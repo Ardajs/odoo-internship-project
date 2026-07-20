@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_course_management_root"
+        name="Course Management"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_course_management_courses"
+        name="Courses"
+        parent="menu_course_management_root"
+        action="action_course"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_course_management_sessions"
+        name="Sessions"
+        parent="menu_course_management_root"
+        action="action_course_session"
+        sequence="20"/>
+
+</odoo>

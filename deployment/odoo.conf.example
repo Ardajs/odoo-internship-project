@@ -1,0 +1,38 @@
+[options]
+
+; Copy to /etc/odoo/odoo.conf, replace every placeholder, then protect it:
+; owner root:odoo, mode 0640. Never commit the real production file.
+admin_passwd = ODOO_MASTER_PASSWORD
+
+; PostgreSQL Unix socket. The Linux service user and PostgreSQL role are "odoo".
+db_host =
+; db_port is intentionally omitted; the local Unix socket is used.
+db_user = odoo
+db_password =
+db_name = DATABASE_NAME
+dbfilter = ^DATABASE_NAME$
+
+addons_path = /opt/odoo/odoo/addons,/opt/odoo/project/dev_addons,/opt/odoo/project/dev_addonsI,/opt/odoo/project/custom_addons
+data_dir = /var/lib/odoo
+
+http_interface = 127.0.0.1
+http_port = 8069
+gevent_port = 8072
+proxy_mode = True
+list_db = False
+
+; EXAMPLE ONLY for a small VPS. Recalculate workers and cron capacity from the
+; actual CPU, RAM and workload before production cutover. Production must use
+; workers > 0 when Nginx routes /websocket to gevent_port 8072.
+workers = 2
+max_cron_threads = 1
+
+; Capacity-dependent examples. Uncomment only after load/capacity planning.
+; limit_memory_soft = 629145600
+; limit_memory_hard = 1677721600
+; limit_time_cpu = 600
+; limit_time_real = 1200
+
+logfile = /var/log/odoo/odoo.log
+log_level = info
+without_demo = True

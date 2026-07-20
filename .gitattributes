@@ -1,0 +1,14 @@
+# Windows development, Linux production
+* text=auto
+
+# Linux-executed deployment files must always use LF.
+*.sh text eol=lf
+deployment/*.service text eol=lf
+deployment/*.timer text eol=lf
+deployment/*.conf text eol=lf
+deployment/nginx/* text eol=lf
+deployment/logrotate/* text eol=lf
+deployment/.env.example text eol=lf
+
+# Documentation is portable and consistently normalized.
+*.md text eol=lf

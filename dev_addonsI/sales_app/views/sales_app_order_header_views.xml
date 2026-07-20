@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+    <data>
+
+        <record id="sales_order_header_view_search" model="ir.ui.view">
+            <field name="name">sales.order.header.view.search</field>
+            <field name="model">sales.order.header</field>
+            <field name="arch" type="xml">
+                <search string="Search Orders">
+                    <field name="name"/>
+                    <field name="customer_id"/>
+                    <field name="salesperson_id"/>
+                    <field name="state"/>
+                    <field name="order_date"/>
+
+
+                    <filter name="my_orders"
+                            string="My Orders"
+                            domain="[('salesperson_id', '=', uid)]"/>
+
+                    <filter name="today_orders"
+                            string="Today's Orders"
+                            domain="[('order_date', '>=', context_today())]"/>
+
+                    <filter name="draft_orders"
+                            string="Draft"
+                            domain="[('state', '=', 'draft')]"/>
+
+                    <filter name="confirmed_orders"
+                            string="Confirmed"
+                            domain="[('state', '=', 'confirmed')]"/>
+
+                    <filter name="cancelled_orders"
+                            string="Cancelled"
+                            domain="[('state', '=', 'cancelled')]"/>
+
+
+
+                    <separator/>
+
+                    <filter name="group_by_customer"
+                            string="Customer"
+                            context="{'group_by': 'customer_id'}"/>
+
+                    <filter name="group_by_salesperson"
+                            string="Salesperson"
+                            context="{'group_by': 'salesperson_id'}"/>
+
+                    <filter name="group_by_state"
+                            string="Status"
+                            context="{'group_by': 'state'}"/>
+                </search>
+            </field>
+        </record>
+
+
+        <record id="sales_order_header_action" model="ir.actions.act_window">
+            <field name="name">Order</field>
+            <field name="res_model">sales.order.header</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="sales_order_header_view_search"/>
+            <field name="domain">[]</field>
+            <field name="context">{}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first order.
+                </p>
+            </field>
+        </record>
+
+        <record id="my_sales_order_header_action" model="ir.actions.act_window">
+            <field name="name">My Orders</field>
+            <field name="res_model">sales.order.header</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="sales_order_header_view_search"/>
+            <field name="domain">[('salesperson_id', '=', uid)]</field>
+            <field name="context">{}</field>
+        </record>
+
+        <record id="sales_order_header_view_tree" model="ir.ui.view">
+            <field name="name">sales.order.header.view.tree</field>
+            <field name="model">sales.order.header</field>
+            <field name="arch" type="xml">
+                <list string="Orders">
+                    <field name="name" />
+                    <field name="customer_id" />
+                    <field name="salesperson_id" />
+                    <field name="customer_phone" />
+                    <field name="customer_email" />
+                    <field name="order_date" />
+                    <field name = "state" />
+                    <field name="untaxed_amount" />
+                    <field name="tax_amount" />
+                    <field name="total_amount" />
+                </list>
+            </field>
+        </record>
+
+        <record id="sales_order_header_view_form" model="ir.ui.view">
+            <field name="name">sales.order.header.view.form</field>
+            <field name="model">sales.order.header</field>
+            <field name="arch" type="xml">
+                <form string="Order">
+                    <!--
+                    Burada form görünümünü tanımlayabilirsiniz. Form görünümü, siparişin detaylarını görüntülemek ve düzenlemek için kullanılır.
+                    "header" etiketi içinde, siparişin durumunu değiştirmek için kullanılacak butonları ve durum çubuğunu ekleyebilirsiniz. #
+                    "sheet" etiketi içinde, siparişin temel bilgilerini ve sipariş satırlarını gösterebilirsiniz.
+                    "notebook" etiketi ile sekmeli bir görünüm oluşturabilir ve sipariş satırlarını ayrı bir sekmede gösterebilirsiniz.
+                    "chatter" etiketi ile Odoo'nun dahili iletişim ve takip sistemini entegre edebilirsiniz.
+                    -->
+                    <header>
+                        <button name="action_confirm"
+                                type="object"
+                                string="Confirm"
+                                class="btn-primary"
+                                invisible="state != 'draft'"/>
+
+                        <button name="action_cancel"
+                                type="object"
+                                string="Cancel"
+                                class="btn-secondary"
+                                invisible="state != 'confirmed'"/>
+
+                        <button name="action_set_to_draft"
+                                type="object"
+                                string="Set to Draft"
+                                class="btn-secondary"
+                                invisible="state != 'cancelled'"/>
+
+                        <field name="state"
+                            widget="statusbar"
+                            statusbar_visible="draft,confirmed,cancelled"/>
+                    </header>
+                    <!-- Burada statusbar widget'ını kullanarak siparişin durumunu gösterebilirsiniz. "statusbar_visible" özelliği ile hangi durumların görünür olacağını belirleyebilirsiniz.-->
+                    <sheet>
+                        <group>
+                            <field name="name" />
+                            <field name="customer_id" readonly="state != 'draft'"/>
+                            <field name="salesperson_id" readonly="state != 'draft'"/>
+                            <field name="customer_phone" readonly="1"/>
+                            <field name="customer_email" readonly="1"/>
+                            <field name="order_date" readonly="state != 'draft'"/>
+                            <field name="state" readonly="1"/>
+                            <field name="untaxed_amount" readonly="1"/>
+                            <field name="tax_amount" readonly="1"/>
+                            <field name="total_amount" readonly="1"/>
+                        </group>
+
+                        <notebook>
+                            <page string="Order Lines">
+                                <field name="order_line_ids" readonly= "state != 'draft'">
+                                    <list editable="bottom">
+                                        <field name="sequence"/>
+                                        <field name="product_id"/>
+                                        <field name="quantity"/>
+                                        <field name="price_unit"/>
+                                        <field name="discount"/>
+                                        <field name="tax_rate"/>
+                                        <field name="subtotal" readonly="1"/>
+                                        <field name="tax_amount" readonly="1"/>
+                                        <field name="total" readonly="1"/>
+                                    </list>
+                                </field>
+                            </page>
+                            <page string="Notes">
+                                <field name="note" placeholder="Write order notes here..."/>
+                            </page>
+                        </notebook>
+
+
+                    </sheet>
+                    <chatter/>
+                </form>
+            </field>
+        </record>
+
+
+
+    </data>
+</odoo>

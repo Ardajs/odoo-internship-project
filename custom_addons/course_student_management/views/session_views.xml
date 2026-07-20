@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="course_session_view_list" model="ir.ui.view">
+        <field name="name">course.session.view.list</field>
+        <field name="model">course.session</field>
+        <field name="arch" type="xml">
+            <list string="Sessions">
+                <field name="title"/>
+                <field name="course_id"/>
+                <field name="session_date"/>
+                <field name="duration"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="course_session_view_form" model="ir.ui.view">
+        <field name="name">course.session.view.form</field>
+        <field name="model">course.session</field>
+        <field name="arch" type="xml">
+            <form string="Session">
+                <sheet>
+                    <group>
+                        <field name="title"/>
+                        <field name="course_id"/>
+                        <field name="session_date"/>
+                        <field name="duration"/>
+                        <field name="state"/>
+                    </group>
+
+                    <group>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

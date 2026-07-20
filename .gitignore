@@ -1,0 +1,137 @@
+# sphinx build directories
+_build/
+
+# dotfiles
+.*
+!.gitignore
+!.gitkeep
+!.github
+!.mailmap
+!.weblate.json
+!.gitattributes
+!deployment/.env.example
+# compiled python files
+*.py[co]
+__pycache__/
+# setup.py egg_info
+*.egg-info
+# emacs backup files
+*~
+# hg stuff
+*.orig
+status
+# odoo filestore
+odoo/filestore
+# maintenance migration scripts
+odoo/addons/base/maintenance
+# windows installation config file
+/odoo.conf
+
+# generated for windows installer?
+install/win32/*.bat
+install/win32/meta.py
+
+# needed only when building for win32
+setup/win32/static/less/
+setup/win32/static/wkhtmltopdf/
+setup/win32/static/postgresql*.exe
+
+# js tooling
+node_modules
+jsconfig.json
+tsconfig.json
+package-lock.json
+package.json
+.husky
+
+# various virtualenv
+/bin/
+/build/
+/dist/
+/include/
+/lib/
+/man/
+/share/
+/src/
+
+# -----------------------------------------------------------------------------
+# Custom project repository safety rules
+# The upstream Odoo core is cloned separately to /opt/odoo/odoo in production.
+# -----------------------------------------------------------------------------
+
+# Python virtual environments
+/.venv/
+/venv/
+/env/
+
+# Python and test caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Logs and runtime files
+*.log
+/logs/
+/sessions/
+**/sessions/
+
+# Local and production secrets/configuration
+.env
+.env.*
+!deployment/.env.example
+/odoo.conf
+/odoo.conf.*
+!deployment/odoo.conf.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# PostgreSQL dumps, Odoo ZIP backups and filesystem archives
+*.dump
+*.backup
+*.bak
+*.pgdump
+*.sql
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+/backup/
+/backups/
+
+# Odoo filestore and local data
+/filestore/
+**/filestore/
+/data_dir/
+
+# IDE, OS and temporary files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tmp
+*.temp
+Thumbs.db
+.DS_Store
+
+# Upstream Odoo Community source and metadata.
+# Keep these out of the custom-project repository; clone Odoo 19 separately.
+/addons/
+/odoo/
+/debian/
+/doc/
+/setup/
+/odoo-bin
+/requirements.txt
+/setup.py
+/setup.cfg
+/MANIFEST.in
+/ruff.toml
+/.weblate.json
+/CONTRIBUTING.md
+/COPYRIGHT
+/SECURITY.md
+/.github/

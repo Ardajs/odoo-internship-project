@@ -1,0 +1,1030 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <template id="report_internship_logbook">
+
+        <t t-call="web.html_container">
+
+            <t t-foreach="docs" t-as="program">
+
+                <t t-call="web.basic_layout">
+
+
+                    <!-- ================================================== -->
+                    <!-- COVER PAGE                                         -->
+                    <!-- ================================================== -->
+
+                    <div class="page"
+                         style="text-align: center; padding-top: 80px; page-break-before: always;">
+
+                        <h1 style="
+                            font-size: 34px;
+                            font-weight: bold;
+                            margin-bottom: 10px;
+                        ">
+                            INTERNSHIP LOGBOOK
+                        </h1>
+
+                        <h3 style="
+                            margin-top: 10px;
+                            font-weight: normal;
+                        ">
+                            Internship Program Report
+                        </h3>
+
+
+                        <!-- Student Information -->
+
+                        <div style="
+                            margin-top: 70px;
+                            text-align: left;
+                        ">
+
+                            <h3 style="
+                                text-align: center;
+                                border-bottom: 1px solid #000;
+                                padding-bottom: 8px;
+                            ">
+                                Student Information
+                            </h3>
+
+                            <table style="
+                                width: 80%;
+                                margin-left: auto;
+                                margin-right: auto;
+                                margin-top: 25px;
+                            ">
+
+                                <tr>
+                                    <td style="
+                                        width: 40%;
+                                        padding: 8px;
+                                    ">
+                                        <strong>Name</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.student_id.name"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 8px;">
+                                        <strong>Student Number</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.student_id.student_number"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 8px;">
+                                        <strong>University</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.student_id.university"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 8px;">
+                                        <strong>Department</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.student_id.department"/>
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                        </div>
+
+
+                        <!-- Internship Information -->
+
+                        <div style="
+                            margin-top: 50px;
+                            text-align: left;
+                        ">
+
+                            <h3 style="
+                                text-align: center;
+                                border-bottom: 1px solid #000;
+                                padding-bottom: 8px;
+                            ">
+                                Internship Information
+                            </h3>
+
+                            <table style="
+                                width: 80%;
+                                margin-left: auto;
+                                margin-right: auto;
+                                margin-top: 25px;
+                            ">
+
+                                <tr>
+                                    <td style="
+                                        width: 40%;
+                                        padding: 8px;
+                                    ">
+                                        <strong>Program</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.name"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 8px;">
+                                        <strong>Company</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.company_name"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 8px;">
+                                        <strong>Company Department</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.department"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 8px;">
+                                        <strong>Start Date</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.start_date"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 8px;">
+                                        <strong>End Date</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.end_date"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 8px;">
+                                        <strong>Supervisor</strong>
+                                    </td>
+
+                                    <td style="padding: 8px;">
+                                        <span t-field="program.supervisor_id.name"/>
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ================================================== -->
+                    <!-- PROGRAM SUMMARY PAGE                               -->
+                    <!-- ================================================== -->
+
+                    <div class="page" style="page-break-after: always; padding-top: 20px;">
+
+                        <h2 style="
+                            text-align: center;
+                            margin-bottom: 30px;
+                        ">
+                            Internship Program Summary
+                        </h2>
+
+
+                        <!-- Student Information -->
+
+                        <h3>Student Information</h3>
+
+                        <table class="table table-sm table-bordered"
+                                style="margin-top: 15px;">
+
+                            <tbody>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Student</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.student_id.name"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Student Number</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.student_id.student_number"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>University</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.student_id.university"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Department</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.student_id.department"/>
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+
+                        <!-- Internship Information -->
+
+                        <h3 style="margin-top: 35px;">
+                            Internship Information
+                        </h3>
+
+                        <table class="table table-sm table-bordered">
+
+                            <tbody>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Program</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.name"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Company</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.company_name"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Company Department</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.department"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Supervisor</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.supervisor_id.name"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Start Date</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.start_date"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>End Date</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.end_date"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Duration</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.duration_days"/>
+                                        days
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+
+                        <!-- Summary -->
+
+                        <h3 style="margin-top: 30px;">
+                            Internship Summary
+                        </h3>
+
+                        <table class="table table-sm table-bordered">
+
+                            <tbody>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Total Daily Entries</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.daily_entry_count"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Approved Entries</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.approved_entry_count"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Total Work Hours</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.total_work_hours"/>
+                                        hours
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Approved Work Hours</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.approved_work_hours"/>
+                                        hours
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Approval Percentage</strong>
+                                    </td>
+
+                                    <td>
+
+                                        <span t-esc="round(program.approval_percentage,2)"/>
+
+                                        <span>%</span>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Program Status</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.state"/>
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+
+                        <!-- Report Information -->
+
+                        <div style="
+                            margin-top: 40px;
+                            text-align: right;
+                            font-size: 12px;
+                        ">
+
+                            <strong>Report Generated:</strong>
+
+                            <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d.%m.%Y %H:%M')"/>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ================================================== -->
+                    <!-- PREPARE APPROVED DAILY ENTRIES                     -->
+                    <!-- ================================================== -->
+
+                    <t
+                        t-set="approved_entries"
+                        t-value="
+                            program.daily_entry_ids
+                                .filtered(
+                                    lambda e:
+                                    e.state == 'approved'
+                                )
+                                .sorted(
+                                    key=lambda e:
+                                    e.entry_date
+                                )
+                        "
+                    />
+
+
+                    <!-- ================================================== -->
+                    <!-- DAILY ENTRY PAGES                                  -->
+                    <!-- ================================================== -->
+
+                    <t t-if="approved_entries">
+
+                        <t
+                            t-foreach="approved_entries"
+                            t-as="entry"
+                        >
+
+                            <div class="page"
+                                style="
+                                    page-break-before: always;
+                                    page-break-after: always;
+                                    page-break-inside: avoid;
+                                    padding-top: 20px;
+                                ">
+
+
+                                <!-- Daily Entry Header -->
+
+                                <h2 style="
+                                    text-align: center;
+                                    margin-bottom: 25px;
+                                ">
+                                    Daily Internship Entry
+                                </h2>
+
+
+                                <div style="
+                                    text-align: center;
+                                    margin-bottom: 25px;
+                                ">
+
+                                    <h3>
+
+                                        Day
+
+                                        <span t-field="entry.day_number"/>
+
+                                        -
+
+                                        <span t-field="entry.title"/>
+
+                                    </h3>
+
+                                </div>
+
+
+                                <!-- Basic Information -->
+
+                                <table
+                                    class="table table-sm table-bordered"
+                                >
+
+                                    <tbody>
+
+                                        <tr>
+
+                                            <td style="width: 30%;">
+                                                <strong>Date</strong>
+                                            </td>
+
+                                            <td>
+                                                <span t-field="entry.entry_date"/>
+                                            </td>
+
+                                        </tr>
+
+                                        <tr>
+
+                                            <td>
+                                                <strong>Work Hours</strong>
+                                            </td>
+
+                                            <td>
+                                                <span t-field="entry.work_hours"/>
+                                                hours
+                                            </td>
+
+                                        </tr>
+
+                                        <tr>
+
+                                            <td>
+                                                <strong>Technologies Used</strong>
+                                            </td>
+
+                                            <td>
+
+                                                <span t-field="entry.technologies"/>
+
+                                            </td>
+
+                                        </tr>
+
+                                    </tbody>
+
+                                </table>
+
+
+                                <!-- Work Description -->
+
+                                <div style="margin-top: 30px;">
+
+                                    <h4>
+                                        Work Description
+                                    </h4>
+
+                                    <div style="
+                                        border: 1px solid #ddd;
+                                        padding: 12px;
+                                        min-height: 80px;
+                                    ">
+
+                                        <span t-field="entry.work_description"/>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Learning Outcomes -->
+
+                                <div style="margin-top: 25px;">
+
+                                    <h4>
+                                        What I Learned
+                                    </h4>
+
+                                    <div style="
+                                        border: 1px solid #ddd;
+                                        padding: 12px;
+                                        min-height: 60px;
+                                    ">
+
+                                        <span t-field="entry.learned_topics"/>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Problems -->
+
+                                <div style="margin-top: 25px;">
+
+                                    <h4>
+                                        Problems and Solutions
+                                    </h4>
+
+                                    <div style="
+                                        border: 1px solid #ddd;
+                                        padding: 12px;
+                                        min-height: 60px;
+                                    ">
+
+                                        <span t-field="entry.challenges"/>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Supervisor Comment -->
+
+                                <div style="margin-top: 25px;">
+
+                                    <h4>
+                                        Supervisor Comment
+                                    </h4>
+
+                                    <div style="
+                                        border: 1px solid #ddd;
+                                        padding: 12px;
+                                        min-height: 60px;
+                                    ">
+
+                                        <span t-field="entry.supervisor_comment"/>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Daily Signature Area -->
+
+                                <div style="margin-top: 60px;">
+
+                                    <table style="width: 100%;">
+
+                                        <tr>
+
+                                            <td style="
+                                                width: 50%;
+                                                text-align: center;
+                                                vertical-align: top;
+                                            ">
+
+                                                <strong>
+                                                    Intern
+                                                </strong>
+
+                                                <br/>
+                                                <br/>
+                                                <br/>
+                                                <br/>
+
+                                                <span t-field="program.student_id.name"/>
+
+                                                <br/>
+
+                                                Signature
+
+                                            </td>
+
+
+                                            <td style="
+                                                width: 50%;
+                                                text-align: center;
+                                                vertical-align: top;
+                                            ">
+
+                                                <strong>
+                                                    Supervisor
+                                                </strong>
+
+                                                <br/>
+                                                <br/>
+                                                <br/>
+                                                <br/>
+
+                                                <span t-field="program.supervisor_id.name"/>
+
+                                                <br/>
+
+                                                Signature
+
+                                            </td>
+
+                                        </tr>
+
+                                    </table>
+
+                                </div>
+
+
+                                <!-- Page Number -->
+
+                                <div style="
+                                    position: absolute;
+                                    bottom: 10px;
+                                    right: 20px;
+                                    font-size: 10px;
+                                ">
+
+                                    Page
+
+                                    <span class="page"/>
+
+                                    /
+
+                                    <span class="topage"/>
+
+                                </div>
+
+                            </div>
+
+                        </t>
+
+                    </t>
+
+
+                    <!-- ================================================== -->
+                    <!-- NO APPROVED RECORDS                                -->
+                    <!-- ================================================== -->
+
+                    <t t-else="">
+
+                        <div class="page">
+
+                            <h2 style="text-align: center; page-break-after: always;">
+                                Daily Internship Entries
+                            </h2>
+
+                            <div style="
+                                margin-top: 100px;
+                                text-align: center;
+                            ">
+
+                                <p>
+                                    No approved daily internship
+                                    entries were found for this program.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </t>
+
+
+                    <!-- ================================================== -->
+                    <!-- FINAL APPROVAL PAGE                                -->
+                    <!-- ================================================== -->
+
+                    <div class="page"
+                        style="
+                            page-break-before: always;
+                            padding-top: 20px;
+                        ">
+                        <h2 style="
+                            text-align: center;
+                            margin-bottom: 50px;
+                            page-break-before: always;
+                        ">
+                            Internship Completion Approval
+                        </h2>
+
+
+                        <table class="table table-sm table-bordered">
+
+                            <tbody>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Student</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.student_id.name"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Student Number</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.student_id.student_number"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Company</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.company_name"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Internship Period</strong>
+                                    </td>
+
+                                    <td>
+
+                                        <span t-field="program.start_date"/>
+
+                                        -
+
+                                        <span t-field="program.end_date"/>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Total Work Hours</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.total_work_hours"/>
+                                        hours
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Approved Work Hours</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.approved_work_hours"/>
+                                        hours
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Approved Daily Entries</strong>
+                                    </td>
+
+                                    <td>
+                                        <span t-field="program.approved_entry_count"/>
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td>
+                                        <strong>Approved Daily Entries</strong>
+                                    </td>
+
+                                    <td>
+
+                                        <span t-field="program.approved_entry_count"/>
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+
+                        <!-- Final Approval Text -->
+
+                        <div style="
+                            margin-top: 60px;
+                            text-align: justify;
+                            line-height: 1.8;
+                        ">
+
+                            <p>
+                                The internship activities documented
+                                in this logbook have been reviewed.
+                                The approved daily entries reflect the
+                                work performed by the intern during the
+                                internship period.
+                            </p>
+
+                        </div>
+
+
+                        <!-- Final Signatures -->
+
+                        <div style="margin-top: 100px;">
+
+                            <table style="width: 100%;">
+
+                                <tr>
+
+                                    <td style="
+                                        width: 50%;
+                                        text-align: center;
+                                    ">
+
+                                        <strong>
+                                            Intern
+                                        </strong>
+
+                                        <br/>
+                                        <br/>
+                                        <br/>
+                                        <br/>
+
+                                        <span t-field="program.student_id.name"/>
+
+                                        <br/>
+
+                                        Signature
+
+                                    </td>
+
+
+                                    <td style="
+                                        width: 50%;
+                                        text-align: center;
+                                    ">
+
+                                        <strong>
+                                            Internship Supervisor
+                                        </strong>
+
+                                        <br/>
+                                        <br/>
+                                        <br/>
+                                        <br/>
+
+                                        <span t-field="program.supervisor_id.name"/>
+
+                                        <br/>
+
+                                        Signature / Stamp
+
+                                    </td>
+
+                                </tr>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+
+                </t>
+
+            </t>
+
+        </t>
+
+    </template>
+
+</odoo>

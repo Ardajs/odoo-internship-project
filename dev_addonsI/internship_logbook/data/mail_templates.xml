@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <!-- Submitted: Supervisor Notification -->
+    <record id="mail_template_daily_entry_submitted" model="mail.template">
+        <field name="name">Daily Entry Submitted</field>
+        <field name="model_id" ref="model_internship_daily_entry"/>
+        <field name="subject">
+            Daily Internship Entry Submitted - {{ object.title }}
+        </field>
+        <field name="email_from">
+            {{ user.email_formatted or '' }}
+        </field>
+        <field name="email_to">
+            {{ object.supervisor_id.email or '' }}
+        </field>
+        <field name="body_html" type="html">
+            <div>
+                <p>Hello <t t-out="object.supervisor_id.name"/>,</p>
+
+                <p>
+                    A new daily internship entry has been submitted
+                    for your review.
+                </p>
+
+                <p>
+                    <strong>Student:</strong>
+                    <t t-out="object.student_id.name"/>
+                </p>
+
+                <p>
+                    <strong>Title:</strong>
+                    <t t-out="object.title"/>
+                </p>
+
+                <p>
+                    <strong>Date:</strong>
+                    <t t-out="object.entry_date"/>
+                </p>
+
+                <p>
+                    Please log in to Odoo to review the entry.
+                </p>
+            </div>
+        </field>
+    </record>
+
+
+    <!-- Revision: Intern Notification -->
+    <record id="mail_template_daily_entry_revision" model="mail.template">
+        <field name="name">Daily Entry Revision Requested</field>
+        <field name="model_id" ref="model_internship_daily_entry"/>
+        <field name="subject">
+            Revision Requested - {{ object.title }}
+        </field>
+        <field name="email_from">
+            {{ user.email_formatted or '' }}
+        </field>
+        <field name="email_to">
+            {{ object.student_id.user_id.email or '' }}
+        </field>
+        <field name="body_html" type="html">
+            <div>
+                <p>Hello <t t-out="object.student_id.name"/>,</p>
+
+                <p>
+                    Your supervisor requested a revision
+                    for your daily internship entry.
+                </p>
+
+                <p>
+                    <strong>Title:</strong>
+                    <t t-out="object.title"/>
+                </p>
+
+                <p>
+                    <strong>Date:</strong>
+                    <t t-out="object.entry_date"/>
+                </p>
+
+                <p>
+                    <strong>Supervisor Comment:</strong>
+                    <t t-out="object.supervisor_comment or '-'"/>
+                </p>
+
+                <p>
+                    Please update the entry and submit it again.
+                </p>
+            </div>
+        </field>
+    </record>
+
+
+    <!-- Approved: Intern Notification -->
+    <record id="mail_template_daily_entry_approved" model="mail.template">
+        <field name="name">Daily Entry Approved</field>
+        <field name="model_id" ref="model_internship_daily_entry"/>
+        <field name="subject">
+            Daily Internship Entry Approved - {{ object.title }}
+        </field>
+        <field name="email_from">
+            {{ user.email_formatted or '' }}
+        </field>
+        <field name="email_to">
+            {{ object.student_id.user_id.email or '' }}
+        </field>
+        <field name="body_html" type="html">
+            <div>
+                <p>Hello <t t-out="object.student_id.name"/>,</p>
+
+                <p>
+                    Your daily internship entry has been approved.
+                </p>
+
+                <p>
+                    <strong>Title:</strong>
+                    <t t-out="object.title"/>
+                </p>
+
+                <p>
+                    <strong>Date:</strong>
+                    <t t-out="object.entry_date"/>
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+                    Approved
+                </p>
+            </div>
+        </field>
+    </record>
+
+</odoo>

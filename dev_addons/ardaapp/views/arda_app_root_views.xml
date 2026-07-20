@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+    <data>
+
+        <menuitem
+            id="arda_app_root_menu"
+            name="Arda App"
+            sequence="10"/>
+
+        <menuitem
+            id="order_header_menu"
+            name="Order Headers"
+            parent="arda_app_root_menu"
+            action="order_header_action"
+            sequence="10"/>
+
+    </data>
+</odoo>

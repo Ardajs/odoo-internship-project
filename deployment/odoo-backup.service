@@ -1,0 +1,22 @@
+[Unit]
+Description=Consistent Odoo database and filestore backup
+Documentation=/opt/odoo/project/deployment/DEPLOYMENT_GUIDE.md
+RequiresMountsFor=/var/backups/odoo /var/lib/odoo
+After=postgresql.service
+ConditionPathExists=/etc/odoo/deployment.env
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+Environment=ENV_FILE=/etc/odoo/deployment.env
+ExecStart=/opt/odoo/project/deployment/scripts/backup.sh --consistent
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+UMask=0077
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

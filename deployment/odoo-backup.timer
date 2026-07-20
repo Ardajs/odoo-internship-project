@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Odoo backup once per day
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=15m
+Persistent=true
+Unit=odoo-backup.service
+
+[Install]
+WantedBy=timers.target

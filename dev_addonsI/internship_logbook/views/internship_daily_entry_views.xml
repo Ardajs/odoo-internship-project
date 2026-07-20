@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <!-- Daily Entry List View -->
+    <record id="view_internship_daily_entry_list" model="ir.ui.view">
+        <field name="name">internship.daily.entry.list</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <list
+                string="Daily Entries"
+                decoration-info="state == 'draft'"
+                decoration-warning="state == 'submitted'"
+                decoration-danger="state == 'revision'"
+                decoration-success="state == 'approved'">
+
+                <field name="entry_date"/>
+                <field name="day_number"/>
+                <field name="title"/>
+                <field name="student_id"/>
+                <field name="program_id"/>
+                <field name="supervisor_id" optional="hide"/>
+                <field name="work_hours"/>
+                <field name="state" widget="badge"/>
+
+            </list>
+        </field>
+    </record>
+
+
+    <!-- Daily Entry Form View -->
+    <record id="view_internship_daily_entry_form" model="ir.ui.view">
+        <field name="name">internship.daily.entry.form</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <form string="Daily Internship Entry">
+
+                <header>
+
+                    <button
+                        name="action_submit"
+                        string="Submit"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state not in ('draft', 'revision')"/>
+
+                    <button
+                        name="action_approve"
+                        string="Approve"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'submitted'"/>
+
+                    <button
+                        name="action_request_revision"
+                        string="Request Revision"
+                        type="object"
+                        invisible="state != 'submitted'"/>
+
+                    <button
+                        name="action_reset_to_draft"
+                        string="Reset to Draft"
+                        type="object"
+                        invisible="state != 'revision'"/>
+
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,submitted,revision,approved"/>
+
+                </header>
+
+                <sheet>
+
+                    <div class="oe_title">
+                        <label for="title"/>
+                        <h1>
+                            <field
+                                name="title"
+                                placeholder="Example: Creating an Odoo model"
+                                readonly="state not in ('draft', 'revision')"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Internship Information">
+
+                            <field
+                                name="program_id"
+                                readonly="state not in ('draft', 'revision')"/>
+
+                            <field name="student_id" readonly="1"/>
+
+                            <field name="supervisor_id" readonly="1"/>
+
+                        </group>
+
+                        <group string="Daily Information">
+
+                            <field
+                                name="entry_date"
+                                readonly="state not in ('draft', 'revision')"/>
+
+                            <field name="day_number" readonly="1"/>
+
+                            <field
+                                name="work_hours"
+                                readonly="state not in ('draft', 'revision')"/>
+
+                            <field name="active"/>
+
+                        </group>
+                    </group>
+
+                    <group string="Work Details">
+
+                        <field
+                            name="technologies"
+                            placeholder="Python, Odoo, PostgreSQL, XML..."
+                            readonly="state not in ('draft', 'revision')"/>
+
+                        <field
+                            name="work_description"
+                            placeholder="Describe the work completed during the day..."
+                            readonly="state not in ('draft', 'revision')"/>
+
+                    </group>
+
+                    <group string="Learning and Problems">
+
+                        <field
+                            name="learned_topics"
+                            placeholder="What did you learn today?"
+                            readonly="state not in ('draft', 'revision')"/>
+
+                        <field
+                            name="challenges"
+                            placeholder="Describe encountered problems and their solutions..."
+                            readonly="state not in ('draft', 'revision')"/>
+
+                    </group>
+
+                    <group
+                        string="Supervisor Evaluation"
+                        invisible="state == 'draft'">
+
+                        <field
+                            name="supervisor_comment"
+                            readonly="state != 'submitted'"
+                            placeholder="Supervisor evaluation or revision explanation..."/>
+
+                    </group>
+
+                </sheet>
+
+                <chatter>
+                    <field
+                        name="message_follower_ids"
+                        widget="mail_followers"/>
+
+                    <field
+                        name="activity_ids"
+                        widget="mail_activity"/>
+
+                    <field
+                        name="message_ids"
+                        widget="mail_thread"/>
+                </chatter>
+
+
+            </form>
+        </field>
+    </record>
+
+
+    <!-- Daily Entry Search View -->
+    <record id="view_internship_daily_entry_search" model="ir.ui.view">
+        <field name="name">internship.daily.entry.search</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <search string="Search Daily Entries">
+
+                <field name="title"/>
+                <field name="program_id"/>
+                <field name="student_id"/>
+                <field name="supervisor_id"/>
+                <field name="entry_date"/>
+                <field name="technologies"/>
+
+                <separator/>
+
+                <filter
+                    name="filter_draft"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]"/>
+
+                <filter
+                    name="filter_submitted"
+                    string="Submitted"
+                    domain="[('state', '=', 'submitted')]"/>
+
+                <filter
+                    name="filter_revision"
+                    string="Revision Requested"
+                    domain="[('state', '=', 'revision')]"/>
+
+                <filter
+                    name="filter_approved"
+                    string="Approved"
+                    domain="[('state', '=', 'approved')]"/>
+
+                <separator/>
+
+                <filter
+                    name="filter_my_entries"
+                    string="My Supervised Entries"
+                    domain="[('supervisor_id', '=', uid)]"/>
+
+                <separator/>
+
+                <filter
+                    name="filter_archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]"/>
+
+                <group>
+
+                    <filter
+                        name="group_by_student"
+                        string="Student"
+                        context="{'group_by': 'student_id'}"/>
+
+                    <filter
+                        name="group_by_program"
+                        string="Internship Program"
+                        context="{'group_by': 'program_id'}"/>
+
+                    <filter
+                        name="group_by_state"
+                        string="Status"
+                        context="{'group_by': 'state'}"/>
+
+                    <filter
+                        name="group_by_entry_month"
+                        string="Entry Month"
+                        context="{'group_by': 'entry_date:month'}"/>
+
+                </group>
+
+            </search>
+        </field>
+    </record>
+
+
+    <!-- Daily Entry Window Action -->
+    <record id="action_internship_daily_entry" model="ir.actions.act_window">
+        <field name="name">Daily Entries</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="search_view_id"
+            ref="view_internship_daily_entry_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first daily internship entry
+            </p>
+            <p>
+                Record daily activities, technologies, learning outcomes
+                and encountered problems.
+            </p>
+        </field>
+    </record>
+
+</odoo>

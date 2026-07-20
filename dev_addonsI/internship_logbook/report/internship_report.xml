@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record
+        id="action_report_internship_logbook"
+        model="ir.actions.report">
+
+        <field name="name">Internship Logbook</field>
+
+        <field name="model">internship.program</field>
+
+        <field name="report_type">qweb-pdf</field>
+
+        <field name="report_name">internship_logbook.report_internship_logbook</field>
+
+        <field name="report_file">internship_logbook.report_internship_logbook</field>
+
+        <field
+            name="binding_model_id"
+            ref="model_internship_program"/>
+
+        <field name="binding_type">report</field>
+
+        <field
+                name="paperformat_id"
+                ref="paperformat_internship_logbook"/>
+
+        <field name="print_report_name">
+            'Internship Logbook - %s' % (object.name)
+        </field>
+
+    </record>
+
+</odoo>

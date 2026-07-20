@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <!-- Internship Program List View -->
+    <record id="view_internship_program_list" model="ir.ui.view">
+        <field name="name">internship.program.list</field>
+        <field name="model">internship.program</field>
+        <field name="arch" type="xml">
+            <list
+                string="Internship Programs"
+                decoration-info="state == 'draft'"
+                decoration-success="state == 'completed'"
+                decoration-warning="state == 'active'"
+                decoration-danger="state == 'cancelled'">
+
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="company_name"/>
+                <field name="department"/>
+                <field name="supervisor_id"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="duration_days"/>
+                <field name="state" widget="badge"/>
+
+            </list>
+        </field>
+    </record>
+
+    <!-- Internship Program Form View -->
+    <record id="view_internship_program_form" model="ir.ui.view">
+        <field name="name">internship.program.form</field>
+        <field name="model">internship.program</field>
+        <field name="arch" type="xml">
+            <form string="Internship Program">
+
+                <header>
+
+                    <button
+                        name="action_start"
+                        string="Start"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'draft'"
+                    />
+
+                    <button
+                        name="action_complete"
+                        string="Complete"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'active'"
+                    />
+
+                    <button
+                        name="action_cancel"
+                        string="Cancel"
+                        type="object"
+                        invisible="state not in ('draft', 'active')"
+                    />
+
+                    <button
+                        name="action_reset_to_draft"
+                        string="Reset to Draft"
+                        type="object"
+                        invisible="state != 'cancelled'"
+                    />
+
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,active,completed,cancelled"
+                    />
+
+                </header>
+
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+
+                        <button
+                            name="action_view_daily_entries"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-book">
+
+                            <field
+                                name="daily_entry_count"
+                                widget="statinfo"
+                                string="Daily Entries"/>
+
+                        </button>
+
+                    </div>
+
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field
+                                name="name"
+                                placeholder="Internship program name..."
+                            />
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Student Information">
+                            <field
+                                name="student_id"
+                                readonly="state != 'draft'"/>
+
+                            <field
+                                name="supervisor_id"
+                                readonly="state in ('completed', 'cancelled')"/>
+                        </group>
+
+                        <group string="Company Information">
+                            <field
+                                name="company_name"
+                                readonly="state != 'draft'"/>
+
+                            <field
+                                name="department"
+                                readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+
+                    <group string="Internship Dates">
+                        <group>
+                            <field
+                                name="start_date"
+                                readonly="state != 'draft'"/>
+
+                            <field
+                                name="end_date"
+                                readonly="state != 'draft'"/>
+                        </group>
+
+                        <group>
+                            <field name="duration_days" readonly="1"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+
+                    <group string="Program Statistics">
+
+                        <group>
+
+                            <field
+                                name="daily_entry_count"
+                                readonly="1"/>
+
+                            <field
+                                name="approved_entry_count"
+                                readonly="1"/>
+
+                            <field
+                                name="approval_percentage"
+                                widget="percentage"
+                                readonly="1"/>
+
+                        </group>
+
+                        <group>
+
+                            <field
+                                name="total_work_hours"
+                                readonly="1"/>
+
+                            <field
+                                name="approved_work_hours"
+                                readonly="1"/>
+
+                        </group>
+
+                    </group>
+
+                    <group string="Additional Information">
+                        <field
+                            name="notes"
+                            placeholder="Enter notes about the internship program..."
+                            readonly="state == 'completed'"
+                        />
+                    </group>
+                    <notebook>
+
+                        <page string="Daily Entries">
+
+                            <field name="daily_entry_ids"
+                            context="{'default_program_id': id}">
+
+                                <list>
+                                    <field name="entry_date"/>
+                                    <field name="day_number"/>
+                                    <field name="title"/>
+                                    <field name="work_hours"/>
+                                    <field name="technologies"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+
+                            </field>
+
+                        </page>
+
+                    </notebook>
+
+                </sheet>
+
+            </form>
+        </field>
+    </record>
+
+    <!-- Internship Program Search View -->
+    <record id="view_internship_program_search" model="ir.ui.view">
+        <field name="name">internship.program.search</field>
+        <field name="model">internship.program</field>
+        <field name="arch" type="xml">
+            <search string="Search Internship Programs">
+
+                <!-- Searchable fields -->
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="company_name"/>
+                <field name="department"/>
+                <field name="supervisor_id"/>
+
+                <separator/>
+
+                <!-- Status filters -->
+                <filter
+                    name="filter_draft"
+                    string="Draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+
+                <filter
+                    name="filter_active"
+                    string="Active"
+                    domain="[('state', '=', 'active')]"
+                />
+
+                <filter
+                    name="filter_completed"
+                    string="Completed"
+                    domain="[('state', '=', 'completed')]"
+                />
+
+                <filter
+                    name="filter_cancelled"
+                    string="Cancelled"
+                    domain="[('state', '=', 'cancelled')]"
+                />
+
+                <separator/>
+
+                <!-- User filter -->
+                <filter
+                    name="filter_current_user"
+                    string="My Programs"
+                    domain="[('supervisor_id', '=', uid)]"
+                />
+
+                <separator/>
+
+                <!-- Archived records -->
+                <filter
+                    name="filter_archived"
+                    string="Archived"
+                    domain="[('active', '=', False)]"
+                />
+
+                <!-- Group By filters -->
+                <group>
+
+                    <filter
+                        name="group_by_student"
+                        string="Student"
+                        context="{'group_by': 'student_id'}"
+                    />
+
+                    <filter
+                        name="group_by_company"
+                        string="Company"
+                        context="{'group_by': 'company_name'}"
+                    />
+
+                    <filter
+                        name="group_by_supervisor"
+                        string="Supervisor"
+                        context="{'group_by': 'supervisor_id'}"
+                    />
+
+                    <filter
+                        name="group_by_state"
+                        string="Status"
+                        context="{'group_by': 'state'}"
+                    />
+
+                    <filter
+                        name="group_by_start_month"
+                        string="Start Month"
+                        context="{'group_by': 'start_date:month'}"
+                    />
+
+                </group>
+
+            </search>
+        </field>
+    </record>
+
+    <!-- Internship Program Action -->
+    <record id="action_internship_program" model="ir.actions.act_window">
+        <field name="name">Internship Programs</field>
+        <field name="res_model">internship.program</field>
+        <field name="view_mode">list,form</field>
+        <field
+            name="search_view_id"
+            ref="view_internship_program_search"
+        />
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first internship program
+            </p>
+            <p>
+                Manage students, companies, supervisors and internship dates.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,35 @@
+[Unit]
+Description=Odoo 19 Application Server
+Documentation=https://www.odoo.com/documentation/19.0/
+Wants=network-online.target postgresql.service
+After=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=odoo
+Group=odoo
+WorkingDirectory=/opt/odoo/odoo
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+ExecStartPre=/usr/bin/test -x /opt/odoo/venv/bin/python3
+ExecStartPre=/usr/bin/test -r /opt/odoo/odoo/odoo-bin
+ExecStartPre=/usr/bin/test -r /etc/odoo/odoo.conf
+ExecStart=/opt/odoo/venv/bin/python3 /opt/odoo/odoo/odoo-bin --config=/etc/odoo/odoo.conf
+
+KillSignal=SIGTERM
+TimeoutStopSec=300
+Restart=on-failure
+RestartSec=5s
+UMask=0027
+LimitNOFILE=65536
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/odoo /var/log/odoo
+
+[Install]
+WantedBy=multi-user.target

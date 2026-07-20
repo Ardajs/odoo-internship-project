@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <!-- Root Menu -->
+    <menuitem
+        id="menu_internship_root"
+        name="Internship Logbook"
+        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="10"/>
+
+    <!-- Management -->
+    <menuitem
+        id="menu_internship_management"
+        name="Management"
+        parent="menu_internship_root"
+        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="10"/>
+
+    <!-- Students -->
+    <menuitem
+        id="menu_internship_student"
+        name="Students"
+        parent="menu_internship_management"
+        action="action_internship_student"
+        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="10"/>
+
+    <!-- Internship Programs -->
+    <menuitem
+        id="menu_internship_program"
+        name="Internship Programs"
+        parent="menu_internship_management"
+        action="action_internship_program"
+        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="20"/>
+
+    <!-- Daily Entries -->
+    <menuitem
+        id="menu_internship_daily_entry"
+        name="Daily Entries"
+        parent="menu_internship_management"
+        action="action_internship_daily_entry"
+        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="30"/>
+
+</odoo>
