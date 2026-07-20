@@ -28,6 +28,13 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 
 - [ ] Database dump ve filestore arşivinin timestamp'i eşleşiyor.
 - [ ] SHA-256 checksum doğrulandı.
+- [ ] Windows migration backup SHA-256 değerleri `checksums.txt` ile doğrulandı.
+- [ ] Windows migration dump catalog'u `pg_restore --list` ile okunabiliyor.
+- [ ] Windows migration ZIP integrity kontrolü `unzip -t` ile başarılı.
+- [ ] Target database restore öncesinde mevcut değildi.
+- [ ] Target filestore restore öncesinde mevcut değildi.
+- [ ] PostgreSQL restore sırasında `--no-owner` kullanıldı.
+- [ ] PostgreSQL restore sırasında `--no-privileges` kullanıldı.
 - [ ] Filestore klasör adı production database adıyla birebir eşleşiyor.
 - [ ] Filestore owner `odoo:odoo`.
 - [ ] DB attachment referansları ve fiziksel dosyalar örneklemle doğrulandı.
@@ -71,6 +78,8 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 - [ ] HTTP otomatik olarak HTTPS'e yönleniyor.
 - [ ] `certbot renew --dry-run` başarılı.
 - [ ] Certbot auto-renew timer aktif.
+- [ ] Gerçek `SSH_PORT`, UFW enable öncesinde ikinci bir SSH terminalinden test edildi.
+- [ ] SSH allow kuralı `ufw status numbered` çıktısında doğrulandı.
 - [ ] UFW yalnız SSH, HTTP ve HTTPS'e izin veriyor.
 - [ ] 8069 public değil.
 - [ ] 8072 public değil.
@@ -89,6 +98,8 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 
 ## Uygulama testleri
 
+- [ ] Production database için Odoo 19 registry testi başarılı.
+- [ ] Attachment karşılaştırmasında missing physical file sayısı `0`.
 - [ ] Admin login testi başarılı.
 - [ ] Intern login ve record-rule testi başarılı.
 - [ ] Supervisor login ve record-rule testi başarılı.

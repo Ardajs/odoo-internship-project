@@ -32,6 +32,7 @@ Bu dosyalar yalnızca şablon ve yönetim araçlarıdır. Repository oluşturulu
 - `update.sh`, varsayılan olarak önce tutarlı backup alır.
 - `backup.sh`, database ve filestore için ortak timestamp/checksum/metadata üretir.
 - `restore.sh`, varsayılan olarak yalnız yeni/staging DB'ye restore eder. Production cutover açık bayrak ve birebir yazılan interaktif onay ister.
+- `migration_restore.sh`, yalnız doğrulanmış Windows `.dump` + filestore `.zip` migration setini yeni ve boş bir production hedefine restore eder; mevcut hedefleri drop veya silmez.
 
 Scriptler root parolası, PostgreSQL parolası veya SMTP parolası içermez. PostgreSQL bağlantısı aynı isimli Linux kullanıcısı ve DB role `odoo` üzerinden Unix socket/peer authentication kullanır.
 

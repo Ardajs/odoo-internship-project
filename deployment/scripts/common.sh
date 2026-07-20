@@ -16,12 +16,40 @@ die() {
     exit 1
 }
 
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
 require_command() {
-    command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
+    command_exists "$1" || die "Required command not found: $1"
 }
 
 require_root() {
     [[ "$(id -u)" -eq 0 ]] || die "Run this command as root (sudo)."
+}
+
+require_file() {
+    local path="$1"
+    [[ -f "$path" ]] || die "Required file not found: $path"
+    [[ ! -L "$path" ]] || die "Required file must not be a symbolic link: $path"
+}
+
+secure_directory_check() {
+    local path="$1"
+    local expected_owner="${2:-root}"
+    local expected_group="${3:-root}"
+    local owner group mode
+
+    [[ -d "$path" ]] || die "Secure directory not found: $path"
+    [[ ! -L "$path" ]] || die "Secure directory must not be a symbolic link: $path"
+
+    owner="$(stat -c '%U' "$path")"
+    group="$(stat -c '%G' "$path")"
+    mode="$(stat -c '%a' "$path")"
+    [[ "$owner" == "$expected_owner" && "$group" == "$expected_group" ]] || \
+        die "$path must be owned by $expected_owner:$expected_group (current: $owner:$group)."
+    [[ "$mode" == "700" ]] || \
+        die "$path must have mode 0700 (current mode: $mode)."
 }
 
 load_env() {

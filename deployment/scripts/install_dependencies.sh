@@ -36,7 +36,7 @@ source /etc/os-release
     die "This script is intentionally limited to Ubuntu 24.04; detected ${ID:-unknown} ${VERSION_ID:-unknown}."
 
 base_packages=(
-    ca-certificates curl git build-essential
+    ca-certificates curl git unzip build-essential
     python3.12 python3.12-venv python3.12-dev python3-pip
     libldap2-dev libpq-dev libsasl2-dev
     libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev

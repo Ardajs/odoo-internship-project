@@ -129,6 +129,7 @@ log "Restoring PostgreSQL dump into $target_db"
 if ! runuser -u postgres -- pg_restore \
     --exit-on-error \
     --no-owner \
+    --no-privileges \
     --role="$DB_ROLE" \
     --dbname="$target_db" \
     "$backup_dir/$dump_name"; then

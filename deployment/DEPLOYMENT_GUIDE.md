@@ -25,14 +25,14 @@ Odoo 19 genel olarak PostgreSQL 13+ destekler. Bu proje için PostgreSQL 17.x se
 
 ## 1. Git repository hazırlığı
 
-**Nerede:** Windows, `C:\Users\ardaa\OneDrive\Desktop\Odoo`
+**Nerede:** Windows, custom repository'nin bulunduğu `PROJECT_ROOT` klasörü
 
 **Amaç:** Upstream Odoo core'u dışarıda bırakan temiz custom repository oluşturmak.
 
 PowerShell açın:
 
 ```powershell
-cd C:\Users\ardaa\OneDrive\Desktop\Odoo
+Set-Location -LiteralPath "PROJECT_ROOT"
 git init
 git status --short --ignored
 ```
@@ -116,35 +116,41 @@ git push -u origin main
 5. PowerShell ile checksum alın:
 
 ```powershell
-Get-FileHash C:\BACKUP_PATH\odoo_test_backup.zip -Algorithm SHA256
+Get-FileHash "BACKUP_PATH\odoo_test_backup.zip" -Algorithm SHA256
 ```
 
 ZIP, database içindeki Gmail SMTP/app password dahil secret'ları taşıyabilir.
 
-### Yöntem B — pg_dump + filestore
+Bu tek ZIP, aşağıda açıklanan dört dosyalı Windows migration paketi değildir ve `migration_restore.sh` girdisi olarak kullanılamaz. Odoo Database Manager yöntemi seçilirse ayrı Odoo restore prosedürü uygulanmalıdır.
+
+### Yöntem B — Doğrulanmış Windows migration paketi
 
 Odoo terminalini/Windows servisini durdurun. Ardından PostgreSQL 17 client ile:
 
 ```powershell
-pg_dump.exe -h localhost -p 5432 -U odoo18db -W -Fc -f C:\BACKUP_PATH\odoo_test_YYYYMMDD_HHMMSS.dump odoo_test
+pg_dump.exe -h localhost -p 5432 -U odoo18db -W -Fc -f "BACKUP_PATH\odoo_test.dump" odoo_test
 ```
 
 `-W` parolayı interaktif sorar; parola komut satırına yazılmaz.
 
-Filestore'u aynı timestamp ile arşivleyin:
+Filestore'u aynı kesinti penceresinde ZIP olarak arşivleyin. ZIP içinde `odoo_test/` üst klasörü korunmalıdır:
 
 ```powershell
-tar -C "$env:LOCALAPPDATA\OpenERP S.A\Odoo\filestore" -czf C:\BACKUP_PATH\odoo_test_filestore_YYYYMMDD_HHMMSS.tar.gz odoo_test
+Compress-Archive -LiteralPath "$env:LOCALAPPDATA\OpenERP S.A\Odoo\filestore\odoo_test" -DestinationPath "BACKUP_PATH\odoo_test_filestore.zip"
 ```
 
-Checksum üretin:
+Bu proje için doğrulanan ve birlikte tutulması gereken set:
 
-```powershell
-Get-FileHash C:\BACKUP_PATH\odoo_test_YYYYMMDD_HHMMSS.dump -Algorithm SHA256
-Get-FileHash C:\BACKUP_PATH\odoo_test_filestore_YYYYMMDD_HHMMSS.tar.gz -Algorithm SHA256
+```text
+odoo_test.dump
+odoo_test_filestore.zip
+checksums.txt
+metadata.txt
 ```
 
-**Beklenen sonuç:** Ortak timestamp'li `.dump`, `.tar.gz`, checksum ve kaynak sürüm notu hazırdır. Odoo ancak iki dosya tamamlandıktan sonra yeniden başlatılır.
+`checksums.txt`, dump ve ZIP'in SHA-256 değerlerini; `metadata.txt` database adı, PostgreSQL/Odoo sürümü, backup zamanı, dosya adları ve custom modülleri içerir. Gerçek credential içermez. Dört dosyayı ayırmayın veya yeniden adlandırmayın.
+
+**Beklenen sonuç:** Aynı cutover anına ait `.dump`, `.zip`, checksum ve metadata hazırdır. Odoo ancak iki veri dosyası tamamlandıktan sonra yeniden başlatılır.
 
 ## 4. Backup restore provası
 
@@ -154,10 +160,10 @@ Get-FileHash C:\BACKUP_PATH\odoo_test_filestore_YYYYMMDD_HHMMSS.tar.gz -Algorith
 
 ```powershell
 createdb.exe -h localhost -p 5432 -U odoo18db -W odoo_restore_test
-pg_restore.exe -h localhost -p 5432 -U odoo18db -W --exit-on-error --no-owner -d odoo_restore_test C:\BACKUP_PATH\odoo_test_YYYYMMDD_HHMMSS.dump
+pg_restore.exe -h localhost -p 5432 -U odoo18db -W --exit-on-error --no-owner --no-privileges -d odoo_restore_test BACKUP_PATH\odoo_test.dump
 ```
 
-Filestore arşivini `odoo_restore_test` adıyla ayrı data directory'ye açın. Custom addon'lar mevcutken Odoo'yu ayrı port/config ile bir defa başlatın ve login, PDF ve attachment testi yapın.
+`odoo_test_filestore.zip` içindeki `odoo_test/` klasörünün içeriğini `odoo_restore_test/` adıyla ayrı data directory'ye açın. Custom addon'lar mevcutken Odoo'yu ayrı port/config ile bir defa başlatın ve login, PDF ve attachment testi yapın.
 
 **Beklenen sonuç:** Restore hatasızdır; eski attachment açılır ve custom modüller installed görünür.
 
@@ -194,7 +200,7 @@ ssh ubuntu@SERVER_IP
 ```bash
 sudo apt update
 sudo apt upgrade
-sudo apt install ca-certificates curl git build-essential python3.12 python3.12-venv python3.12-dev python3-pip libldap2-dev libpq-dev libsasl2-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev libssl-dev
+sudo apt install ca-certificates curl git unzip build-essential python3.12 python3.12-venv python3.12-dev python3-pip libldap2-dev libpq-dev libsasl2-dev libxml2-dev libxslt1-dev libjpeg-dev zlib1g-dev libffi-dev libssl-dev
 ```
 
 Her paket listesini onay ekranında inceleyin. Repository klonlandıktan sonra aynı kontrolü script dry-run ile yapabilirsiniz:
@@ -388,49 +394,118 @@ Workers notu: örnek config'deki `workers=2` yalnız küçük VPS için başlang
 
 ## 14. Database restore
 
+### Windows Migration Backup Restore
+
 **Nerede:** Önce Windows PowerShell, sonra VPS SSH terminali
 
-Backup setini önce kullanıcı home dizinine aktarın:
+Windows development ortamından doğrulanan migration seti tam olarak şu dört dosyadan oluşur:
 
-```powershell
-scp C:\BACKUP_PATH\DATABASE_NAME_BACKUP_SET\* ubuntu@SERVER_IP:/home/ubuntu/odoo-backup/
+```text
+odoo_test.dump
+odoo_test_filestore.zip
+checksums.txt
+metadata.txt
 ```
 
-VPS'te korumalı backup alanına taşıyın:
+Bu format yalnız `migration_restore.sh` ile kullanılır. Günlük Linux backup setleri için kullanılan `restore.sh` ile karıştırılmaz.
+
+#### 1. Geçici kullanıcı dizinine transfer
+
+Windows PowerShell'de `SSH_PORT`, `SSH_USERNAME` ve `SERVER_IP` placeholder'larını gerçek, secret olmayan bağlantı bilgileriyle değiştirin:
+
+Önce VPS SSH terminalinde kullanıcıya ait geçici ve kapalı dizini oluşturun:
 
 ```bash
-sudo install -d -o root -g root -m 0700 /var/backups/odoo/incoming
-sudo mv /home/ubuntu/odoo-backup/* /var/backups/odoo/incoming/
-sudo chown -R root:root /var/backups/odoo/incoming
-sudo chmod -R go-rwx /var/backups/odoo/incoming
+install -d -m 0700 /home/SSH_USERNAME/odoo-migration-upload
 ```
+
+Ardından Windows PowerShell'de:
+
+```powershell
+scp -P SSH_PORT "BACKUP_SOURCE_DIRECTORY\odoo_test.dump" "BACKUP_SOURCE_DIRECTORY\odoo_test_filestore.zip" "BACKUP_SOURCE_DIRECTORY\checksums.txt" "BACKUP_SOURCE_DIRECTORY\metadata.txt" SSH_USERNAME@SERVER_IP:/home/SSH_USERNAME/odoo-migration-upload/
+```
+
+**Amaç:** Dört dosyayı şifreli SSH aktarımıyla geçici kullanıcı alanına yüklemek.
+
+**Beklenen sonuç:** Dört dosya `/home/SSH_USERNAME/odoo-migration-upload/` altında görünür. Database dump hassas SMTP ve uygulama verisi içerebilir; herkese açık veya şifresiz bir konuma yüklemeyin.
+
+#### 2. Korumalı incoming dizinine taşıma
+
+`TIMESTAMP` yerine cutover setini tanımlayan benzersiz zamanı yazın:
+
+```bash
+sudo install -d -o root -g root -m 0700 /var/backups/odoo/incoming/windows-cutover-TIMESTAMP
+sudo mv /home/SSH_USERNAME/odoo-migration-upload/odoo_test.dump /home/SSH_USERNAME/odoo-migration-upload/odoo_test_filestore.zip /home/SSH_USERNAME/odoo-migration-upload/checksums.txt /home/SSH_USERNAME/odoo-migration-upload/metadata.txt /var/backups/odoo/incoming/windows-cutover-TIMESTAMP/
+sudo chown root:root /var/backups/odoo/incoming/windows-cutover-TIMESTAMP/*
+sudo chmod 0600 /var/backups/odoo/incoming/windows-cutover-TIMESTAMP/*
+sudo stat -c '%U:%G %a %n' /var/backups/odoo/incoming/windows-cutover-TIMESTAMP /var/backups/odoo/incoming/windows-cutover-TIMESTAMP/*
+```
+
+**Beklenen sonuç:** Dizin `root:root 0700`, içindeki dört dosya `root:root 0600` görünür.
+
+#### 3. Checksum, dump ve ZIP doğrulaması ile restore
+
+Odoo production servisi henüz başlatılmamış olmalıdır. Kaynak database adı `odoo_test`, yeni production database ve filestore adı `odoo_production` olur:
+
+```bash
+sudo /opt/odoo/project/deployment/scripts/migration_restore.sh \
+  --backup-dir /var/backups/odoo/incoming/windows-cutover-TIMESTAMP \
+  --source-db odoo_test \
+  --target-db odoo_production \
+  --postgres-role odoo \
+  --filestore-root /var/lib/odoo/filestore \
+  --expected-file-count 474
+```
+
+Script, kullanıcıdan `MIGRATE odoo_test TO odoo_production` ifadesini aynen yazmasını ister. `474` yalnız bu doğrulanmış backup setinin beklenen sayısıdır; yeni bir final backup alınırsa güncel fiziksel dosya sayısını kullanın.
+
+Script sırasıyla SHA-256, `pg_restore --list`, `unzip -t`, ZIP üst klasörü, hedeflerin mevcut olmaması, database restore, `ANALYZE`, modül durumları ve filestore dosya sayılarını doğrular. Restore sırasında `--no-owner --no-privileges --exit-on-error` kullanır. Mevcut bir database veya filestore'u drop/silmez.
+
+Doğru filestore yapısı:
+
+```text
+/var/lib/odoo/filestore/odoo_production/<hash klasörleri ve dosyalar>
+```
+
+Yanlış ve kabul edilmeyen yapı:
+
+```text
+/var/lib/odoo/filestore/odoo_production/odoo_test/
+```
+
+#### 4. Registry testi
+
+Odoo servisini başlatmadan önce:
+
+```bash
+sudo -u odoo /opt/odoo/venv/bin/python3 /opt/odoo/odoo/odoo-bin --config=/etc/odoo/odoo.conf --database=odoo_production --stop-after-init --no-http
+```
+
+Registry testi, dört custom modül ve attachment eşleşmesi doğrulandıktan sonra Odoo servisi başlatılabilir. Test başarısızsa yarım database/filestore otomatik silinmez; önce loglar ve kalan hedefler incelenir.
+
+### Günlük Linux backup setini restore etme
+
+`backup.sh` tarafından üretilen timestamp'li `.dump`, `.tar.gz`, `.sha256` ve `.metadata` setleri yalnız mevcut `restore.sh` ile kullanılır.
 
 Önce staging restore:
 
 ```bash
-sudo /opt/odoo/project/deployment/scripts/restore.sh --backup-dir /var/backups/odoo/incoming/BACKUP_SET_DIRECTORY --target-db odoo_restore_test
+sudo /opt/odoo/project/deployment/scripts/restore.sh --backup-dir /var/backups/odoo/BACKUP_SET_DIRECTORY --target-db odoo_restore_test
 ```
 
-Production restore açık onay ister:
+Production üzerinde mevcut hedefi rollback adına koruyarak restore etmek için açık onay gerekir:
 
 ```bash
-sudo /opt/odoo/project/deployment/scripts/restore.sh --backup-dir /var/backups/odoo/incoming/BACKUP_SET_DIRECTORY --target-db DATABASE_NAME --production --replace-existing
+sudo /opt/odoo/project/deployment/scripts/restore.sh --backup-dir /var/backups/odoo/BACKUP_SET_DIRECTORY --target-db DATABASE_NAME --production --replace-existing
 ```
 
-Script:
-
-- checksum ve timestamp eşleşmesini doğrular,
-- eksik dump/filestore çiftini reddeder,
-- production için `RESTORE DATABASE_NAME` yazılmasını ister,
-- mevcut DB ve filestore'u rollback adıyla korur,
-- yeni DB'yi `odoo` owner/role ile restore eder,
-- `ANALYZE` çalıştırır.
+Linux restore scripti checksum ve timestamp eşleşmesini doğrular, `--no-owner --no-privileges` kullanır, mevcut production DB/filestore'u rollback adıyla korur ve `ANALYZE` çalıştırır.
 
 ## 15. Filestore restore doğrulaması
 
 **Nerede:** VPS SSH terminali
 
-`restore.sh` filestore'u otomatik olarak hedef DB adıyla yerleştirir. Manuel restore yapılıyorsa kaynak `odoo_test` klasörü production DB adına çevrilmelidir:
+`restore.sh` ve `migration_restore.sh` filestore içeriğini otomatik olarak hedef DB adıyla yerleştirir. Manuel restore yapılıyorsa kaynak `odoo_test` klasörünün kendisi hedefin altına kopyalanmamalı; yalnız içeriği production DB adlı klasöre konmalıdır:
 
 ```text
 /var/lib/odoo/filestore/DATABASE_NAME
@@ -576,17 +651,31 @@ sudo certbot renew --dry-run
 
 **Nerede:** VPS SSH terminali
 
-SSH kuralını önce ekleyin:
+`SSH_PORT` yerine VPS'in gerçek SSH portunu yazın. Mevcut SSH oturumunu kapatmayın. Önce SSH ve Nginx kurallarını ekleyip kontrol edin:
 
 ```bash
-sudo ufw allow OpenSSH
+sudo ufw allow SSH_PORT/tcp
 sudo ufw allow 'Nginx Full'
+sudo ufw status numbered
+```
+
+`SSH_PORT=22` ise `sudo ufw allow OpenSSH` profili alternatif olarak kullanılabilir. Standart dışı portta mutlaka `SSH_PORT/tcp` kuralını kullanın.
+
+UFW henüz etkinleştirilmeden ikinci bir terminal açın ve bağlantıyı sınayın:
+
+```bash
+ssh -p SSH_PORT SSH_USERNAME@SERVER_IP
+```
+
+İkinci bağlantı başarılı olmalı ve `sudo ufw status numbered` çıktısında gerçek SSH portunun allow kuralı görünmelidir. İlk SSH oturumunu açık tutarak ancak bu iki kontrol geçtikten sonra:
+
+```bash
 sudo ufw status verbose
 sudo ufw enable
 sudo ufw status numbered
 ```
 
-Beklenen public portlar yalnız 22, 80 ve 443'tür. 5432, 8069 ve 8072 için allow kuralı eklemeyin.
+Beklenen public portlar yalnız gerçek SSH portu, 80 ve 443'tür. 5432, 8069 ve 8072 için hiçbir public allow kuralı eklemeyin.
 
 Harici bir makineden ayrıca port scan yapın. Local `ss` çıktısı, Odoo portlarının yalnız `127.0.0.1` üzerinde olduğunu göstermelidir.
 
