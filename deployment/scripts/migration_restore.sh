@@ -20,6 +20,9 @@ target_filestore_created=false
 extract_dir=""
 zip_listing=""
 target_filestore=""
+restore_temp_dir=""
+restore_dump_file=""
+verified_dump_checksum=""
 
 usage() {
     cat <<'EOF'
@@ -160,6 +163,7 @@ cleanup_temp() {
     fi
     [[ -n "$zip_listing" && -f "$zip_listing" ]] && rm -f -- "$zip_listing"
     [[ -n "$extract_dir" && -d "$extract_dir" ]] && rm -rf -- "$extract_dir"
+    [[ -n "$restore_temp_dir" && -d "$restore_temp_dir" ]] && rm -rf -- "$restore_temp_dir"
     exit "$rc"
 }
 trap cleanup_temp EXIT
@@ -180,8 +184,12 @@ for backup_name in "$dump_name" "$filestore_name"; do
         die "checksums.txt must contain exactly one valid SHA-256 entry for $backup_name."
     actual_checksum="$(sha256sum "$backup_dir/$backup_name" | awk '{print tolower($1)}')"
     [[ "$actual_checksum" == "$expected_checksum" ]] || die "SHA-256 mismatch: $backup_name"
+    if [[ "$backup_name" == "$dump_name" ]]; then
+        verified_dump_checksum="$actual_checksum"
+    fi
     log "SHA-256 verified: $backup_name"
 done
+[[ -n "$verified_dump_checksum" ]] || die "Verified dump checksum was not captured."
 
 log "Checking PostgreSQL custom-format dump catalog."
 pg_restore --list "$dump_file" >/dev/null
@@ -231,6 +239,18 @@ else
         "PRODUCTION MIGRATION: source backup is $source_db; new target is $target_db. Existing targets are never replaced."
 fi
 
+log "Creating a protected temporary dump copy for the postgres restore process."
+restore_temp_dir="$(mktemp -d /var/tmp/odoo-migration-pgrestore.XXXXXX)"
+chown root:postgres "$restore_temp_dir"
+chmod 0710 "$restore_temp_dir"
+restore_dump_file="$restore_temp_dir/$dump_name"
+install -o postgres -g postgres -m 0600 "$dump_file" "$restore_dump_file"
+[[ "$(stat -c '%U:%G %a' "$restore_dump_file")" == "postgres:postgres 600" ]] || \
+    die "Temporary dump must be owned by postgres:postgres with mode 0600."
+temporary_dump_checksum="$(sha256sum "$restore_dump_file" | awk '{print tolower($1)}')"
+[[ "$temporary_dump_checksum" == "$verified_dump_checksum" ]] || \
+    die "Temporary dump checksum does not match the verified original dump."
+
 log "Creating UTF8 database from template0, owner $postgres_role: $target_db"
 runuser -u postgres -- createdb \
     --owner="$postgres_role" \
@@ -246,7 +266,7 @@ runuser -u postgres -- pg_restore \
     --no-privileges \
     --role="$postgres_role" \
     --dbname="$target_db" \
-    "$dump_file"
+    "$restore_dump_file"
 
 runuser -u postgres -- psql --dbname="$target_db" --no-align --tuples-only \
     --command='SELECT current_database();' >/dev/null
