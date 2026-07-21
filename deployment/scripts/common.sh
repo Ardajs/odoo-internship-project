@@ -91,7 +91,10 @@ is_placeholder() {
 require_value() {
     local name="$1"
     local value="${!name:-}"
-    is_placeholder "$value" && die "$name is missing or still contains a placeholder."
+
+    if is_placeholder "$value"; then
+        die "$name is missing or still contains a placeholder."
+    fi
 }
 
 require_absolute_safe_path() {
