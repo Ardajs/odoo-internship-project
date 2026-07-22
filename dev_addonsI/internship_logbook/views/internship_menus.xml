@@ -7,7 +7,8 @@
         id="menu_internship_root"
         name="Internship Logbook"
         groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
-        sequence="10"/>
+        sequence="10"
+        web_icon="internship_logbook,static/src/img/internship.png"/>
 
     <!-- Management -->
     <menuitem
