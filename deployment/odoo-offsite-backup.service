@@ -1,6 +1,5 @@
 [Unit]
 Description=Upload verified Odoo backup sets to protected off-site storage
-Documentation=/opt/odoo/project/deployment/DEPLOYMENT_GUIDE.md
 Wants=network-online.target
 After=network-online.target odoo-backup.service
 RequiresMountsFor=/var/backups/odoo /etc/rclone
@@ -12,7 +11,7 @@ Group=root
 Environment=ENV_FILE=/etc/odoo/deployment.env
 Environment=RCLONE_CONFIG=/etc/rclone/odoo-rclone.conf
 Environment=OFFSITE_LOCK_FILE=/run/odoo-offsite-backup/upload.lock
-ExecStart=/opt/odoo/project/deployment/scripts/offsite_backup.sh
+ExecStart=/usr/bin/bash /opt/odoo/project/deployment/scripts/offsite_backup.sh
 RuntimeDirectory=odoo-offsite-backup
 RuntimeDirectoryMode=0700
 UMask=0077
@@ -41,10 +40,9 @@ LockPersonality=true
 MemoryDenyWriteExecute=true
 SystemCallArchitectures=native
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
-CapabilityBoundingSet=
-AmbientCapabilities=
-ReadOnlyPaths=/var/backups/odoo
-ReadWritePaths=/etc/rclone
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+AmbientCapabilities=CAP_DAC_READ_SEARCH
+ReadOnlyPaths=/var/backups/odoo /opt/odoo/project/deployment/scripts /etc/rclone/odoo-rclone.conf
 
 [Install]
 WantedBy=multi-user.target
