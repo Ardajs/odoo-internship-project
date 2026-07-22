@@ -31,6 +31,7 @@ Bu dosyalar yalnızca şablon ve yönetim araçlarıdır. Repository oluşturulu
 - `update.sh`, Odoo core'u hiçbir zaman güncellemez; yalnız custom repository'yi fast-forward eder.
 - `update.sh`, varsayılan olarak önce tutarlı backup alır.
 - `backup.sh`, database ve filestore için ortak timestamp/checksum/metadata üretir.
+- `offsite_backup.sh`, tamamlanmış local setleri ve SHA-256 manifestlerini doğrulayıp dört dosyayı `rclone copyto --immutable` ile Google Drive'a kopyalar; local veya remote dosya silmez.
 - `restore.sh`, varsayılan olarak yalnız yeni/staging DB'ye restore eder. Production cutover açık bayrak ve birebir yazılan interaktif onay ister.
 - `migration_restore.sh`, yalnız doğrulanmış Windows `.dump` + filestore `.zip` migration setini yeni ve boş bir production hedefine restore eder; mevcut hedefleri drop veya silmez.
 
@@ -41,5 +42,7 @@ Scriptler root parolası, PostgreSQL parolası veya SMTP parolası içermez. Pos
 - Kaynak DB PostgreSQL 17.6'dır; hedef PostgreSQL 17.x seçimi downgrade riskini önlemek içindir. Odoo 19'un genel minimumu PostgreSQL 13'tür.
 - Backup database içindeki Gmail SMTP/app password dahil uygulama secret'larını taşıyabilir.
 - `/var/backups/odoo` tek başına yeterli değildir. Backup'ları şifreli off-site depoya kopyalayın ve restore testi yapın.
+- Local backup ve Google Drive upload ayrı systemd service/timer birimleridir. Google Drive kesintisi local backup sonucunu değiştirmez; off-site hata ayrıca izlenmelidir.
+- Rclone OAuth config yalnız `/etc/rclone/odoo-rclone.conf` altında `root:root 0600` tutulur. Config içeriği, token veya client secret Git'e ya da dokümantasyona yazılmaz.
 - `workers > 0` production modunda Nginx `/websocket` trafiğini yalnız localhost'taki `127.0.0.1:8072` portuna yönlendirir.
 - Gerçek `odoo.conf`, `.env`, Certbot private key, dump ve filestore repository'ye eklenmez.

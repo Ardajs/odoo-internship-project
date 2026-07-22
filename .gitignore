@@ -89,6 +89,16 @@ htmlcov/
 *.p12
 *.pfx
 
+# rclone/OAuth credentials and deployment secret material
+**/rclone.conf
+**/*rclone*.conf
+**/.config/rclone/
+**/client_secret*.json
+**/credentials*.json
+**/oauth*.json
+*.token
+/deployment/secrets/
+
 # PostgreSQL dumps, Odoo ZIP backups and filesystem archives
 *.dump
 *.backup

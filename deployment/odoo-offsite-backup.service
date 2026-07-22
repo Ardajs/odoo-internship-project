@@ -1,0 +1,50 @@
+[Unit]
+Description=Upload verified Odoo backup sets to protected off-site storage
+Documentation=/opt/odoo/project/deployment/DEPLOYMENT_GUIDE.md
+Wants=network-online.target
+After=network-online.target odoo-backup.service
+RequiresMountsFor=/var/backups/odoo /etc/rclone
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+Environment=ENV_FILE=/etc/odoo/deployment.env
+Environment=RCLONE_CONFIG=/etc/rclone/odoo-rclone.conf
+Environment=OFFSITE_LOCK_FILE=/run/odoo-offsite-backup/upload.lock
+ExecStart=/opt/odoo/project/deployment/scripts/offsite_backup.sh
+RuntimeDirectory=odoo-offsite-backup
+RuntimeDirectoryMode=0700
+UMask=0077
+Nice=15
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=6h
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectHostname=true
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadOnlyPaths=/var/backups/odoo
+ReadWritePaths=/etc/rclone
+
+[Install]
+WantedBy=multi-user.target

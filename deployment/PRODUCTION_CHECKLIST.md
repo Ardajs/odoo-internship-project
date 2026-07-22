@@ -41,8 +41,23 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 - [ ] Backup metadata Odoo/PostgreSQL/custom commit bilgilerini içeriyor.
 - [ ] Backup restore testi yapıldı.
 - [ ] En az 7 günlük local retention yapılandırıldı.
-- [ ] Şifreli off-site backup mevcut.
+- [ ] Erişim kontrollü off-site backup mevcut; client-side encryption kullanılıp kullanılmadığı açıkça kayıtlı.
 - [ ] Off-site backup'tan restore testi planlandı veya tamamlandı.
+- [ ] Rclone config `/etc/rclone/odoo-rclone.conf` altında ve Git repository dışında.
+- [ ] Rclone config owner/mode değeri `root:root 0600`.
+- [ ] Google OAuth token veya rclone config içeriği dokümantasyona, loglara ya da Git'e yazılmadı.
+- [ ] Root kullanıcısı korumalı config ile `gdrive:` remote'unu görebiliyor.
+- [ ] Manuel `offsite_backup.sh` testi başarılı.
+- [ ] Remote backup setinde `.dump`, `.tar.gz`, `.metadata` ve `.sha256` dosyaları mevcut.
+- [ ] Local ve remote set `rclone check --one-way` ile doğrulandı.
+- [ ] Off-site script `sync`, `move`, `delete` veya `purge` kullanmıyor.
+- [ ] `odoo-offsite-backup.service` manuel çalıştırma testi başarılı.
+- [ ] `odoo-offsite-backup.timer` enabled ve `Persistent=true`.
+- [ ] Local ve off-site timer'ların birbirinden bağımsız olduğu doğrulandı.
+- [ ] Off-site hata inceleme prosedürü `journalctl` ile test edildi.
+- [ ] Google Drive kesintisinin tamamlanmış local backup setini etkilemediği doğrulandı.
+- [ ] Local backup restore testi tamamlandı.
+- [ ] Google Drive'dan indirilen off-site backup ile staging restore testi planlandı veya tamamlandı.
 
 ## Odoo configuration ve service
 

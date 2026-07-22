@@ -744,7 +744,114 @@ sudo find /var/backups/odoo -maxdepth 2 -type f -ls
 
 Backup default olarak Odoo'yu kısa süre durdurur, DB dump ve filestore arşivini ortak timestamp ile üretir, checksum/metadata ekler ve servisi yeniden başlatır. Retention örneği 7 gündür.
 
-Backup setlerini şifreli biçimde başka sunucu/object storage'a gönderin. Aynı VPS'teki disk kaybı local backup'ı da yok eder.
+### Google Drive off-site backup
+
+Off-site upload, local backup'tan ayrı `odoo-offsite-backup.service` ve `odoo-offsite-backup.timer` birimleriyle çalışır. Google Drive veya ağ hatası off-site servisini başarısız yapar ancak daha önce tamamlanan local backup'ı değiştirmez ve local backup service sonucuna bağlanmaz.
+
+Script yalnız şu biçimde tamamlanmış dizinleri işler:
+
+```text
+/var/backups/odoo/odoo_production_YYYYMMDD_HHMMSS/
+```
+
+`.incomplete_*`, `.incoming_*` ve beklenen adla eşleşmeyen dizinler upload edilmez. Local SHA-256 manifest doğrulanmadan ağ işlemi başlamaz. Upload için `copyto --immutable` kullanılır; `sync`, `move`, `delete` veya `purge` kullanılmaz. Rclone'un `copyto` ve `--immutable` davranışı için [resmî rclone copyto dokümantasyonuna](https://rclone.org/commands/rclone_copyto/) bakın.
+
+#### 1. Yetkilendirilmiş rclone config'i korumalı konuma kopyalama
+
+**Nerede:** VPS SSH terminali
+
+Mevcut config `arda` kullanıcısı altında oluşturulduysa içeriğini ekrana yazdırmadan kopyalayın:
+
+```bash
+sudo install -d -o root -g root -m 0700 /etc/rclone
+sudo install -o root -g root -m 0600 /home/arda/.config/rclone/rclone.conf /etc/rclone/odoo-rclone.conf
+sudo stat -c '%U:%G %a %n' /etc/rclone /etc/rclone/odoo-rclone.conf
+```
+
+**Beklenen sonuç:** `/etc/rclone` `root:root 0700`, config `root:root 0600` görünür. Google OAuth token, refresh token, client secret veya config içeriğini terminal çıktısına, Git'e, issue kaydına ya da dokümantasyona yapıştırmayın. Rclone Google Drive yetkilendirme yapısı için [resmî Google Drive backend dokümantasyonuna](https://rclone.org/drive/) bakın.
+
+Remote adının root tarafından görülebildiğini config içeriğini göstermeden kontrol edin:
+
+```bash
+sudo rclone --config /etc/rclone/odoo-rclone.conf listremotes
+sudo rclone --config /etc/rclone/odoo-rclone.conf lsd gdrive:Odoo-Production-Backups
+```
+
+**Beklenen sonuç:** `gdrive:` listelenir ve hedef klasör okunabilir. `rclone config show` veya config dosyasını yazdıran komut kullanmayın.
+
+#### 2. Environment ayarlarını doğrulama
+
+`/etc/odoo/deployment.env` içinde yalnız secret olmayan yollar bulunur:
+
+```dotenv
+RCLONE_CONFIG=/etc/rclone/odoo-rclone.conf
+OFFSITE_REMOTE=gdrive:Odoo-Production-Backups
+```
+
+OAuth token bu environment dosyasına yazılmaz.
+
+#### 3. Manuel off-site upload testi
+
+Önce en az bir tamamlanmış local backup seti bulunduğunu doğrulayın, ardından scripti çalıştırın:
+
+```bash
+sudo find /var/backups/odoo -mindepth 1 -maxdepth 1 -type d -name 'odoo_production_20*' -print
+sudo /opt/odoo/project/deployment/scripts/offsite_backup.sh
+```
+
+Script her sette dört beklenen dosyayı, `root:root 0600` izinlerini ve SHA-256 manifestini doğrular. Uzak set zaten eksiksizse tekrar transfer etmez. Eksikse yalnız `.dump`, `.tar.gz`, `.metadata` ve `.sha256` dosyalarını `copyto --immutable` ile gönderir. Değiştirilmiş aynı adlı remote dosyanın üzerine yazmak yerine hata verir.
+
+Belirli bir seti local ve remote arasında ayrıca kontrol edin:
+
+```bash
+sudo rclone --config /etc/rclone/odoo-rclone.conf check \
+  /var/backups/odoo/SET_NAME \
+  gdrive:Odoo-Production-Backups/SET_NAME \
+  --one-way
+```
+
+#### 4. Off-site systemd service ve timer kurulumu
+
+```bash
+sudo chmod 0755 /opt/odoo/project/deployment/scripts/offsite_backup.sh
+sudo cp /opt/odoo/project/deployment/odoo-offsite-backup.service /etc/systemd/system/odoo-offsite-backup.service
+sudo cp /opt/odoo/project/deployment/odoo-offsite-backup.timer /etc/systemd/system/odoo-offsite-backup.timer
+sudo systemd-analyze verify /etc/systemd/system/odoo-offsite-backup.service /etc/systemd/system/odoo-offsite-backup.timer
+sudo systemctl daemon-reload
+```
+
+Önce service'i manuel test edin:
+
+```bash
+sudo systemctl start odoo-offsite-backup.service
+sudo systemctl status odoo-offsite-backup.service --no-pager
+sudo journalctl -u odoo-offsite-backup.service -n 100 --no-pager
+```
+
+Test başarılı olduktan sonra ayrı timer'ı etkinleştirin:
+
+```bash
+sudo systemctl enable --now odoo-offsite-backup.timer
+sudo systemctl list-timers odoo-backup.timer odoo-offsite-backup.timer
+```
+
+Local timer gece yarısı civarında çalışır. Off-site timer günlük `02:00` sonrasında en fazla 30 dakikalık rastgele gecikmeyle çalışır ve `Persistent=true` kullanır. İki timer ayrı kalır; off-site service local backup service'i çağırmaz.
+
+#### 5. Hata inceleme ve restore sorumluluğu
+
+Upload hatalarını incelemek için:
+
+```bash
+sudo systemctl status odoo-offsite-backup.service --no-pager
+sudo journalctl -u odoo-offsite-backup.service --since today --no-pager
+sudo systemctl list-timers odoo-offsite-backup.timer
+```
+
+Google Drive kesintisi sırasında off-site service non-zero döner. Local set silinmez veya değiştirilmez; sonraki timer çalışması eksik seti yeniden dener. Uzun süreli kesintilerin local retention süresini aşmaması için journal/systemd failure takibi yapılmalıdır.
+
+Bu yapı doğrudan `gdrive:` backend'ine upload yapar ve rclone `crypt` kullanmadığı için client-side şifreleme sağlamaz. Google hesabında güçlü parola, MFA ve sınırlı erişim uygulanmalıdır. İleride client-side encryption istenirse ayrı bir `crypt` remote staging restore ile test edilmeden production hedefi sessizce değiştirilmemelidir.
+
+Local restore testi ve Google Drive'dan korumalı bir staging dizinine indirilmiş off-site setle restore testi ayrı ayrı yapılmalıdır. Bu ilk uygulama local veya remote retention/delete işlemi yapmaz. Off-site backup ancak indirme, checksum ve staging restore provasıyla tam olarak doğrulanmış sayılır.
 
 ## 25. Restore testi
 

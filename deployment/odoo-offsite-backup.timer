@@ -1,0 +1,12 @@
+[Unit]
+Description=Upload Odoo backups off-site after the daily local backup window
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=30m
+Persistent=true
+AccuracySec=1m
+Unit=odoo-offsite-backup.service
+
+[Install]
+WantedBy=timers.target
