@@ -30,6 +30,7 @@ This module allows companies to manage:
     "views/internship_student_views.xml",
     "views/internship_program_views.xml",
     "views/internship_daily_entry_views.xml",
+    "wizard/ai_assistant_wizard_views.xml",
     "views/internship_menus.xml",
 
     "report/internship_paperformat.xml",

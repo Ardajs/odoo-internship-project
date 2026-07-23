@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_internship_ai_assistant_wizard_form" model="ir.ui.view">
+        <field name="name">internship.ai.assistant.wizard.form</field>
+        <field name="model">internship.ai.assistant.wizard</field>
+        <field name="arch" type="xml">
+            <form string="AI Writing Assistant">
+                <group>
+                    <group>
+                        <field name="entry_id"/>
+                        <field name="action_type"/>
+                        <field name="target_field"/>
+                    </group>
+                </group>
+                <group string="Source">
+                    <field name="original_text" nolabel="1"/>
+                    <field
+                        name="supervisor_comment"
+                        nolabel="1"
+                        invisible="action_type != 'revision'"/>
+                </group>
+                <group
+                    string="AI Suggested Text"
+                    invisible="action_type in ('suggestions', 'missing_details')">
+                    <field name="suggested_text" nolabel="1"/>
+                </group>
+                <group string="AI Feedback / Explanation">
+                    <field name="feedback" nolabel="1"/>
+                    <field name="warnings" nolabel="1" invisible="not warnings"/>
+                </group>
+                <footer>
+                    <button
+                        name="action_regenerate"
+                        string="Regenerate"
+                        type="object"
+                        class="btn-secondary"/>
+                    <button
+                        name="action_apply_suggestion"
+                        string="Apply Suggestion"
+                        type="object"
+                        class="btn-primary"
+                        invisible="action_type not in ('improve', 'revision', 'improve_learned_topics', 'improve_challenges') or not suggested_text"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_internship_daily_entry_form_ai_assistant" model="ir.ui.view">
+        <field name="name">internship.daily.entry.form.ai.assistant</field>
+        <field name="model">internship.daily.entry</field>
+        <field
+            name="inherit_id"
+            ref="internship_logbook.view_internship_daily_entry_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='work_description']" position="after">
+                <div
+                    class="d-flex flex-wrap gap-2 mt-2"
+                    invisible="state not in ('draft', 'revision')">
+                    <button
+                        name="action_ai_improve_writing"
+                        string="Improve with AI"
+                        type="object"
+                        icon="fa-magic"
+                        class="btn-secondary"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"/>
+                    <button
+                        name="action_ai_give_suggestions"
+                        string="Get AI Suggestions"
+                        type="object"
+                        icon="fa-lightbulb-o"
+                        class="btn-secondary"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"/>
+                    <button
+                        name="action_ai_find_missing_details"
+                        string="Find Missing Details"
+                        type="object"
+                        icon="fa-search"
+                        class="btn-secondary"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"/>
+                    <button
+                        name="action_ai_revision_assistant"
+                        string="Help Me Revise"
+                        type="object"
+                        icon="fa-refresh"
+                        class="btn-secondary"
+                        invisible="state != 'revision'"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='learned_topics']" position="after">
+                <div
+                    class="d-flex flex-wrap gap-2 mt-2"
+                    invisible="state not in ('draft', 'revision')">
+                    <button
+                        name="action_ai_improve_learned_topics"
+                        string="Improve Learning Summary with AI"
+                        type="object"
+                        icon="fa-magic"
+                        class="btn-secondary"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='challenges']" position="after">
+                <div
+                    class="d-flex flex-wrap gap-2 mt-2"
+                    invisible="state not in ('draft', 'revision')">
+                    <button
+                        name="action_ai_improve_challenges"
+                        string="Improve Problems &amp; Solutions with AI"
+                        type="object"
+                        icon="fa-magic"
+                        class="btn-secondary"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
