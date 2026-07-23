@@ -81,6 +81,35 @@ Intern A ve Intern B farklı `internship.student` kayıtlarına bağlanmalıdır
 | FLOW-08 | Intern revision kaydını düzeltip tekrar submit eder | State `submitted`, revision activity tamamlanır |
 | FLOW-09 | Toplu/multi-record revision çağrısı | Son kayıt dışındaki activity/e-posta davranışı ayrıca incelenir |
 
+## 3A. AI Writing Assistant — Gemini production smoke testi
+
+Production'da provider `gemini` olmalı; `mock` provider kullanılmamalıdır.
+Test sırasında API key, prompt, ham provider cevabı veya günlük metni loglara
+yazdırılmamalıdır.
+
+| ID | Rol/işlem | Beklenen sonuç |
+|---|---|---|
+| AI-01 | Intern kendi draft entry'sinde Improve Writing açar | Wizard açılır; öneri üretilirken entry otomatik değişmez |
+| AI-02 | Intern Apply Suggestion kullanır | Yalnız `work_description` güncellenir; state ve diğer alanlar değişmez |
+| AI-03 | Improve Learning Summary | Yalnız `learned_topics` güncellenir |
+| AI-04 | Improve Problems & Solutions | Yalnız `challenges` güncellenir |
+| AI-05 | Give Suggestions / Find Missing Details | Feedback oluşur; hiçbir business field otomatik güncellenmez |
+| AI-06 | Revision Assistant | Yalnız revision state'inde görünür; supervisor comment değiştirilmez |
+| AI-07 | Regenerate | Güncel kaynak metinden yeni öneri oluşur; otomatik apply yapılmaz |
+| AI-08 | Submitted/approved entry | AI butonları görünmez; eski wizard üzerinden apply backend tarafından reddedilir |
+| AI-09 | Supervisor hesabı | Entry'yi workflow kapsamında görebilir ancak AI kullanamaz |
+| AI-10 | Intern başka intern'in entry'si | Record rule erişimi engeller |
+| AI-11 | Stale suggestion | Hedef alan başka sekmede değişmişse eski öneri apply edilmez |
+| AI-12 | Gemini erişim/timeout/quota hatası | Güvenli kullanıcı mesajı görünür; entry değişmez, secret/traceback sızmaz |
+| AI-13 | Türkçe dağınık teknik metin | Gerçekler korunarak profesyonel Türkçe üretilir; olmayan komut/port/sürüm uydurulmaz |
+| AI-14 | AI environment doğrulaması | Non-secret ayarlar doğrulanır; API key yalnız “set/missing” olarak kontrol edilir |
+
+Gerçek Gemini smoke testi küçük ve secretsız bir örnekle yapılmalı; kota ve
+maliyet Google tarafında ayrıca izlenmelidir. Güvenli environment doğrulama
+komutu için
+[MAINTENANCE_RUNBOOK.md](MAINTENANCE_RUNBOOK.md#5-gemini-ai-production-yapılandırması)
+bölümünü kullanın.
+
 ## 4. SMTP, mail queue ve scheduled actions
 
 | ID | Test | Beklenen sonuç |
@@ -165,5 +194,14 @@ Cutover sonrası en az:
 10. Eski ve yeni attachment indirme
 11. Nginx websocket health
 12. Backup service manuel test
+13. Gemini AI Assistant güvenlik ve apply smoke testi
+14. MuK tema/app bar/chatter/dialog görünüm kontrolü
+15. Internship uygulama ikonunun doğru yüklenmesi
+16. Off-site backup timer ve son başarılı upload logu
+17. Certbot renewal timer durumu
 
-uygulanmalıdır. Kritik bir hata halinde yeni yazma işlemleri durdurulmalı ve `DEPLOYMENT_GUIDE.md` rollback bölümüne geçilmelidir.
+uygulanmalıdır. Frontend/theme/logo değişikliğinde browser hard refresh ve
+asset cache kontrolü yapılmalıdır. Kritik bir hata halinde yeni yazma
+işlemleri durdurulmalı ve
+[MAINTENANCE_RUNBOOK.md](MAINTENANCE_RUNBOOK.md#11-conservative-rollback)
+rollback prosedürü izlenmelidir.

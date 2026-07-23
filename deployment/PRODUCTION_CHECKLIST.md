@@ -1,6 +1,23 @@
 # Odoo 19 Production Checklist
 
-Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
+Bu checklist hem ilk kurulum/rebuild kabulü hem de periyodik production
+kontrolü içindir. Günlük operasyon komutları için
+[MAINTENANCE_RUNBOOK.md](MAINTENANCE_RUNBOOK.md) kullanılmalıdır.
+
+## Doğrulanmış mevcut production durumu
+
+- [x] Domain `stajdefterim.site` HTTPS üzerinden erişilebilir.
+- [x] HTTP, HTTPS'e yönleniyor.
+- [x] HTTPS isteği Odoo `/odoo` yönlendirmesi döndürüyor.
+- [x] Production database `odoo_production`.
+- [x] Odoo 19 Community systemd servisi `odoo.service`.
+- [x] `postgresql` enabled ve active.
+- [x] `odoo` enabled ve active.
+- [x] `nginx` enabled ve active.
+- [x] `odoo-backup.timer` enabled ve active.
+- [x] `odoo-offsite-backup.timer` enabled ve active.
+- [x] `certbot.timer` enabled ve active.
+- [x] Gemini AI Writing Assistant production'da çalışıyor.
 
 ## Git ve kaynak kod
 
@@ -17,7 +34,7 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 - [ ] PostgreSQL 17.x kurulu ve çalışıyor.
 - [ ] Kaynak PostgreSQL 17.6'dan daha eski bir major sürüme restore yapılmıyor.
 - [ ] PostgreSQL role `odoo` mevcut; superuser değil.
-- [ ] Production database `DATABASE_NAME` mevcut ve owner/restore role doğru.
+- [ ] Production database `odoo_production` mevcut ve owner/restore role doğru.
 - [ ] Odoo Unix socket üzerinden PostgreSQL'e bağlanıyor.
 - [ ] PostgreSQL public interface üzerinde dinlemiyor.
 - [ ] 5432 UFW/public güvenlik grubunda açık değil.
@@ -45,8 +62,8 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 - [ ] Off-site backup'tan restore testi planlandı veya tamamlandı.
 - [ ] Rclone config `/etc/rclone/odoo-rclone.conf` altında ve Git repository dışında.
 - [ ] Rclone config owner/mode değeri `root:root 0600`.
-- [ ] Google OAuth token veya rclone config içeriği dokümantasyona, loglara ya da Git'e yazılmadı.
-- [ ] Root kullanıcısı korumalı config ile `gdrive:` remote'unu görebiliyor.
+- [ ] OAuth token veya rclone config içeriği dokümantasyona, loglara ya da Git'e yazılmadı.
+- [ ] Root kullanıcısı korumalı config ile yapılandırılmış rclone remote'unu görebiliyor.
 - [ ] Manuel `offsite_backup.sh` testi başarılı.
 - [ ] Remote backup setinde `.dump`, `.tar.gz`, `.metadata` ve `.sha256` dosyaları mevcut.
 - [ ] Local ve remote set `rclone check --one-way` ile doğrulandı.
@@ -55,9 +72,9 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 - [ ] `odoo-offsite-backup.timer` enabled ve `Persistent=true`.
 - [ ] Local ve off-site timer'ların birbirinden bağımsız olduğu doğrulandı.
 - [ ] Off-site hata inceleme prosedürü `journalctl` ile test edildi.
-- [ ] Google Drive kesintisinin tamamlanmış local backup setini etkilemediği doğrulandı.
+- [ ] Remote/ağ kesintisinin tamamlanmış local backup setini etkilemediği doğrulandı.
 - [ ] Local backup restore testi tamamlandı.
-- [ ] Google Drive'dan indirilen off-site backup ile staging restore testi planlandı veya tamamlandı.
+- [ ] Off-site remote'dan indirilen backup ile staging restore testi planlandı veya tamamlandı.
 
 ## Odoo configuration ve service
 
@@ -82,7 +99,7 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 
 ## Nginx, DNS, HTTPS ve firewall
 
-- [ ] `DOMAIN_NAME` doğru public IP'ye çözülüyor.
+- [ ] `stajdefterim.site` doğru public IP'ye çözülüyor.
 - [ ] Nginx config'de placeholder kalmadı.
 - [ ] `/` istekleri `127.0.0.1:8069` adresine gidiyor.
 - [ ] `/websocket` istekleri `127.0.0.1:8072` adresine gidiyor.
@@ -111,6 +128,22 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 - [ ] Mail queue işlendi ve hata kuyruğu kontrol edildi.
 - [ ] Scheduled Actions/cron çalışıyor.
 
+## Gemini AI
+
+- [ ] Systemd drop-in `/etc/systemd/system/odoo.service.d/ai.conf` mevcut.
+- [ ] Drop-in `EnvironmentFile=/etc/odoo/odoo-ai.env` kullanıyor.
+- [ ] `/etc/odoo/odoo-ai.env` Git dışında, restrictive owner/mode ile korunuyor.
+- [ ] `INTERNSHIP_AI_ENABLED` production'da aktif.
+- [ ] `INTERNSHIP_AI_PROVIDER=gemini`; production'da `mock` kullanılmıyor.
+- [ ] API key yalnız server-side environment üzerinden Odoo process'ine veriliyor.
+- [ ] API key değeri diagnostic çıktısında, logda veya dokümantasyonda görünmüyor.
+- [ ] API key yalnız mevcut/yok şeklinde güvenli yöntemle doğrulandı.
+- [ ] Intern kendi draft/revision entry'sinde AI kullanabiliyor.
+- [ ] Supervisor AI kullanamıyor.
+- [ ] Submitted/Approved apply backend tarafından reddediliyor.
+- [ ] Suggestions ve Missing Details business field değiştirmiyor.
+- [ ] Gemini quota, billing ve maliyet takibi için sorumlu/uyarı tanımlı.
+
 ## Uygulama testleri
 
 - [ ] Production database için Odoo 19 registry testi başarılı.
@@ -129,11 +162,22 @@ Her madde kanıtla doğrulanmadan production cutover tamamlanmış sayılmaz.
 - [ ] PDF'deki yinelenen “Approved Daily Entries” satırı için karar verildi.
 - [ ] Company logo'nun PDF'de gösterilip gösterilmeyeceğine karar verildi.
 - [ ] Attachment upload/download testi başarılı.
-- [ ] `ardaapp` temel CRUD testi başarılı.
-- [ ] `sales_app` ürün/sequence/order testi başarılı.
-- [ ] `course_student_management` course/session/student testi başarılı.
+- [ ] Internship application icon
+  `dev_addonsI/internship_logbook/static/src/img/internship.png` yükleniyor.
+- [ ] Kurulu MuK theme/support modülleri açılıyor ve asset hatası yok.
 
-## Cutover ve rollback
+## Routine maintenance
+
+- [ ] Odoo/PostgreSQL/Nginx health kontrolü yapıldı.
+- [ ] HTTPS ve `certbot.timer` kontrol edildi.
+- [ ] Son local backup ve SHA-256 sonucu doğrulandı.
+- [ ] Son off-site backup logu başarılı.
+- [ ] Disk, inode, RAM ve swap kullanımı kontrol edildi.
+- [ ] Production Git branch `main` ve working tree temiz.
+- [ ] Son Odoo error logları incelendi.
+- [ ] Periyodik restore provası yapıldı veya takvimi güncel.
+
+## Initial cutover/rebuild ve rollback
 
 - [ ] Cutover bakım penceresi duyuruldu.
 - [ ] Windows Odoo'da yazma işlemleri durduruldu.
