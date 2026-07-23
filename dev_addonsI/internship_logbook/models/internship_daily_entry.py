@@ -193,7 +193,7 @@ class InternshipDailyEntry(models.Model):
             if previous_state == "revision":
                 revision_activities = entry.activity_ids.filtered(
                     lambda activity:
-                        activity.user_id.id == self.env.user
+                        activity.user_id == self.env.user
                         and activity.summary == "Revise Daily Internship Entry"
                 )
 
@@ -278,7 +278,7 @@ class InternshipDailyEntry(models.Model):
             # Complete supervisor's review activity
             activities = entry.activity_ids.filtered(
                 lambda activity:
-                    activity.user_id.id == self.env.user
+                    activity.user_id == self.env.user
                     and activity.summary == "Review Daily Internship Entry"
             )
 
@@ -365,3 +365,28 @@ class InternshipDailyEntry(models.Model):
                 )
 
             entry.state = "draft"
+
+    def _action_open_ai_assistant(self, action_type):
+        self.ensure_one()
+        return self.env["internship.ai.assistant.wizard"].open_for_entry(
+            self,
+            action_type,
+        )
+
+    def action_ai_improve_writing(self):
+        return self._action_open_ai_assistant("improve")
+
+    def action_ai_give_suggestions(self):
+        return self._action_open_ai_assistant("suggestions")
+
+    def action_ai_find_missing_details(self):
+        return self._action_open_ai_assistant("missing_details")
+
+    def action_ai_revision_assistant(self):
+        return self._action_open_ai_assistant("revision")
+
+    def action_ai_improve_learned_topics(self):
+        return self._action_open_ai_assistant("improve_learned_topics")
+
+    def action_ai_improve_challenges(self):
+        return self._action_open_ai_assistant("improve_challenges")
