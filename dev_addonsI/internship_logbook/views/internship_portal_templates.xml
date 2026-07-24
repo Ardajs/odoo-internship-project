@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="portal_my_home_internship"
+              name="My Internship Portal Card"
+              inherit_id="portal.portal_my_home"
+              priority="35">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t groups="internship_logbook.group_internship_portal_intern"
+               t-call="portal.portal_docs_entry">
+                <t t-set="title">My Internship</t>
+                <t t-set="url" t-value="'/my/internship'"/>
+                <t t-set="text">
+                    View your Internship Logbook onboarding status
+                </t>
+                <t t-set="placeholder_count"
+                   t-value="'internship_program_count'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_my_internship" name="My Internship">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">My Internship</t>
+            </t>
+            <div class="alert alert-success" role="status">
+                <strong>Account verified.</strong>
+                Your student profile has been created.
+            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="h4" t-out="student.name"/>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Student number</dt>
+                        <dd class="col-sm-8" t-out="student.student_number"/>
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8" t-out="student.email"/>
+                    </dl>
+                </div>
+            </div>
+            <div t-if="not education_complete"
+                 class="alert alert-info" role="status">
+                Your education profile still needs university and department
+                information. Profile editing will be added during onboarding.
+            </div>
+            <div t-if="not programs" class="card border-dashed">
+                <div class="card-body">
+                    <h2 class="h4">Create Your First Internship</h2>
+                    <p class="mb-2">
+                        No internship program has been created yet.
+                    </p>
+                    <button class="btn btn-secondary" disabled="disabled">
+                        Available in Phase 2B
+                    </button>
+                </div>
+            </div>
+            <div t-else="" class="card">
+                <div class="card-body">
+                    <h2 class="h4">Internship programs</h2>
+                    <ul class="mb-0">
+                        <li t-foreach="programs" t-as="program">
+                            <span t-out="program.name"/>
+                            <span class="text-muted"
+                                  t-out="program.state"/>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

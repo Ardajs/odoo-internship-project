@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+    <record id="sequence_internship_student" model="ir.sequence">
+        <field name="name">Internship Student Number</field>
+        <field name="code">internship.student</field>
+        <field name="prefix">INT-</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>
