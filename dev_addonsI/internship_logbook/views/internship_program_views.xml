@@ -18,6 +18,7 @@
                 <field name="student_id"/>
                 <field name="company_name"/>
                 <field name="department"/>
+                <field name="workflow_mode"/>
                 <field name="supervisor_id"/>
                 <field name="start_date"/>
                 <field name="end_date"/>
@@ -43,6 +44,7 @@
                         type="object"
                         class="btn-primary"
                         invisible="state != 'draft'"
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
                     />
 
                     <button
@@ -50,7 +52,25 @@
                         string="Complete"
                         type="object"
                         class="btn-primary"
-                        invisible="state != 'active'"
+                        invisible="state != 'active' or workflow_mode != 'supervised'"
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+                    />
+
+                    <button
+                        name="action_complete"
+                        string="Complete"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'active' or workflow_mode != 'independent'"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"
+                    />
+
+                    <button
+                        name="action_reopen"
+                        string="Reopen"
+                        type="object"
+                        invisible="state != 'completed' or workflow_mode != 'independent'"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"
                     />
 
                     <button
@@ -58,6 +78,7 @@
                         string="Cancel"
                         type="object"
                         invisible="state not in ('draft', 'active')"
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
                     />
 
                     <button
@@ -65,6 +86,7 @@
                         string="Reset to Draft"
                         type="object"
                         invisible="state != 'cancelled'"
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
                     />
 
                     <field
@@ -110,7 +132,19 @@
                                 readonly="state != 'draft'"/>
 
                             <field
+                                name="workflow_mode"
+                                readonly="state != 'draft' or daily_entry_count > 0"
+                                groups="internship_logbook.group_internship_manager"/>
+
+                            <field
+                                name="workflow_mode"
+                                readonly="1"
+                                groups="!internship_logbook.group_internship_manager"/>
+
+                            <field
                                 name="supervisor_id"
+                                required="workflow_mode == 'supervised'"
+                                invisible="workflow_mode == 'independent'"
                                 readonly="state in ('completed', 'cancelled')"/>
                         </group>
 
@@ -124,6 +158,13 @@
                                 readonly="state != 'draft'"/>
                         </group>
                     </group>
+
+                    <div
+                        class="alert alert-info"
+                        role="alert"
+                        invisible="workflow_mode != 'independent'">
+                        Independent internships do not use supervisor approval workflow.
+                    </div>
 
                     <group string="Internship Dates">
                         <group>
@@ -142,7 +183,9 @@
                         </group>
                     </group>
 
-                    <group string="Program Statistics">
+                    <group
+                        string="Approval Statistics"
+                        invisible="workflow_mode != 'supervised'">
 
                         <group>
 
@@ -173,6 +216,23 @@
 
                         </group>
 
+                    </group>
+
+                    <group
+                        string="Completion Statistics"
+                        invisible="workflow_mode != 'independent'">
+                        <group>
+                            <field name="daily_entry_count" readonly="1"/>
+                            <field name="completed_entry_count" readonly="1"/>
+                            <field
+                                name="completion_percentage"
+                                widget="percentage"
+                                readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="total_work_hours" readonly="1"/>
+                            <field name="completed_work_hours" readonly="1"/>
+                        </group>
                     </group>
 
                     <group string="Additional Information">
@@ -222,7 +282,22 @@
                 <field name="student_id"/>
                 <field name="company_name"/>
                 <field name="department"/>
+                <field name="workflow_mode"/>
                 <field name="supervisor_id"/>
+
+                <separator/>
+
+                <filter
+                    name="filter_supervised"
+                    string="Supervised"
+                    domain="[('workflow_mode', '=', 'supervised')]"
+                />
+
+                <filter
+                    name="filter_independent"
+                    string="Independent"
+                    domain="[('workflow_mode', '=', 'independent')]"
+                />
 
                 <separator/>
 
@@ -257,7 +332,7 @@
                 <filter
                     name="filter_current_user"
                     string="My Programs"
-                    domain="[('supervisor_id', '=', uid)]"
+                    domain="['|', ('student_id.user_id', '=', uid), ('supervisor_id', '=', uid)]"
                 />
 
                 <separator/>
@@ -294,6 +369,12 @@
                         name="group_by_state"
                         string="Status"
                         context="{'group_by': 'state'}"
+                    />
+
+                    <filter
+                        name="group_by_workflow_mode"
+                        string="Workflow Mode"
+                        context="{'group_by': 'workflow_mode'}"
                     />
 
                     <filter

@@ -12,13 +12,14 @@
                 decoration-info="state == 'draft'"
                 decoration-warning="state == 'submitted'"
                 decoration-danger="state == 'revision'"
-                decoration-success="state == 'approved'">
+                decoration-success="state in ('approved', 'completed')">
 
                 <field name="entry_date"/>
                 <field name="day_number"/>
                 <field name="title"/>
                 <field name="student_id"/>
                 <field name="program_id"/>
+                <field name="workflow_mode" optional="show"/>
                 <field name="supervisor_id" optional="hide"/>
                 <field name="work_hours"/>
                 <field name="state" widget="badge"/>
@@ -36,37 +37,64 @@
             <form string="Daily Internship Entry">
 
                 <header>
+                    <field name="workflow_mode" invisible="1"/>
+                    <field name="program_state" invisible="1"/>
 
                     <button
                         name="action_submit"
                         string="Submit"
                         type="object"
                         class="btn-primary"
-                        invisible="state not in ('draft', 'revision')"/>
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"
+                        invisible="workflow_mode != 'supervised' or state not in ('draft', 'revision')"/>
 
                     <button
                         name="action_approve"
                         string="Approve"
                         type="object"
                         class="btn-primary"
-                        invisible="state != 'submitted'"/>
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+                        invisible="workflow_mode != 'supervised' or state != 'submitted'"/>
 
                     <button
                         name="action_request_revision"
                         string="Request Revision"
                         type="object"
-                        invisible="state != 'submitted'"/>
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+                        invisible="workflow_mode != 'supervised' or state != 'submitted'"/>
 
                     <button
                         name="action_reset_to_draft"
                         string="Reset to Draft"
                         type="object"
-                        invisible="state != 'revision'"/>
+                        invisible="workflow_mode != 'supervised' or state != 'revision'"/>
+
+                    <button
+                        name="action_complete"
+                        string="Complete"
+                        type="object"
+                        class="btn-primary"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"
+                        invisible="workflow_mode != 'independent' or state != 'draft' or program_state != 'active'"/>
+
+                    <button
+                        name="action_reopen"
+                        string="Reopen"
+                        type="object"
+                        groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"
+                        invisible="workflow_mode != 'independent' or state != 'completed' or program_state != 'active'"/>
 
                     <field
                         name="state"
                         widget="statusbar"
-                        statusbar_visible="draft,submitted,revision,approved"/>
+                        statusbar_visible="draft,submitted,revision,approved"
+                        invisible="workflow_mode == 'independent'"/>
+
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,completed"
+                        invisible="workflow_mode != 'independent'"/>
 
                 </header>
 
@@ -91,7 +119,10 @@
 
                             <field name="student_id" readonly="1"/>
 
-                            <field name="supervisor_id" readonly="1"/>
+                            <field
+                                name="supervisor_id"
+                                readonly="1"
+                                invisible="workflow_mode == 'independent'"/>
 
                         </group>
 
@@ -142,7 +173,7 @@
 
                     <group
                         string="Supervisor Evaluation"
-                        invisible="state == 'draft'">
+                        invisible="workflow_mode == 'independent' or state == 'draft'">
 
                         <field
                             name="supervisor_comment"
@@ -183,6 +214,7 @@
                 <field name="title"/>
                 <field name="program_id"/>
                 <field name="student_id"/>
+                <field name="workflow_mode"/>
                 <field name="supervisor_id"/>
                 <field name="entry_date"/>
                 <field name="technologies"/>
@@ -208,6 +240,11 @@
                     name="filter_approved"
                     string="Approved"
                     domain="[('state', '=', 'approved')]"/>
+
+                <filter
+                    name="filter_completed"
+                    string="Completed"
+                    domain="[('state', '=', 'completed')]"/>
 
                 <separator/>
 
