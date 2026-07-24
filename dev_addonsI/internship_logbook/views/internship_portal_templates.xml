@@ -109,6 +109,24 @@
             <t t-call="portal.portal_searchbar">
                 <t t-set="title">Daily Internship Entries</t>
             </t>
+            <div t-if="daily_entry_saved"
+                 class="alert alert-success"
+                 role="status">
+                Daily entry saved as draft.
+            </div>
+            <div t-if="eligible_program"
+                 class="d-flex justify-content-end mb-3">
+                <a href="/my/internship/daily/new"
+                   class="btn btn-primary">
+                    Create Daily Entry
+                </a>
+            </div>
+            <div t-elif="programs"
+                 class="alert alert-info"
+                 role="status">
+                Daily entries can be created only while exactly one
+                independent internship program is active.
+            </div>
             <div t-if="not programs"
                  class="card border-dashed">
                 <div class="card-body">
@@ -160,6 +178,107 @@
                     </table>
                 </div>
                 <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_create_daily_entry"
+              name="Create Daily Entry">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Create Daily Entry</t>
+            </t>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h1 class="h3">Create Daily Entry</h1>
+                    <p class="text-muted">
+                        Save today's internship work as a draft entry.
+                    </p>
+                    <div t-if="form_error"
+                         class="alert alert-danger"
+                         role="alert"
+                         t-out="form_error"/>
+                    <form action="/my/internship/daily/new"
+                          method="post"
+                          class="card">
+                        <div class="card-body">
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <div class="mb-3">
+                                <label for="daily_entry_date"
+                                       class="form-label">Entry Date</label>
+                                <input id="daily_entry_date"
+                                       name="entry_date"
+                                       type="date"
+                                       required="required"
+                                       t-att-min="program.start_date"
+                                       t-att-max="program.end_date"
+                                       t-att-value="form_values.get('entry_date')"
+                                       t-att-class="'form-control is-invalid' if errors.get('entry_date') else 'form-control'"/>
+                                <div t-if="errors.get('entry_date')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('entry_date')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_title"
+                                       class="form-label">Work Title</label>
+                                <input id="daily_entry_title"
+                                       name="title"
+                                       type="text"
+                                       required="required"
+                                       maxlength="200"
+                                       t-att-value="form_values.get('title')"
+                                       t-att-class="'form-control is-invalid' if errors.get('title') else 'form-control'"/>
+                                <div t-if="errors.get('title')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('title')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_description"
+                                       class="form-label">
+                                    Work Description
+                                </label>
+                                <textarea id="daily_entry_description"
+                                          name="work_description"
+                                          required="required"
+                                          maxlength="10000"
+                                          rows="8"
+                                          t-att-class="'form-control is-invalid' if errors.get('work_description') else 'form-control'"
+                                          t-out="form_values.get('work_description')"/>
+                                <div t-if="errors.get('work_description')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('work_description')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_hours"
+                                       class="form-label">Work Hours</label>
+                                <input id="daily_entry_hours"
+                                       name="work_hours"
+                                       type="number"
+                                       required="required"
+                                       min="0.01"
+                                       max="24"
+                                       step="0.25"
+                                       t-att-value="form_values.get('work_hours')"
+                                       t-att-class="'form-control is-invalid' if errors.get('work_hours') else 'form-control'"/>
+                                <div t-if="errors.get('work_hours')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('work_hours')"/>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Save Draft
+                            </button>
+                            <a href="/my/internship/daily"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </t>
     </template>

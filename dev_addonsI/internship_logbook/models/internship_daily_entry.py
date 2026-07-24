@@ -1,3 +1,5 @@
+import math
+
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
@@ -298,6 +300,111 @@ class InternshipDailyEntry(models.Model):
         return self.env.su or self.env.user.has_group(
             "internship_logbook.group_internship_manager"
         )
+
+    @api.model
+    @api.private
+    def _portal_create_draft_entry(self, user_id, program_id, values):
+        """Create one owned portal draft after repeating all trust checks."""
+        allowed_fields = {
+            "entry_date",
+            "title",
+            "work_description",
+            "work_hours",
+        }
+        if set(values) - allowed_fields:
+            raise AccessError(_("Unsupported daily entry values."))
+
+        user = self.env["res.users"].browse(user_id).exists()
+        if (
+            len(user) != 1
+            or not user.share
+            or not user.has_group(
+                "internship_logbook.group_internship_portal_intern"
+            )
+        ):
+            raise AccessError(
+                _("This account cannot create portal daily entries.")
+            )
+
+        students = self.env["internship.student"].search(
+            [("user_id", "=", user.id), ("active", "=", True)],
+            limit=2,
+        )
+        if len(students) != 1:
+            raise AccessError(
+                _("A valid student profile is required.")
+            )
+        student = students
+
+        eligible_programs = self.env["internship.program"].search([
+            ("student_id", "=", student.id),
+            ("workflow_mode", "=", "independent"),
+            ("state", "=", "active"),
+            ("active", "=", True),
+        ], limit=2)
+        program = eligible_programs.filtered(
+            lambda candidate: candidate.id == program_id
+        )
+        if len(eligible_programs) != 1 or len(program) != 1:
+            raise AccessError(
+                _("Exactly one active independent internship is required.")
+            )
+
+        title = (values.get("title") or "").strip()
+        work_description = (
+            values.get("work_description") or ""
+        ).strip()
+        try:
+            entry_date = fields.Date.to_date(values.get("entry_date"))
+        except (TypeError, ValueError):
+            entry_date = False
+        try:
+            work_hours = float(values.get("work_hours"))
+        except (TypeError, ValueError):
+            work_hours = 0.0
+
+        if not title or not work_description or not entry_date:
+            raise ValidationError(
+                _("Complete all required daily entry fields.")
+            )
+        if len(title) > 200 or len(work_description) > 10000:
+            raise ValidationError(
+                _("The daily entry text exceeds the allowed length.")
+            )
+        if (
+            not math.isfinite(work_hours)
+            or work_hours <= 0
+            or work_hours > 24
+        ):
+            raise ValidationError(
+                _("Work hours must be greater than zero and at most 24.")
+            )
+
+        with self.env.cr.savepoint():
+            self.env.cr.execute(
+                "SELECT id FROM internship_program WHERE id = %s FOR UPDATE",
+                [program.id],
+            )
+            if self.with_context(active_test=False).search_count([
+                ("program_id", "=", program.id),
+                ("entry_date", "=", entry_date),
+            ], limit=1):
+                raise UserError(
+                    _("A daily entry already exists for this date.")
+                )
+            entry = self.create({
+                "program_id": program.id,
+                "entry_date": entry_date,
+                "title": title,
+                "work_description": work_description,
+                "work_hours": work_hours,
+                "state": "draft",
+            })
+            if entry.student_id != student:
+                raise AccessError(
+                    _("The daily entry ownership could not be verified.")
+                )
+            return entry
 
     def _is_owning_intern(self, entry=None, program=None):
         target_program = program or entry.program_id

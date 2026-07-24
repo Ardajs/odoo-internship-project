@@ -4,3 +4,4 @@ from . import test_independent_mode
 from . import test_self_registration
 from . import test_portal_onboarding
 from . import test_portal_daily_entries
+from . import test_portal_daily_entry_creation

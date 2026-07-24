@@ -1,3 +1,5 @@
+import math
+
 from werkzeug.exceptions import Forbidden
 
 from odoo import _, fields, http
@@ -11,6 +13,8 @@ from odoo.addons.portal.controllers.portal import pager as portal_pager
 class InternshipPortal(CustomerPortal):
     _ONBOARDING_TEXT_MAX = 200
     _DAILY_ENTRIES_PAGE_SIZE = 30
+    _DAILY_ENTRY_TITLE_MAX = 200
+    _DAILY_ENTRY_DESCRIPTION_MAX = 10000
 
     def _is_portal_intern(self):
         return request.env.user.has_group(
@@ -50,12 +54,124 @@ class InternshipPortal(CustomerPortal):
             limit=limit,
         )
 
+    def _resolve_portal_entry_program(self, student):
+        if not student:
+            return request.env["internship.program"]
+        programs = request.env["internship.program"].search([
+            ("student_id", "=", student.id),
+            ("workflow_mode", "=", "independent"),
+            ("state", "=", "active"),
+            ("active", "=", True),
+        ], limit=2)
+        return programs if len(programs) == 1 else programs.browse()
+
     def _daily_entry_state_labels(self):
         state_field = request.env["internship.daily.entry"].fields_get(
             ["state"],
             attributes=["selection"],
         ).get("state", {})
         return dict(state_field.get("selection") or [])
+
+    def _empty_daily_entry_values(self):
+        return {
+            "entry_date": fields.Date.to_string(
+                fields.Date.context_today(request.env.user)
+            ),
+            "title": "",
+            "work_description": "",
+            "work_hours": "8",
+        }
+
+    def _validate_daily_entry_form(self, post, program):
+        values = {
+            "entry_date": (post.get("entry_date") or "").strip(),
+            "title": (post.get("title") or "").strip(),
+            "work_description": (
+                post.get("work_description") or ""
+            ).strip(),
+            "work_hours": (post.get("work_hours") or "").strip(),
+        }
+        errors = {}
+
+        if not values["title"]:
+            errors["title"] = _("Work title is required.")
+        elif len(values["title"]) > self._DAILY_ENTRY_TITLE_MAX:
+            errors["title"] = _(
+                "Work title must not exceed %s characters."
+            ) % self._DAILY_ENTRY_TITLE_MAX
+
+        if not values["work_description"]:
+            errors["work_description"] = _("Work description is required.")
+        elif (
+            len(values["work_description"])
+            > self._DAILY_ENTRY_DESCRIPTION_MAX
+        ):
+            errors["work_description"] = _(
+                "Work description must not exceed %s characters."
+            ) % self._DAILY_ENTRY_DESCRIPTION_MAX
+
+        try:
+            parsed_date = fields.Date.to_date(values["entry_date"])
+        except (TypeError, ValueError):
+            parsed_date = False
+        if not parsed_date:
+            errors["entry_date"] = _("Enter a valid entry date.")
+        elif program and (
+            parsed_date < program.start_date
+            or parsed_date > program.end_date
+        ):
+            errors["entry_date"] = _(
+                "Entry date must be within the internship period."
+            )
+
+        try:
+            parsed_hours = float(values["work_hours"].replace(",", "."))
+        except (TypeError, ValueError):
+            parsed_hours = False
+        if parsed_hours is False or not math.isfinite(parsed_hours):
+            errors["work_hours"] = _("Enter valid work hours.")
+        elif parsed_hours <= 0 or parsed_hours > 24:
+            errors["work_hours"] = _(
+                "Work hours must be greater than zero and at most 24."
+            )
+
+        if parsed_date and program and request.env[
+            "internship.daily.entry"
+        ].search_count([
+            ("program_id", "=", program.id),
+            ("entry_date", "=", parsed_date),
+        ], limit=1):
+            errors["entry_date"] = _(
+                "A daily entry already exists for this date."
+            )
+
+        create_values = {
+            "entry_date": parsed_date,
+            "title": values["title"],
+            "work_description": values["work_description"],
+            "work_hours": parsed_hours,
+        }
+        return values, create_values, errors
+
+    def _render_daily_entry_form(
+        self,
+        program,
+        values=None,
+        errors=None,
+        form_error=None,
+    ):
+        portal_values = self._prepare_portal_layout_values()
+        portal_values.update({
+            "page_name": "internship_daily_entry_new",
+            "program": program,
+            "form_values": values or self._empty_daily_entry_values(),
+            "errors": errors or {},
+            "form_error": form_error,
+        })
+        return request.render(
+            "internship_logbook.portal_create_daily_entry",
+            portal_values,
+        )
 
     def _is_onboarding_eligible(self, student):
         return bool(student) and not self._portal_programs(student)
@@ -189,6 +305,7 @@ class InternshipPortal(CustomerPortal):
             raise Forbidden()
 
         programs = self._portal_programs(student)
+        eligible_program = self._resolve_portal_entry_program(student)
         entry_model = request.env["internship.daily.entry"]
         domain = self._portal_daily_entry_domain(student)
         entry_count = entry_model.search_count(domain)
@@ -208,15 +325,98 @@ class InternshipPortal(CustomerPortal):
             "page_name": "internship_daily_entries",
             "student": student,
             "programs": programs,
+            "eligible_program": eligible_program,
             "entries": entries,
             "entry_count": entry_count,
             "pager": pager,
             "daily_entry_state_labels": self._daily_entry_state_labels(),
+            "daily_entry_saved": request.session.pop(
+                "internship_daily_entry_saved",
+                False,
+            ),
         })
         return request.render(
             "internship_logbook.portal_daily_entries",
             values,
         )
+
+    @http.route(
+        "/my/internship/daily/new",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET"],
+        sitemap=False,
+    )
+    def portal_create_daily_entry_form(self, **_ignored):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+        program = self._resolve_portal_entry_program(student)
+        if not program:
+            return request.redirect("/my/internship/daily")
+        return self._render_daily_entry_form(program)
+
+    @http.route(
+        "/my/internship/daily/new",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["POST"],
+        csrf=True,
+        sitemap=False,
+    )
+    def portal_create_daily_entry_submit(self, **post):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+        program = self._resolve_portal_entry_program(student)
+        if not program:
+            return request.redirect("/my/internship/daily", code=303)
+
+        values, create_values, errors = self._validate_daily_entry_form(
+            post,
+            program,
+        )
+        if errors:
+            return self._render_daily_entry_form(
+                program,
+                values,
+                errors,
+            )
+
+        try:
+            request.env[
+                "internship.daily.entry"
+            ].sudo()._portal_create_draft_entry(
+                request.env.user.id,
+                program.id,
+                create_values,
+            )
+        except UserError:
+            return self._render_daily_entry_form(
+                program,
+                values,
+                form_error=_(
+                    "A daily entry already exists for this date."
+                ),
+            )
+        except (AccessError, ValidationError):
+            return self._render_daily_entry_form(
+                program,
+                values,
+                form_error=_(
+                    "The daily entry could not be created. "
+                    "Review the submitted information and try again."
+                ),
+            )
+
+        request.session["internship_daily_entry_saved"] = True
+        return request.redirect("/my/internship/daily", code=303)
 
     @http.route(
         "/my/internship/create",
