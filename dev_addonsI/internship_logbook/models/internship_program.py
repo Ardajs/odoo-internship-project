@@ -1,5 +1,5 @@
-from odoo import api, fields, models
-from odoo.exceptions import AccessError, ValidationError
+from odoo import _, api, fields, models
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 
 class InternshipProgram(models.Model):
@@ -240,6 +240,86 @@ class InternshipProgram(models.Model):
                     "This student already has an internship program "
                     "that overlaps with the selected date range."
                 )
+
+    @api.model
+    @api.private
+    def _portal_create_first_program(self, user_id, values):
+        """Create the first portal internship with a serialized eligibility check."""
+        allowed_fields = {
+            "company_name",
+            "department",
+            "start_date",
+            "end_date",
+            "workflow_mode",
+        }
+        if set(values) - allowed_fields:
+            raise AccessError(_("Unsupported internship onboarding values."))
+
+        user = self.env["res.users"].browse(user_id).exists()
+        if (
+            len(user) != 1
+            or not user.share
+            or not user.has_group(
+                "internship_logbook.group_internship_portal_intern"
+            )
+        ):
+            raise AccessError(_("This account cannot create an internship."))
+
+        students = self.env["internship.student"].search(
+            [("user_id", "=", user.id), ("active", "=", True)],
+            limit=2,
+        )
+        if len(students) != 1:
+            raise AccessError(
+                _("A valid student profile is required for onboarding.")
+            )
+        student = students
+
+        company_name = (values.get("company_name") or "").strip()
+        department = (values.get("department") or "").strip()
+        workflow_mode = values.get("workflow_mode")
+        start_date = fields.Date.to_date(values.get("start_date"))
+        end_date = fields.Date.to_date(values.get("end_date"))
+        if not company_name or not department or not start_date or not end_date:
+            raise ValidationError(_("Complete all required internship fields."))
+        if len(company_name) > 200 or len(department) > 200:
+            raise ValidationError(
+                _("Company and department must not exceed 200 characters.")
+            )
+        if workflow_mode != "independent":
+            raise ValidationError(
+                _("Only independent internships are available in onboarding.")
+            )
+        if end_date < start_date:
+            raise ValidationError(
+                _("End date cannot be earlier than start date.")
+            )
+
+        # Serialize first-program creation without imposing a permanent unique
+        # constraint that would block future historical/multi-program support.
+        with self.env.cr.savepoint():
+            self.env.cr.execute(
+                "SELECT id FROM internship_student WHERE id = %s FOR UPDATE",
+                [student.id],
+            )
+            if self.with_context(active_test=False).search_count(
+                [("student_id", "=", student.id)],
+                limit=1,
+            ):
+                raise UserError(
+                    _("An internship program already exists for this account.")
+                )
+            return self.create({
+                "name": _("Internship at %s") % company_name,
+                "student_id": student.id,
+                "company_name": company_name,
+                "department": department,
+                "workflow_mode": "independent",
+                "supervisor_id": False,
+                "start_date": start_date,
+                "end_date": end_date,
+                "state": "draft",
+            })
 
     def write(self, values):
         protected_fields = {"workflow_mode", "student_id", "supervisor_id"}

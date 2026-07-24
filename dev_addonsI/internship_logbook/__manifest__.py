@@ -1,6 +1,6 @@
 {
     "name": "Internship Logbook",
-    "version": "19.0.3.0.0",
+    "version": "19.0.4.0.0",
     "summary": "Manage internship programs and daily internship records",
     "description": """
 Internship Logbook Management

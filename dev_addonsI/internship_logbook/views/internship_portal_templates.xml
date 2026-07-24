@@ -51,21 +51,155 @@
                     <p class="mb-2">
                         No internship program has been created yet.
                     </p>
-                    <button class="btn btn-secondary" disabled="disabled">
-                        Available in Phase 2B
-                    </button>
+                    <a href="/my/internship/create"
+                       class="btn btn-primary">
+                        Create Your First Internship
+                    </a>
                 </div>
             </div>
             <div t-else="" class="card">
                 <div class="card-body">
-                    <h2 class="h4">Internship programs</h2>
-                    <ul class="mb-0">
-                        <li t-foreach="programs" t-as="program">
-                            <span t-out="program.name"/>
-                            <span class="text-muted"
-                                  t-out="program.state"/>
-                        </li>
-                    </ul>
+                    <h2 class="h4">Current Internship</h2>
+                    <div t-foreach="programs" t-as="program">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Company</dt>
+                            <dd class="col-sm-8" t-out="program.company_name"/>
+                            <dt class="col-sm-4">Department</dt>
+                            <dd class="col-sm-8" t-out="program.department"/>
+                            <dt class="col-sm-4">Start date</dt>
+                            <dd class="col-sm-8">
+                                <span t-field="program.start_date"/>
+                            </dd>
+                            <dt class="col-sm-4">End date</dt>
+                            <dd class="col-sm-8">
+                                <span t-field="program.end_date"/>
+                            </dd>
+                            <dt class="col-sm-4">Mode</dt>
+                            <dd class="col-sm-8">
+                                <span t-if="program.workflow_mode == 'independent'">
+                                    Independent
+                                </span>
+                                <span t-else="">Supervised</span>
+                            </dd>
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8" t-out="program.state"/>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_create_internship"
+              name="Create Your First Internship">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Create Your First Internship</t>
+            </t>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h1 class="h3">Create Your First Internship</h1>
+                    <p class="text-muted">
+                        Enter the basic information for your personal
+                        internship logbook.
+                    </p>
+                    <div t-if="form_error"
+                         class="alert alert-danger"
+                         role="alert"
+                         t-out="form_error"/>
+                    <form action="/my/internship/create"
+                          method="post"
+                          class="card">
+                        <div class="card-body">
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <div class="mb-3">
+                                <label for="internship_company"
+                                       class="form-label">Company</label>
+                                <input id="internship_company"
+                                       name="company_name"
+                                       type="text"
+                                       required="required"
+                                       maxlength="200"
+                                       t-att-class="'form-control is-invalid' if errors.get('company_name') else 'form-control'"
+                                       t-att-value="form_values.get('company_name')"/>
+                                <div t-if="errors.get('company_name')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('company_name')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="internship_department"
+                                       class="form-label">Department</label>
+                                <input id="internship_department"
+                                       name="department"
+                                       type="text"
+                                       required="required"
+                                       maxlength="200"
+                                       t-att-class="'form-control is-invalid' if errors.get('department') else 'form-control'"
+                                       t-att-value="form_values.get('department')"/>
+                                <div t-if="errors.get('department')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('department')"/>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="internship_start_date"
+                                           class="form-label">Start Date</label>
+                                    <input id="internship_start_date"
+                                           name="start_date"
+                                           type="date"
+                                           required="required"
+                                           t-att-class="'form-control is-invalid' if errors.get('start_date') else 'form-control'"
+                                           t-att-value="form_values.get('start_date')"/>
+                                    <div t-if="errors.get('start_date')"
+                                         class="invalid-feedback"
+                                         t-out="errors.get('start_date')"/>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="internship_end_date"
+                                           class="form-label">End Date</label>
+                                    <input id="internship_end_date"
+                                           name="end_date"
+                                           type="date"
+                                           required="required"
+                                           t-att-class="'form-control is-invalid' if errors.get('end_date') else 'form-control'"
+                                           t-att-value="form_values.get('end_date')"/>
+                                    <div t-if="errors.get('end_date')"
+                                         class="invalid-feedback"
+                                         t-out="errors.get('end_date')"/>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="internship_workflow_mode"
+                                       class="form-label">Internship Mode</label>
+                                <select id="internship_workflow_mode"
+                                        name="workflow_mode"
+                                        required="required"
+                                        t-att-class="'form-select is-invalid' if errors.get('workflow_mode') else 'form-select'">
+                                    <option value="independent"
+                                            t-att-selected="form_values.get('workflow_mode') == 'independent'">
+                                        Independent
+                                    </option>
+                                </select>
+                                <div t-if="errors.get('workflow_mode')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('workflow_mode')"/>
+                                <div class="form-text">
+                                    Supervisor onboarding is not included in
+                                    this release.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Create Internship
+                            </button>
+                            <a href="/my/internship"
+                               class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
                 </div>
             </div>
         </t>
