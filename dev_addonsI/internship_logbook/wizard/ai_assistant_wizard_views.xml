@@ -84,7 +84,7 @@
                         type="object"
                         icon="fa-refresh"
                         class="btn-secondary"
-                        invisible="state != 'revision'"
+                        invisible="workflow_mode != 'supervised' or state != 'revision'"
                         groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_manager"/>
                 </div>
             </xpath>

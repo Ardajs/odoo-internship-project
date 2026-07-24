@@ -1,5 +1,5 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 
 
 class InternshipProgram(models.Model):
@@ -26,17 +26,26 @@ class InternshipProgram(models.Model):
     )
 
     department = fields.Char(
-    string="Department",
-    required=True,
-)
+        string="Department",
+        required=True,
+    )
+
+    workflow_mode = fields.Selection(
+        selection=[
+            ("supervised", "Supervised"),
+            ("independent", "Independent"),
+        ],
+        string="Workflow Mode",
+        required=True,
+        default="supervised",
+        index=True,
+    )
 
     supervisor_id = fields.Many2one(
-    comodel_name="res.users",
-    string="Supervisor",
-    required=True,
-    default=lambda self: self.env.user,
-    index=True,
-)
+        comodel_name="res.users",
+        string="Supervisor",
+        index=True,
+    )
 
     start_date = fields.Date(
         string='Start Date',
@@ -82,6 +91,11 @@ class InternshipProgram(models.Model):
         compute="_compute_daily_entry_statistics",
     )
 
+    completed_entry_count = fields.Integer(
+        string="Completed Entry Count",
+        compute="_compute_daily_entry_statistics",
+    )
+
     total_work_hours = fields.Float(
         string="Total Work Hours",
         compute="_compute_daily_entry_statistics",
@@ -92,8 +106,18 @@ class InternshipProgram(models.Model):
         compute="_compute_daily_entry_statistics",
     )
 
+    completed_work_hours = fields.Float(
+        string="Completed Work Hours",
+        compute="_compute_daily_entry_statistics",
+    )
+
     approval_percentage = fields.Float(
         string="Approval Percentage",
+        compute="_compute_daily_entry_statistics",
+    )
+
+    completion_percentage = fields.Float(
+        string="Completion Percentage",
         compute="_compute_daily_entry_statistics",
     )
 
@@ -127,6 +151,19 @@ class InternshipProgram(models.Model):
                 raise ValidationError(
                     'End date cannot be earlier than start date.'
                 )
+
+    @api.constrains("workflow_mode", "supervisor_id")
+    def _check_workflow_supervisor(self):
+        for record in self:
+            if record.workflow_mode == "supervised" and not record.supervisor_id:
+                raise ValidationError(
+                    "A supervisor is required for supervised internships."
+                )
+            if record.workflow_mode == "independent" and record.supervisor_id:
+                raise ValidationError(
+                    "Independent internships cannot have a supervisor."
+                )
+
     @api.depends(
         "daily_entry_ids",
         "daily_entry_ids.state",
@@ -143,9 +180,13 @@ class InternshipProgram(models.Model):
             approved_entries = entries.filtered(
                 lambda entry: entry.state == "approved"
             )
+            completed_entries = entries.filtered(
+                lambda entry: entry.state == "completed"
+            )
 
             # Number of approved entries
             program.approved_entry_count = len(approved_entries)
+            program.completed_entry_count = len(completed_entries)
 
             # Work hours of all entries
             program.total_work_hours = sum(
@@ -156,6 +197,9 @@ class InternshipProgram(models.Model):
             program.approved_work_hours = sum(
                 approved_entries.mapped("work_hours")
             )
+            program.completed_work_hours = sum(
+                completed_entries.mapped("work_hours")
+            )
 
             # Approval percentage
             if program.daily_entry_count:
@@ -165,6 +209,13 @@ class InternshipProgram(models.Model):
                 ) * 100
             else:
                 program.approval_percentage = 0.0
+            if program.daily_entry_count:
+                program.completion_percentage = (
+                    program.completed_entry_count
+                    / program.daily_entry_count
+                ) * 100
+            else:
+                program.completion_percentage = 0.0
 
 
     @api.constrains("student_id", "start_date", "end_date")
@@ -190,26 +241,129 @@ class InternshipProgram(models.Model):
                     "that overlaps with the selected date range."
                 )
 
+    def write(self, values):
+        protected_fields = {"workflow_mode", "student_id", "supervisor_id"}
+        is_manager = self.env.su or self.env.user.has_group(
+            "internship_logbook.group_internship_manager"
+        )
+        is_intern = self.env.user.has_group(
+            "internship_logbook.group_internship_intern"
+        )
+
+        if not is_manager and is_intern and "state" in values:
+            raise AccessError(
+                "Internship program state changes must use an authorized "
+                "workflow action."
+            )
+
+        if not is_manager and protected_fields.intersection(values):
+            if "workflow_mode" in values:
+                raise AccessError(
+                    "Only internship managers can change the workflow mode."
+                )
+            if is_intern:
+                raise AccessError(
+                    "Interns cannot change the student or supervisor assignment."
+                )
+
+        if "workflow_mode" in values:
+            for record in self:
+                if values["workflow_mode"] == record.workflow_mode:
+                    continue
+                if not is_manager:
+                    raise AccessError(
+                        "Only internship managers can change the workflow mode."
+                    )
+                if record.state != "draft":
+                    raise ValidationError(
+                        "The workflow mode can only be changed while the "
+                        "internship program is in draft."
+                    )
+                if record.daily_entry_ids:
+                    raise ValidationError(
+                        "The workflow mode cannot be changed after daily "
+                        "entries have been created."
+                    )
+
+        return super().write(values)
+
+    def _is_internship_manager(self):
+        return self.env.su or self.env.user.has_group(
+            "internship_logbook.group_internship_manager"
+        )
+
+    def _is_owning_intern(self):
+        self.ensure_one()
+        return self.env.user.has_group(
+            "internship_logbook.group_internship_intern"
+        ) and self.student_id.user_id == self.env.user
+
+    def _check_independent_workflow_actor(self):
+        self.ensure_one()
+        self.check_access("write")
+        if self._is_internship_manager():
+            return
+        if not self._is_owning_intern():
+            raise AccessError(
+                "Only the owning intern or an internship manager can "
+                "use the independent internship program workflow."
+            )
+
+    def _check_supervised_workflow_actor(self):
+        self.ensure_one()
+        self.check_access("write")
+        if self._is_internship_manager():
+            return
+        if self.env.user.has_group(
+            "internship_logbook.group_internship_supervisor"
+        ):
+            return
+        raise AccessError(
+            "Only the assigned internship supervisor or an internship "
+            "manager can use the supervised internship program workflow."
+        )
+
+    @api.private
+    def _write_workflow_state(self, state):
+        return super(InternshipProgram, self).write({"state": state})
+
     def action_start(self):
         for record in self:
+            record._check_supervised_workflow_actor()
             if record.state != "draft":
                 raise ValidationError(
                     "Only draft internship programs can be started."
                 )
-            record.state = "active"
+            record._write_workflow_state("active")
 
     def action_complete(self):
         for record in self:
+            record.check_access("write")
+            if record.workflow_mode == "independent":
+                record._check_independent_workflow_actor()
+            else:
+                record._check_supervised_workflow_actor()
+
             if record.state != "active":
                 raise ValidationError(
                     "Only active internship programs can be completed."
                 )
 
+            required_entry_state = (
+                "completed"
+                if record.workflow_mode == "independent"
+                else "approved"
+            )
             unfinished_entries = record.daily_entry_ids.filtered(
-                lambda entry: entry.state != "approved"
+                lambda entry: entry.state != required_entry_state
             )
 
             if unfinished_entries:
+                if record.workflow_mode == "independent":
+                    raise ValidationError(
+                        "The internship program cannot be completed while "
+                        "there are daily entries that have not been completed."
+                    )
                 raise ValidationError(
                     "The internship program cannot be completed while "
                     "there are daily entries that have not been approved."
@@ -221,23 +375,39 @@ class InternshipProgram(models.Model):
                     "at least one daily entry."
                 )
 
-            record.state = "completed"
+            record._write_workflow_state("completed")
+
+    def action_reopen(self):
+        for record in self:
+            record._check_independent_workflow_actor()
+            if record.workflow_mode != "independent":
+                raise ValidationError(
+                    "Only independent internship programs can be reopened."
+                )
+            if record.state != "completed":
+                raise ValidationError(
+                    "Only completed independent internship programs "
+                    "can be reopened."
+                )
+            record._write_workflow_state("active")
 
     def action_cancel(self):
         for record in self:
+            record._check_supervised_workflow_actor()
             if record.state not in ("draft", "active"):
                 raise ValidationError(
                     "Only draft or active internship programs can be cancelled."
                 )
-            record.state = "cancelled"
+            record._write_workflow_state("cancelled")
 
     def action_reset_to_draft(self):
         for record in self:
+            record._check_supervised_workflow_actor()
             if record.state != "cancelled":
                 raise ValidationError(
                     "Only cancelled internship programs can be reset to draft."
                 )
-            record.state = "draft"
+            record._write_workflow_state("draft")
 
 
     def action_view_daily_entries(self):

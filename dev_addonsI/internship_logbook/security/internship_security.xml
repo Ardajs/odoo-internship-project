@@ -68,7 +68,10 @@
             name="groups"
             eval="[Command.link(ref('group_internship_supervisor'))]"/>
         <field name="domain_force">
-            [('program_ids.supervisor_id', '=', user.id)]
+            [
+                ('program_ids.workflow_mode', '=', 'supervised'),
+                ('program_ids.supervisor_id', '=', user.id),
+            ]
         </field>
     </record>
 
@@ -79,7 +82,10 @@
             name="groups"
             eval="[Command.link(ref('group_internship_supervisor'))]"/>
         <field name="domain_force">
-            [('supervisor_id', '=', user.id)]
+            [
+                ('workflow_mode', '=', 'supervised'),
+                ('supervisor_id', '=', user.id),
+            ]
         </field>
     </record>
 
@@ -90,7 +96,10 @@
             name="groups"
             eval="[Command.link(ref('group_internship_supervisor'))]"/>
         <field name="domain_force">
-            [('supervisor_id', '=', user.id)]
+            [
+                ('program_id.workflow_mode', '=', 'supervised'),
+                ('supervisor_id', '=', user.id),
+            ]
         </field>
     </record>
 

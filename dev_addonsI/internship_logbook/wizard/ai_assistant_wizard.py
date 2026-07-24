@@ -204,6 +204,16 @@ class InternshipAIAssistantWizard(models.TransientModel):
     def _validate_action_state(self, entry, action_type):
         if action_type not in dict(self._fields["action_type"].selection):
             raise ValidationError(_("Unsupported AI Assistant action."))
+        if entry.program_id.workflow_mode == "independent":
+            if entry.state != "draft":
+                raise ValidationError(
+                    _("AI suggestions can only be used on draft independent entries.")
+                )
+            if action_type == "revision":
+                raise ValidationError(
+                    _("Revision Assistant is not available for independent internships.")
+                )
+            return
         if entry.state not in ("draft", "revision"):
             raise ValidationError(
                 _("AI suggestions can only be used on draft or revision-requested entries.")

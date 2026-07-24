@@ -179,7 +179,7 @@
                                     </td>
                                 </tr>
 
-                                <tr>
+                                <tr t-if="program.workflow_mode == 'supervised'">
                                     <td style="padding: 8px;">
                                         <strong>Supervisor</strong>
                                     </td>
@@ -318,7 +318,7 @@
 
                                 </tr>
 
-                                <tr>
+                                <tr t-if="program.workflow_mode == 'supervised'">
 
                                     <td>
                                         <strong>Supervisor</strong>
@@ -394,7 +394,7 @@
 
                                 </tr>
 
-                                <tr>
+                                <tr t-if="program.workflow_mode == 'supervised'">
 
                                     <td>
                                         <strong>Approved Entries</strong>
@@ -404,6 +404,15 @@
                                         <span t-field="program.approved_entry_count"/>
                                     </td>
 
+                                </tr>
+
+                                <tr t-if="program.workflow_mode == 'independent'">
+                                    <td>
+                                        <strong>Completed Entries</strong>
+                                    </td>
+                                    <td>
+                                        <span t-field="program.completed_entry_count"/>
+                                    </td>
                                 </tr>
 
                                 <tr>
@@ -419,7 +428,7 @@
 
                                 </tr>
 
-                                <tr>
+                                <tr t-if="program.workflow_mode == 'supervised'">
 
                                     <td>
                                         <strong>Approved Work Hours</strong>
@@ -432,7 +441,17 @@
 
                                 </tr>
 
-                                <tr>
+                                <tr t-if="program.workflow_mode == 'independent'">
+                                    <td>
+                                        <strong>Completed Work Hours</strong>
+                                    </td>
+                                    <td>
+                                        <span t-field="program.completed_work_hours"/>
+                                        hours
+                                    </td>
+                                </tr>
+
+                                <tr t-if="program.workflow_mode == 'supervised'">
 
                                     <td>
                                         <strong>Approval Percentage</strong>
@@ -446,6 +465,16 @@
 
                                     </td>
 
+                                </tr>
+
+                                <tr t-if="program.workflow_mode == 'independent'">
+                                    <td>
+                                        <strong>Completion Percentage</strong>
+                                    </td>
+                                    <td>
+                                        <span t-esc="round(program.completion_percentage,2)"/>
+                                        <span>%</span>
+                                    </td>
                                 </tr>
 
                                 <tr>
@@ -483,16 +512,20 @@
 
 
                     <!-- ================================================== -->
-                    <!-- PREPARE APPROVED DAILY ENTRIES                     -->
+                    <!-- PREPARE REPORTABLE DAILY ENTRIES                   -->
                     <!-- ================================================== -->
 
                     <t
-                        t-set="approved_entries"
+                        t-set="report_entries"
                         t-value="
                             program.daily_entry_ids
                                 .filtered(
                                     lambda e:
-                                    e.state == 'approved'
+                                    e.state == (
+                                        'completed'
+                                        if program.workflow_mode == 'independent'
+                                        else 'approved'
+                                    )
                                 )
                                 .sorted(
                                     key=lambda e:
@@ -506,10 +539,10 @@
                     <!-- DAILY ENTRY PAGES                                  -->
                     <!-- ================================================== -->
 
-                    <t t-if="approved_entries">
+                    <t t-if="report_entries">
 
                         <t
-                            t-foreach="approved_entries"
+                            t-foreach="report_entries"
                             t-as="entry"
                         >
 
@@ -669,7 +702,9 @@
 
                                 <!-- Supervisor Comment -->
 
-                                <div style="margin-top: 25px;">
+                                <div
+                                    t-if="program.workflow_mode == 'supervised'"
+                                    style="margin-top: 25px;">
 
                                     <h4>
                                         Supervisor Comment
@@ -696,11 +731,12 @@
 
                                         <tr>
 
-                                            <td style="
-                                                width: 50%;
-                                                text-align: center;
-                                                vertical-align: top;
-                                            ">
+                                            <td
+                                                t-att-style="
+                                                    'width: 50%; text-align: center; vertical-align: top;'
+                                                    if program.workflow_mode == 'supervised'
+                                                    else 'width: 100%; text-align: center; vertical-align: top;'
+                                                ">
 
                                                 <strong>
                                                     Intern
@@ -720,7 +756,7 @@
                                             </td>
 
 
-                                            <td style="
+                                            <td t-if="program.workflow_mode == 'supervised'" style="
                                                 width: 50%;
                                                 text-align: center;
                                                 vertical-align: top;
@@ -794,8 +830,13 @@
                             ">
 
                                 <p>
-                                    No approved daily internship
-                                    entries were found for this program.
+                                    No
+                                    <t t-if="program.workflow_mode == 'independent'">
+                                        completed
+                                    </t>
+                                    <t t-else="">approved</t>
+                                    daily internship entries were found
+                                    for this program.
                                 </p>
 
                             </div>
@@ -809,7 +850,9 @@
                     <!-- FINAL APPROVAL PAGE                                -->
                     <!-- ================================================== -->
 
-                    <div class="page"
+                    <div
+                        t-if="program.workflow_mode == 'supervised'"
+                        class="page"
                         style="
                             page-break-before: always;
                             padding-top: 20px;
@@ -1016,6 +1059,85 @@
 
                         </div>
 
+                    </div>
+
+                    <div
+                        t-if="program.workflow_mode == 'independent'"
+                        class="page"
+                        style="page-break-before: always; padding-top: 20px;">
+                        <h2 style="text-align: center; margin-bottom: 50px;">
+                            Internship Logbook Completion Summary
+                        </h2>
+
+                        <table class="table table-sm table-bordered">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Student</strong></td>
+                                    <td>
+                                        <span t-field="program.student_id.name"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Student Number</strong></td>
+                                    <td>
+                                        <span t-field="program.student_id.student_number"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Company</strong></td>
+                                    <td>
+                                        <span t-field="program.company_name"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Internship Period</strong></td>
+                                    <td>
+                                        <span t-field="program.start_date"/>
+                                        -
+                                        <span t-field="program.end_date"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Completed Entries</strong></td>
+                                    <td>
+                                        <span t-field="program.completed_entry_count"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Completed Work Hours</strong></td>
+                                    <td>
+                                        <span t-field="program.completed_work_hours"/>
+                                        hours
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Completion Percentage</strong></td>
+                                    <td>
+                                        <span t-esc="round(program.completion_percentage, 2)"/>
+                                        %
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div style="margin-top: 60px; text-align: justify; line-height: 1.8;">
+                            <p>
+                                This summary contains the daily entries completed
+                                by the intern during the independent internship
+                                period.
+                            </p>
+                        </div>
+
+                        <div style="margin-top: 100px; text-align: center;">
+                            <strong>Intern</strong>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <span t-field="program.student_id.name"/>
+                            <br/>
+                            Signature
+                        </div>
                     </div>
 
 
