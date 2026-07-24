@@ -518,6 +518,125 @@ class InternshipDailyEntry(models.Model):
                 _("A daily entry already exists for this date.")
             ) from None
 
+    @api.model
+    @api.private
+    def _portal_submit_draft_entry(self, user_id, entry_id):
+        """Complete one owned Independent draft through its real workflow."""
+        user = self.env["res.users"].browse(user_id).exists()
+        if (
+            len(user) != 1
+            or not user.share
+            or not user.has_group(
+                "internship_logbook.group_internship_portal_intern"
+            )
+        ):
+            raise AccessError(
+                _("This account cannot submit portal daily entries.")
+            )
+
+        students = self.env["internship.student"].search(
+            [("user_id", "=", user.id), ("active", "=", True)],
+            limit=2,
+        )
+        if len(students) != 1:
+            raise AccessError(_("A valid student profile is required."))
+        student = students
+
+        entry = self.with_context(active_test=False).search([
+            ("id", "=", entry_id),
+            ("student_id", "=", student.id),
+            ("program_id.student_id", "=", student.id),
+        ], limit=1)
+        if not entry:
+            raise AccessError(_("The daily entry could not be found."))
+        program = entry.program_id
+
+        with self.env.cr.savepoint():
+            self.env.cr.execute(
+                "SELECT id FROM internship_program "
+                "WHERE id = %s FOR UPDATE",
+                [program.id],
+            )
+            self.env.cr.execute(
+                "SELECT id FROM internship_daily_entry "
+                "WHERE id = %s FOR UPDATE",
+                [entry.id],
+            )
+            program.invalidate_recordset(
+                ["active", "state", "workflow_mode", "student_id"]
+            )
+            entry.invalidate_recordset()
+            entry = self.with_context(active_test=False).search([
+                ("id", "=", entry_id),
+                ("student_id", "=", student.id),
+                ("program_id", "=", program.id),
+                ("program_id.student_id", "=", student.id),
+            ], limit=1)
+            if not entry:
+                raise AccessError(_("The daily entry could not be found."))
+            if (
+                entry.program_id != program
+                or program.student_id != student
+            ):
+                raise AccessError(
+                    _("The daily entry ownership could not be verified.")
+                )
+            if (
+                not program.active
+                or program.state != "active"
+                or program.workflow_mode != "independent"
+            ):
+                raise UserError(
+                    _(
+                        "Daily entries can be submitted only while the "
+                        "independent internship program is active."
+                    )
+                )
+            if entry.state != "draft":
+                raise UserError(
+                    _(
+                        "This daily entry is no longer available "
+                        "for submission."
+                    )
+                )
+
+            self._portal_prepare_daily_entry_values({
+                "entry_date": entry.entry_date,
+                "title": entry.title,
+                "work_description": entry.work_description,
+                "work_hours": entry.work_hours,
+            })
+            if (
+                entry.entry_date < program.start_date
+                or entry.entry_date > program.end_date
+            ):
+                raise ValidationError(
+                    _(
+                        "The daily entry date must be within the "
+                        "internship period."
+                    )
+                )
+            if self.with_context(active_test=False).search_count([
+                ("program_id", "=", program.id),
+                ("entry_date", "=", entry.entry_date),
+                ("id", "!=", entry.id),
+            ], limit=1):
+                raise ValidationError(
+                    _("A daily entry already exists for this date.")
+                )
+
+            entry.action_complete()
+            entry.invalidate_recordset()
+            if (
+                entry.state != "completed"
+                or entry.student_id != student
+                or entry.program_id != program
+            ):
+                raise AccessError(
+                    _("The daily entry submission could not be verified.")
+                )
+            return entry
+
     def _is_owning_intern(self, entry=None, program=None):
         target_program = program or entry.program_id
         return self.env.user.has_group(

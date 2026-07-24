@@ -124,6 +124,22 @@
                  role="alert">
                 Only draft entries in an active internship can be edited.
             </div>
+            <div t-if="daily_entry_completed"
+                 class="alert alert-success"
+                 role="status">
+                Daily entry completed successfully.
+            </div>
+            <div t-if="daily_entry_submit_state_denied"
+                 class="alert alert-warning"
+                 role="alert">
+                This daily entry is no longer available for submission.
+            </div>
+            <div t-if="daily_entry_submit_program_denied"
+                 class="alert alert-warning"
+                 role="alert">
+                Daily entries can be submitted only while the independent
+                internship program is active.
+            </div>
             <div t-if="eligible_program"
                  class="d-flex justify-content-end mb-3">
                 <a href="/my/internship/daily/new"
@@ -186,12 +202,22 @@
                                 <td class="text-end"
                                      t-out="entry.work_hours"/>
                                 <td class="text-end">
-                                    <a t-if="entry.state == 'draft'
-                                             and entry.program_state == 'active'"
-                                       t-att-href="'/my/internship/daily/%s/edit' % entry.id"
-                                       class="btn btn-sm btn-outline-primary">
-                                        Edit
-                                    </a>
+                                    <div class="d-inline-flex gap-2">
+                                        <a t-if="entry.state == 'draft'
+                                                 and entry.program_state == 'active'"
+                                           t-att-href="'/my/internship/daily/%s/edit' % entry.id"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Edit
+                                        </a>
+                                        <a t-if="entry.state == 'draft'
+                                                 and entry.program_id.active
+                                                 and entry.program_state == 'active'
+                                                 and entry.workflow_mode == 'independent'"
+                                           t-att-href="'/my/internship/daily/%s/submit-confirm' % entry.id"
+                                           class="btn btn-sm btn-primary">
+                                            Submit
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -298,6 +324,60 @@
                             </a>
                         </div>
                     </form>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_submit_daily_entry"
+              name="Submit Daily Entry">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Submit Daily Entry</t>
+            </t>
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+                    <h1 class="h3">Submit Daily Entry</h1>
+                    <div t-if="form_error"
+                         class="alert alert-danger"
+                         role="alert"
+                         t-out="form_error"/>
+                    <div class="card">
+                        <div class="card-body">
+                            <dl class="row mb-3">
+                                <dt class="col-sm-4">Entry Date</dt>
+                                <dd class="col-sm-8">
+                                    <span t-field="entry.entry_date"/>
+                                </dd>
+                                <dt class="col-sm-4">Work Title</dt>
+                                <dd class="col-sm-8"
+                                    t-out="entry.title"/>
+                            </dl>
+                            <div class="alert alert-warning mb-0"
+                                 role="alert">
+                                After submission, this daily entry can no
+                                longer be edited from the portal.
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <form t-att-action="'/my/internship/daily/%s/submit' % entry.id"
+                                  method="post"
+                                  class="d-flex gap-2">
+                                <input type="hidden"
+                                       name="csrf_token"
+                                       t-att-value="request.csrf_token()"/>
+                                <button type="submit"
+                                        class="btn btn-primary">
+                                    Confirm Submission
+                                </button>
+                                <a href="/my/internship/daily"
+                                   class="btn btn-outline-secondary">
+                                    Cancel
+                                </a>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </t>

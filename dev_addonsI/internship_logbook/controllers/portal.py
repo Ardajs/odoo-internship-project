@@ -70,6 +70,15 @@ class InternshipPortal(CustomerPortal):
             and entry.program_state == "active"
         )
 
+    def _is_portal_daily_entry_submittable(self, entry):
+        return bool(
+            entry
+            and entry.state == "draft"
+            and entry.program_id.active
+            and entry.program_state == "active"
+            and entry.workflow_mode == "independent"
+        )
+
     def _resolve_portal_entry_program(self, student):
         if not student:
             return request.env["internship.program"]
@@ -225,6 +234,32 @@ class InternshipPortal(CustomerPortal):
             "internship_logbook.portal_edit_daily_entry",
             portal_values,
         )
+
+    def _render_daily_entry_submit_confirmation(
+        self,
+        entry,
+        form_error=None,
+    ):
+        portal_values = self._prepare_portal_layout_values()
+        portal_values.update({
+            "page_name": "internship_daily_entry_submit",
+            "entry": entry,
+            "form_error": form_error,
+        })
+        return request.render(
+            "internship_logbook.portal_submit_daily_entry",
+            portal_values,
+        )
+
+    def _set_daily_entry_submit_denial(self, entry):
+        if entry and entry.state == "draft":
+            request.session[
+                "internship_daily_entry_submit_program_denied"
+            ] = True
+        else:
+            request.session[
+                "internship_daily_entry_submit_state_denied"
+            ] = True
 
     def _is_onboarding_eligible(self, student):
         return bool(student) and not self._portal_programs(student)
@@ -393,6 +428,18 @@ class InternshipPortal(CustomerPortal):
             ),
             "daily_entry_edit_denied": request.session.pop(
                 "internship_daily_entry_edit_denied",
+                False,
+            ),
+            "daily_entry_completed": request.session.pop(
+                "internship_daily_entry_completed",
+                False,
+            ),
+            "daily_entry_submit_state_denied": request.session.pop(
+                "internship_daily_entry_submit_state_denied",
+                False,
+            ),
+            "daily_entry_submit_program_denied": request.session.pop(
+                "internship_daily_entry_submit_program_denied",
                 False,
             ),
         })
@@ -568,6 +615,82 @@ class InternshipPortal(CustomerPortal):
             )
 
         request.session["internship_daily_entry_updated"] = True
+        return request.redirect("/my/internship/daily", code=303)
+
+    @http.route(
+        "/my/internship/daily/<int:entry_id>/submit-confirm",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET"],
+        sitemap=False,
+    )
+    def portal_submit_daily_entry_confirmation(self, entry_id, **_ignored):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+        entry = self._resolve_portal_daily_entry(student, entry_id)
+        if not entry:
+            raise request.not_found()
+        if not self._is_portal_daily_entry_submittable(entry):
+            self._set_daily_entry_submit_denial(entry)
+            return request.redirect("/my/internship/daily")
+        return self._render_daily_entry_submit_confirmation(entry)
+
+    @http.route(
+        "/my/internship/daily/<int:entry_id>/submit",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["POST"],
+        csrf=True,
+        sitemap=False,
+    )
+    def portal_submit_daily_entry(self, entry_id, **_ignored):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+        entry = self._resolve_portal_daily_entry(student, entry_id)
+        if not entry:
+            raise request.not_found()
+        if not self._is_portal_daily_entry_submittable(entry):
+            self._set_daily_entry_submit_denial(entry)
+            return request.redirect("/my/internship/daily", code=303)
+
+        try:
+            request.env[
+                "internship.daily.entry"
+            ].sudo()._portal_submit_draft_entry(
+                request.env.user.id,
+                entry.id,
+            )
+        except AccessError:
+            raise request.not_found()
+        except ValidationError:
+            entry.invalidate_recordset()
+            if not self._is_portal_daily_entry_submittable(entry):
+                self._set_daily_entry_submit_denial(entry)
+                return request.redirect("/my/internship/daily", code=303)
+            return self._render_daily_entry_submit_confirmation(
+                entry,
+                form_error=_(
+                    "This daily entry is incomplete or invalid and "
+                    "could not be submitted."
+                ),
+            )
+        except UserError:
+            entry.invalidate_recordset()
+            entry.program_id.invalidate_recordset(
+                ["active", "state", "workflow_mode"]
+            )
+            self._set_daily_entry_submit_denial(entry)
+            return request.redirect("/my/internship/daily", code=303)
+
+        request.session["internship_daily_entry_completed"] = True
         return request.redirect("/my/internship/daily", code=303)
 
     @http.route(
