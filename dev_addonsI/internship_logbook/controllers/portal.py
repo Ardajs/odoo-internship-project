@@ -54,6 +54,22 @@ class InternshipPortal(CustomerPortal):
             limit=limit,
         )
 
+    def _resolve_portal_daily_entry(self, student, entry_id):
+        if not student:
+            return request.env["internship.daily.entry"]
+        return request.env["internship.daily.entry"].search([
+            ("id", "=", entry_id),
+            *self._portal_daily_entry_domain(student),
+        ], limit=1)
+
+    def _is_portal_daily_entry_editable(self, entry):
+        return bool(
+            entry
+            and entry.state == "draft"
+            and entry.program_id.active
+            and entry.program_state == "active"
+        )
+
     def _resolve_portal_entry_program(self, student):
         if not student:
             return request.env["internship.program"]
@@ -82,7 +98,15 @@ class InternshipPortal(CustomerPortal):
             "work_hours": "8",
         }
 
-    def _validate_daily_entry_form(self, post, program):
+    def _daily_entry_form_values(self, entry):
+        return {
+            "entry_date": fields.Date.to_string(entry.entry_date),
+            "title": entry.title or "",
+            "work_description": entry.work_description or "",
+            "work_hours": str(entry.work_hours),
+        }
+
+    def _validate_daily_entry_form(self, post, program, *, current_entry=None):
         values = {
             "entry_date": (post.get("entry_date") or "").strip(),
             "title": (post.get("title") or "").strip(),
@@ -135,12 +159,20 @@ class InternshipPortal(CustomerPortal):
                 "Work hours must be greater than zero and at most 24."
             )
 
-        if parsed_date and program and request.env[
-            "internship.daily.entry"
-        ].search_count([
+        duplicate_domain = [
             ("program_id", "=", program.id),
             ("entry_date", "=", parsed_date),
-        ], limit=1):
+        ]
+        if current_entry:
+            duplicate_domain.append(("id", "!=", current_entry.id))
+        if (
+            parsed_date
+            and program
+            and request.env["internship.daily.entry"].search_count(
+                duplicate_domain,
+                limit=1,
+            )
+        ):
             errors["entry_date"] = _(
                 "A daily entry already exists for this date."
             )
@@ -170,6 +202,27 @@ class InternshipPortal(CustomerPortal):
         })
         return request.render(
             "internship_logbook.portal_create_daily_entry",
+            portal_values,
+        )
+
+    def _render_daily_entry_edit_form(
+        self,
+        entry,
+        values=None,
+        errors=None,
+        form_error=None,
+    ):
+        portal_values = self._prepare_portal_layout_values()
+        portal_values.update({
+            "page_name": "internship_daily_entry_edit",
+            "entry": entry,
+            "program": entry.program_id,
+            "form_values": values or self._daily_entry_form_values(entry),
+            "errors": errors or {},
+            "form_error": form_error,
+        })
+        return request.render(
+            "internship_logbook.portal_edit_daily_entry",
             portal_values,
         )
 
@@ -334,6 +387,14 @@ class InternshipPortal(CustomerPortal):
                 "internship_daily_entry_saved",
                 False,
             ),
+            "daily_entry_updated": request.session.pop(
+                "internship_daily_entry_updated",
+                False,
+            ),
+            "daily_entry_edit_denied": request.session.pop(
+                "internship_daily_entry_edit_denied",
+                False,
+            ),
         })
         return request.render(
             "internship_logbook.portal_daily_entries",
@@ -416,6 +477,97 @@ class InternshipPortal(CustomerPortal):
             )
 
         request.session["internship_daily_entry_saved"] = True
+        return request.redirect("/my/internship/daily", code=303)
+
+    @http.route(
+        "/my/internship/daily/<int:entry_id>/edit",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET"],
+        sitemap=False,
+    )
+    def portal_edit_daily_entry_form(self, entry_id, **_ignored):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+        entry = self._resolve_portal_daily_entry(student, entry_id)
+        if not entry:
+            raise request.not_found()
+        if not self._is_portal_daily_entry_editable(entry):
+            request.session["internship_daily_entry_edit_denied"] = True
+            return request.redirect("/my/internship/daily")
+        return self._render_daily_entry_edit_form(entry)
+
+    @http.route(
+        "/my/internship/daily/<int:entry_id>/edit",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["POST"],
+        csrf=True,
+        sitemap=False,
+    )
+    def portal_edit_daily_entry_submit(self, entry_id, **post):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+        entry = self._resolve_portal_daily_entry(student, entry_id)
+        if not entry:
+            raise request.not_found()
+        if not self._is_portal_daily_entry_editable(entry):
+            request.session["internship_daily_entry_edit_denied"] = True
+            return request.redirect("/my/internship/daily", code=303)
+
+        values, update_values, errors = self._validate_daily_entry_form(
+            post,
+            entry.program_id,
+            current_entry=entry,
+        )
+        if errors:
+            return self._render_daily_entry_edit_form(
+                entry,
+                values,
+                errors,
+            )
+
+        try:
+            request.env[
+                "internship.daily.entry"
+            ].sudo()._portal_update_draft_entry(
+                request.env.user.id,
+                entry.id,
+                update_values,
+            )
+        except UserError:
+            entry.invalidate_recordset()
+            if not self._is_portal_daily_entry_editable(entry):
+                request.session["internship_daily_entry_edit_denied"] = True
+                return request.redirect("/my/internship/daily", code=303)
+            return self._render_daily_entry_edit_form(
+                entry,
+                values,
+                form_error=_(
+                    "A daily entry already exists for this date."
+                ),
+            )
+        except AccessError:
+            raise request.not_found()
+        except ValidationError:
+            return self._render_daily_entry_edit_form(
+                entry,
+                values,
+                form_error=_(
+                    "The daily entry could not be updated. "
+                    "Review the submitted information and try again."
+                ),
+            )
+
+        request.session["internship_daily_entry_updated"] = True
         return request.redirect("/my/internship/daily", code=303)
 
     @http.route(

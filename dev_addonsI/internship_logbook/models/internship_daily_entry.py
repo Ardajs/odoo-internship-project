@@ -1,5 +1,7 @@
 import math
 
+from psycopg2 import IntegrityError
+
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
@@ -303,8 +305,8 @@ class InternshipDailyEntry(models.Model):
 
     @api.model
     @api.private
-    def _portal_create_draft_entry(self, user_id, program_id, values):
-        """Create one owned portal draft after repeating all trust checks."""
+    def _portal_prepare_daily_entry_values(self, values):
+        """Normalize the scalar values accepted by portal create/edit."""
         allowed_fields = {
             "entry_date",
             "title",
@@ -313,6 +315,48 @@ class InternshipDailyEntry(models.Model):
         }
         if set(values) - allowed_fields:
             raise AccessError(_("Unsupported daily entry values."))
+
+        title = (values.get("title") or "").strip()
+        work_description = (
+            values.get("work_description") or ""
+        ).strip()
+        try:
+            entry_date = fields.Date.to_date(values.get("entry_date"))
+        except (TypeError, ValueError):
+            entry_date = False
+        try:
+            work_hours = float(values.get("work_hours"))
+        except (TypeError, ValueError):
+            work_hours = 0.0
+
+        if not title or not work_description or not entry_date:
+            raise ValidationError(
+                _("Complete all required daily entry fields.")
+            )
+        if len(title) > 200 or len(work_description) > 10000:
+            raise ValidationError(
+                _("The daily entry text exceeds the allowed length.")
+            )
+        if (
+            not math.isfinite(work_hours)
+            or work_hours <= 0
+            or work_hours > 24
+        ):
+            raise ValidationError(
+                _("Work hours must be greater than zero and at most 24.")
+            )
+        return {
+            "entry_date": entry_date,
+            "title": title,
+            "work_description": work_description,
+            "work_hours": work_hours,
+        }
+
+    @api.model
+    @api.private
+    def _portal_create_draft_entry(self, user_id, program_id, values):
+        """Create one owned portal draft after repeating all trust checks."""
+        prepared_values = self._portal_prepare_daily_entry_values(values)
 
         user = self.env["res.users"].browse(user_id).exists()
         if (
@@ -350,36 +394,6 @@ class InternshipDailyEntry(models.Model):
                 _("Exactly one active independent internship is required.")
             )
 
-        title = (values.get("title") or "").strip()
-        work_description = (
-            values.get("work_description") or ""
-        ).strip()
-        try:
-            entry_date = fields.Date.to_date(values.get("entry_date"))
-        except (TypeError, ValueError):
-            entry_date = False
-        try:
-            work_hours = float(values.get("work_hours"))
-        except (TypeError, ValueError):
-            work_hours = 0.0
-
-        if not title or not work_description or not entry_date:
-            raise ValidationError(
-                _("Complete all required daily entry fields.")
-            )
-        if len(title) > 200 or len(work_description) > 10000:
-            raise ValidationError(
-                _("The daily entry text exceeds the allowed length.")
-            )
-        if (
-            not math.isfinite(work_hours)
-            or work_hours <= 0
-            or work_hours > 24
-        ):
-            raise ValidationError(
-                _("Work hours must be greater than zero and at most 24.")
-            )
-
         with self.env.cr.savepoint():
             self.env.cr.execute(
                 "SELECT id FROM internship_program WHERE id = %s FOR UPDATE",
@@ -387,17 +401,14 @@ class InternshipDailyEntry(models.Model):
             )
             if self.with_context(active_test=False).search_count([
                 ("program_id", "=", program.id),
-                ("entry_date", "=", entry_date),
+                ("entry_date", "=", prepared_values["entry_date"]),
             ], limit=1):
                 raise UserError(
                     _("A daily entry already exists for this date.")
                 )
             entry = self.create({
                 "program_id": program.id,
-                "entry_date": entry_date,
-                "title": title,
-                "work_description": work_description,
-                "work_hours": work_hours,
+                **prepared_values,
                 "state": "draft",
             })
             if entry.student_id != student:
@@ -405,6 +416,107 @@ class InternshipDailyEntry(models.Model):
                     _("The daily entry ownership could not be verified.")
                 )
             return entry
+
+    @api.model
+    @api.private
+    def _portal_update_draft_entry(self, user_id, entry_id, values):
+        """Update one owned draft through a narrow portal-only service."""
+        prepared_values = self._portal_prepare_daily_entry_values(values)
+
+        user = self.env["res.users"].browse(user_id).exists()
+        if (
+            len(user) != 1
+            or not user.share
+            or not user.has_group(
+                "internship_logbook.group_internship_portal_intern"
+            )
+        ):
+            raise AccessError(
+                _("This account cannot edit portal daily entries.")
+            )
+
+        students = self.env["internship.student"].search(
+            [("user_id", "=", user.id), ("active", "=", True)],
+            limit=2,
+        )
+        if len(students) != 1:
+            raise AccessError(_("A valid student profile is required."))
+        student = students
+
+        entry = self.with_context(active_test=False).search([
+            ("id", "=", entry_id),
+            ("student_id", "=", student.id),
+            ("program_id.student_id", "=", student.id),
+        ], limit=1)
+        if not entry:
+            raise AccessError(_("The daily entry could not be found."))
+
+        program = entry.program_id
+        try:
+            with self.env.cr.savepoint():
+                self.env.cr.execute(
+                    "SELECT id FROM internship_program "
+                    "WHERE id = %s FOR UPDATE",
+                    [program.id],
+                )
+                self.env.cr.execute(
+                    "SELECT id FROM internship_daily_entry "
+                    "WHERE id = %s FOR UPDATE",
+                    [entry.id],
+                )
+                program.invalidate_recordset(["state", "active"])
+                entry.invalidate_recordset()
+                entry = self.with_context(active_test=False).search([
+                    ("id", "=", entry_id),
+                    ("student_id", "=", student.id),
+                    ("program_id", "=", program.id),
+                    ("program_id.student_id", "=", student.id),
+                ], limit=1)
+                if not entry:
+                    raise AccessError(
+                        _("The daily entry could not be found.")
+                    )
+                if (
+                    entry.state != "draft"
+                    or not entry.program_id.active
+                    or entry.program_id.state != "active"
+                ):
+                    raise UserError(
+                        _(
+                            "Only draft entries in an active internship "
+                            "can be edited."
+                        )
+                    )
+
+                if self.with_context(active_test=False).search_count([
+                    ("program_id", "=", program.id),
+                    ("entry_date", "=", prepared_values["entry_date"]),
+                    ("id", "!=", entry.id),
+                ], limit=1):
+                    raise UserError(
+                        _("A daily entry already exists for this date.")
+                    )
+
+                entry.write(prepared_values)
+                entry.invalidate_recordset()
+                if (
+                    entry.student_id != student
+                    or entry.program_id != program
+                    or entry.state != "draft"
+                ):
+                    raise AccessError(
+                        _("The daily entry update could not be verified.")
+                    )
+                return entry
+        except IntegrityError as error:
+            if (
+                error.diag.constraint_name
+                != "internship_daily_entry_program_entry_date_unique"
+            ):
+                raise
+            raise UserError(
+                _("A daily entry already exists for this date.")
+            ) from None
 
     def _is_owning_intern(self, entry=None, program=None):
         target_program = program or entry.program_id
