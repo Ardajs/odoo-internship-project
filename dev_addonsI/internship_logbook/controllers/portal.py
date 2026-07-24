@@ -5,10 +5,12 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
+from odoo.addons.portal.controllers.portal import pager as portal_pager
 
 
 class InternshipPortal(CustomerPortal):
     _ONBOARDING_TEXT_MAX = 200
+    _DAILY_ENTRIES_PAGE_SIZE = 30
 
     def _is_portal_intern(self):
         return request.env.user.has_group(
@@ -31,6 +33,29 @@ class InternshipPortal(CustomerPortal):
             [("student_id", "=", student.id)],
             order="start_date desc, id desc",
         )
+
+    def _portal_daily_entry_domain(self, student):
+        return [
+            ("student_id", "=", student.id),
+            ("program_id.student_id", "=", student.id),
+        ]
+
+    def _portal_daily_entries(self, student, *, offset=0, limit=None):
+        if not student:
+            return request.env["internship.daily.entry"]
+        return request.env["internship.daily.entry"].search(
+            self._portal_daily_entry_domain(student),
+            order="entry_date desc, id desc",
+            offset=offset,
+            limit=limit,
+        )
+
+    def _daily_entry_state_labels(self):
+        state_field = request.env["internship.daily.entry"].fields_get(
+            ["state"],
+            attributes=["selection"],
+        ).get("state", {})
+        return dict(state_field.get("selection") or [])
 
     def _is_onboarding_eligible(self, student):
         return bool(student) and not self._portal_programs(student)
@@ -143,6 +168,54 @@ class InternshipPortal(CustomerPortal):
         return request.render(
             "internship_logbook.portal_my_internship",
             self._prepare_internship_portal_values(student),
+        )
+
+    @http.route(
+        [
+            "/my/internship/daily",
+            "/my/internship/daily/page/<int:page>",
+        ],
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET"],
+        sitemap=False,
+    )
+    def portal_daily_entries(self, page=1, **_ignored):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+
+        programs = self._portal_programs(student)
+        entry_model = request.env["internship.daily.entry"]
+        domain = self._portal_daily_entry_domain(student)
+        entry_count = entry_model.search_count(domain)
+        pager = portal_pager(
+            url="/my/internship/daily",
+            total=entry_count,
+            page=page,
+            step=self._DAILY_ENTRIES_PAGE_SIZE,
+        )
+        entries = self._portal_daily_entries(
+            student,
+            offset=pager["offset"],
+            limit=self._DAILY_ENTRIES_PAGE_SIZE,
+        )
+        values = self._prepare_portal_layout_values()
+        values.update({
+            "page_name": "internship_daily_entries",
+            "student": student,
+            "programs": programs,
+            "entries": entries,
+            "entry_count": entry_count,
+            "pager": pager,
+            "daily_entry_state_labels": self._daily_entry_state_labels(),
+        })
+        return request.render(
+            "internship_logbook.portal_daily_entries",
+            values,
         )
 
     @http.route(

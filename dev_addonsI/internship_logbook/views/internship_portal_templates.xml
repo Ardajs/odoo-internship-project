@@ -87,6 +87,80 @@
                     </div>
                 </div>
             </div>
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h2 class="h4">Daily Entries</h2>
+                    <p class="mb-2">
+                        Review the daily internship entries in your logbook.
+                    </p>
+                    <a href="/my/internship/daily"
+                       class="btn btn-outline-primary">
+                        Daily Entries
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_daily_entries"
+              name="Daily Internship Entries">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Daily Internship Entries</t>
+            </t>
+            <div t-if="not programs"
+                 class="card border-dashed">
+                <div class="card-body">
+                    <h1 class="h4">Daily Internship Entries</h1>
+                    <p>
+                        Create your first internship from the dashboard before
+                        viewing daily entries.
+                    </p>
+                    <a href="/my/internship"
+                       class="btn btn-primary">
+                        Back to My Internship
+                    </a>
+                </div>
+            </div>
+            <div t-elif="not entries"
+                 class="card border-dashed">
+                <div class="card-body">
+                    <h1 class="h4">Daily Internship Entries</h1>
+                    <p class="mb-0">No daily entries yet.</p>
+                </div>
+            </div>
+            <div t-else="">
+                <h1 class="h3 mb-3">Daily Internship Entries</h1>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th scope="col">Date</th>
+                                <th scope="col">Work Title</th>
+                                <th scope="col">Status</th>
+                                <th scope="col"
+                                    class="text-end">Work Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="entries" t-as="entry">
+                                <td>
+                                    <span t-field="entry.entry_date"/>
+                                </td>
+                                <td t-out="entry.title"/>
+                                <td t-out="daily_entry_state_labels.get(
+                                    entry.state,
+                                    entry.state or 'Unknown'
+                                )"/>
+                                <td class="text-end"
+                                    t-out="entry.work_hours"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <t t-call="portal.pager"/>
+            </div>
         </t>
     </template>
 
