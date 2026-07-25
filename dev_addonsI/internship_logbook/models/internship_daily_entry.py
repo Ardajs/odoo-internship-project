@@ -1,9 +1,13 @@
+import logging
 import math
 
 from psycopg2 import IntegrityError
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
+
+
+_logger = logging.getLogger(__name__)
 
 class InternshipDailyEntry(models.Model):
     _name = "internship.daily.entry"
@@ -782,6 +786,8 @@ class InternshipDailyEntry(models.Model):
         self._complete_supervisor_review_activities(
             "Daily internship entry reviewed and approved."
         )
+        if self.env.context.get("skip_review_navigation"):
+            return False
         return self._action_open_next_review()
 
 
@@ -832,7 +838,127 @@ class InternshipDailyEntry(models.Model):
             )
             if template:
                 template.send_mail(self.id, force_send=False)
+        if self.env.context.get("skip_review_navigation"):
+            return False
         return self._action_open_next_review()
+
+    def _bulk_review_notification(self, results, operation):
+        success_label = (
+            _("Approved")
+            if operation == "approve"
+            else _("Revision Requested")
+        )
+        labels = (
+            ("success", success_label),
+            ("rejected", _("Rejected")),
+            ("approved", _("Already Approved")),
+            ("revision", _("Already Revision Requested")),
+            ("unauthorized", _("Unauthorized")),
+            ("independent", _("Independent Workflow")),
+            ("other", _("Other Errors")),
+        )
+        lines = []
+        for key, label in labels:
+            names = results[key]
+            line = _("%(label)s: %(count)s", label=label, count=len(names))
+            if names and key != "unauthorized":
+                line += " — " + ", ".join(names[:5])
+                if len(names) > 5:
+                    line += _(" and %(count)s more", count=len(names) - 5)
+            lines.append(line)
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Bulk Review Summary"),
+                "message": "\n".join(lines),
+                "type": "success" if results["success"] else "warning",
+                "sticky": bool(
+                    results["rejected"]
+                    or results["unauthorized"]
+                    or results["independent"]
+                    or results["other"]
+                ),
+                "next": self.env["ir.actions.actions"]._for_xml_id(
+                    "internship_logbook."
+                    "action_internship_supervisor_review_queue"
+                ),
+            },
+        }
+
+    def _action_bulk_review(self, operation):
+        if not self:
+            raise UserError(_("Select at least one daily entry to review."))
+        if not self._is_internship_manager() and not self.env.user.has_group(
+            "internship_logbook.group_internship_supervisor"
+        ):
+            raise AccessError(
+                _("Only internship supervisors or managers can review entries.")
+            )
+        results = {
+            key: []
+            for key in (
+                "success",
+                "rejected",
+                "approved",
+                "revision",
+                "unauthorized",
+                "independent",
+                "other",
+            )
+        }
+        for entry in self.sorted("id"):
+            try:
+                entry.check_access("write")
+                entry.invalidate_recordset(
+                    ["state", "workflow_mode", "title"]
+                )
+                name = entry.display_name
+                if entry.workflow_mode == "independent":
+                    results["independent"].append(name)
+                    continue
+                if entry.state == "approved":
+                    results["approved"].append(name)
+                    continue
+                if entry.state == "revision":
+                    results["revision"].append(name)
+                    continue
+                if entry.state != "submitted":
+                    results["rejected"].append(name)
+                    continue
+                try:
+                    with self.env.cr.savepoint():
+                        review_entry = entry.with_context(
+                            skip_review_navigation=True
+                        )
+                        if operation == "approve":
+                            review_entry.action_approve()
+                        else:
+                            review_entry.action_request_revision()
+                except AccessError:
+                    entry.invalidate_recordset()
+                    results["unauthorized"].append(str(entry.id))
+                except (UserError, ValidationError):
+                    entry.invalidate_recordset()
+                    results["rejected"].append(name)
+                except Exception:
+                    entry.invalidate_recordset()
+                    _logger.exception(
+                        "Unexpected bulk review error for daily entry id=%s",
+                        entry.id,
+                    )
+                    results["other"].append(name)
+                else:
+                    results["success"].append(name)
+            except AccessError:
+                results["unauthorized"].append(str(entry.id))
+        return self._bulk_review_notification(results, operation)
+
+    def action_bulk_approve(self):
+        return self._action_bulk_review("approve")
+
+    def action_bulk_request_revision(self):
+        return self._action_bulk_review("revision")
 
     def _lock_and_validate_supervised_review(self):
         """Lock and re-check one form review without bypassing access rules."""

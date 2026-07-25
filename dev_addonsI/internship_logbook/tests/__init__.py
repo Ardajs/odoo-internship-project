@@ -13,3 +13,4 @@ from . import test_portal_pdf_export
 from . import test_supervisor_dashboard
 from . import test_supervisor_review_workflow
 from . import test_backend_analytics
+from . import test_bulk_review_operations

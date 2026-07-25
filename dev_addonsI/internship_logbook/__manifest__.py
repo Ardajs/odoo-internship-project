@@ -31,6 +31,7 @@ This module allows companies to manage:
     "data/internship_student_sequence.xml",
     "data/self_registration_mail_template.xml",
     "data/mail_templates.xml",
+    "data/bulk_review_actions.xml",
 
     "views/internship_student_views.xml",
     "views/internship_program_views.xml",
