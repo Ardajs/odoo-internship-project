@@ -717,6 +717,22 @@ class InternshipDailyEntry(models.Model):
         if template:
             template.send_mail(self.id, force_send=False)
 
+    def action_open_communication_center(self):
+        self.ensure_one()
+        self.check_access("read")
+        self.env["internship.communication.service"]._check_operator()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Communication Center"),
+            "res_model": "internship.communication.center.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "active_model": self._name,
+                "active_id": self.id,
+            },
+        }
+
     @api.model
     def _find_pending_reviews(self, domain=None, limit=None):
         """Return caller-visible supervised entries awaiting review."""

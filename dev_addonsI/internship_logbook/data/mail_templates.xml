@@ -131,4 +131,56 @@
         </field>
     </record>
 
+    <record id="mail_template_pending_review_reminder" model="mail.template">
+        <field name="name">Pending Daily Entry Review Reminder</field>
+        <field name="model_id" ref="model_internship_daily_entry"/>
+        <field name="subject">[Internship Logbook] Pending Review Reminder - {{ object.title }}</field>
+        <field name="email_from">{{ user.email_formatted or '' }}</field>
+        <field name="email_to">{{ object.supervisor_id.email or '' }}</field>
+        <field name="body_html" type="html">
+            <div>
+                <p>Hello <t t-out="object.supervisor_id.name"/>,</p>
+                <p>The following daily internship entry is awaiting your review.</p>
+                <p><strong>Student:</strong> <t t-out="object.student_id.name"/></p>
+                <p><strong>Title:</strong> <t t-out="object.title"/></p>
+                <p><strong>Date:</strong> <t t-out="object.entry_date"/></p>
+                <p>Please log in to Odoo to review the entry.</p>
+            </div>
+        </field>
+    </record>
+
+    <record id="mail_template_missing_entries_reminder" model="mail.template">
+        <field name="name">Missing Daily Entries Reminder</field>
+        <field name="model_id" ref="model_internship_program"/>
+        <field name="subject">[Internship Logbook] Missing Daily Entries - {{ object.display_name }}</field>
+        <field name="email_from">{{ user.email_formatted or '' }}</field>
+        <field name="body_html" type="html">
+            <div>
+                <p>Hello,</p>
+                <p>The internship program has missing daily entries that require attention.</p>
+                <p><strong>Program:</strong> <t t-out="object.display_name"/></p>
+                <p><strong>Student:</strong> <t t-out="object.student_id.name"/></p>
+                <p>Please review the internship logbook in Odoo.</p>
+            </div>
+        </field>
+    </record>
+
+    <record id="mail_template_program_ending_reminder" model="mail.template">
+        <field name="name">Internship Program Ending Soon Reminder</field>
+        <field name="model_id" ref="model_internship_program"/>
+        <field name="subject">[Internship Logbook] Internship Ending Soon - {{ object.display_name }}</field>
+        <field name="email_from">{{ user.email_formatted or '' }}</field>
+        <field name="email_to">{{ object.supervisor_id.email or '' }}</field>
+        <field name="body_html" type="html">
+            <div>
+                <p>Hello <t t-out="object.supervisor_id.name"/>,</p>
+                <p>The following internship program is approaching its end date.</p>
+                <p><strong>Program:</strong> <t t-out="object.display_name"/></p>
+                <p><strong>Student:</strong> <t t-out="object.student_id.name"/></p>
+                <p><strong>End Date:</strong> <t t-out="object.end_date"/></p>
+                <p>Please review the program status in Odoo.</p>
+            </div>
+        </field>
+    </record>
+
 </odoo>

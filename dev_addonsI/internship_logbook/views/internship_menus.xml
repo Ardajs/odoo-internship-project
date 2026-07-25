@@ -116,4 +116,27 @@
         groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
         sequence="50"/>
 
+    <menuitem
+        id="menu_internship_communication"
+        name="Communication"
+        parent="menu_internship_root"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_internship_entry_communications"
+        name="Entry Communications"
+        parent="menu_internship_communication"
+        action="action_internship_entry_communications"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_internship_program_reminders"
+        name="Program Reminders"
+        parent="menu_internship_communication"
+        action="action_internship_program_reminders"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="20"/>
+
 </odoo>

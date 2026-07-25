@@ -30,6 +30,7 @@ This module allows companies to manage:
 
     "data/internship_student_sequence.xml",
     "data/self_registration_mail_template.xml",
+    "data/communication_subtypes.xml",
     "data/mail_templates.xml",
     "data/bulk_review_actions.xml",
     "data/ir_cron.xml",
@@ -40,6 +41,8 @@ This module allows companies to manage:
     "views/internship_supervisor_dashboard_views.xml",
     "views/internship_analytics_views.xml",
     "wizard/ai_assistant_wizard_views.xml",
+    "wizard/communication_center_wizard_views.xml",
+    "views/communication_center_views.xml",
     "views/internship_menus.xml",
 
     "report/internship_paperformat.xml",

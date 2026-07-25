@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_daily_entry_form_communication_center" model="ir.ui.view">
+        <field name="name">internship.daily.entry.form.communication.center</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="inherit_id" ref="view_internship_daily_entry_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_open_communication_center" type="object"
+                        string="Communication" class="btn-secondary"
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_program_form_communication_center" model="ir.ui.view">
+        <field name="name">internship.program.form.communication.center</field>
+        <field name="model">internship.program</field>
+        <field name="inherit_id" ref="view_internship_program_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_open_communication_center" type="object"
+                        string="Communication" class="btn-secondary"
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_internship_entry_communications" model="ir.actions.act_window">
+        <field name="name">Entry Communications</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('workflow_mode', '=', 'supervised')]</field>
+    </record>
+
+    <record id="action_internship_program_reminders" model="ir.actions.act_window">
+        <field name="name">Program Reminders</field>
+        <field name="res_model">internship.program</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'active')]</field>
+    </record>
+</odoo>

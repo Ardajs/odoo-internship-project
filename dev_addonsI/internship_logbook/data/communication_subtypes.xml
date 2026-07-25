@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="mt_communication_entry_submitted" model="mail.message.subtype">
+        <field name="name">Communication: Daily Entry Submitted</field>
+        <field name="internal" eval="True"/>
+    </record>
+    <record id="mt_communication_revision_requested" model="mail.message.subtype">
+        <field name="name">Communication: Revision Requested</field>
+        <field name="internal" eval="True"/>
+    </record>
+    <record id="mt_communication_entry_approved" model="mail.message.subtype">
+        <field name="name">Communication: Daily Entry Approved</field>
+        <field name="internal" eval="True"/>
+    </record>
+    <record id="mt_communication_pending_review" model="mail.message.subtype">
+        <field name="name">Communication: Pending Review Reminder</field>
+        <field name="internal" eval="True"/>
+    </record>
+    <record id="mt_communication_missing_entries" model="mail.message.subtype">
+        <field name="name">Communication: Missing Daily Entries</field>
+        <field name="internal" eval="True"/>
+    </record>
+    <record id="mt_communication_program_ending" model="mail.message.subtype">
+        <field name="name">Communication: Program Ending Soon</field>
+        <field name="internal" eval="True"/>
+    </record>
+</odoo>

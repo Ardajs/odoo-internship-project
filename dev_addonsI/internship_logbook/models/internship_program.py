@@ -461,6 +461,22 @@ class InternshipProgram(models.Model):
             return self.supervisor_id
         return self.env["res.users"]
 
+    def action_open_communication_center(self):
+        self.ensure_one()
+        self.check_access("read")
+        self.env["internship.communication.service"]._check_operator()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Communication Center"),
+            "res_model": "internship.communication.center.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "active_model": self._name,
+                "active_id": self.id,
+            },
+        }
+
     @api.model
     def _cleanup_stale_program_reminders(
         self, summary, today=None, days=7, batch_limit=200
