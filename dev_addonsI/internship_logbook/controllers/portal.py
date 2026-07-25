@@ -13,6 +13,7 @@ from odoo.addons.portal.controllers.portal import pager as portal_pager
 class InternshipPortal(CustomerPortal):
     _ONBOARDING_TEXT_MAX = 200
     _DAILY_ENTRIES_PAGE_SIZE = 30
+    _DASHBOARD_RECENT_ENTRY_LIMIT = 5
     _DAILY_ENTRY_TITLE_MAX = 200
     _DAILY_ENTRY_DESCRIPTION_MAX = 10000
 
@@ -96,6 +97,167 @@ class InternshipPortal(CustomerPortal):
             attributes=["selection"],
         ).get("state", {})
         return dict(state_field.get("selection") or [])
+
+    def _program_selection_labels(self, field_name):
+        field = request.env["internship.program"].fields_get(
+            [field_name],
+            attributes=["selection"],
+        ).get(field_name, {})
+        return dict(field.get("selection") or [])
+
+    def _portal_context_today(self):
+        return fields.Date.context_today(request.env.user)
+
+    def _resolve_portal_dashboard_program(self, student):
+        empty_program = request.env["internship.program"]
+        if not student:
+            return {
+                "program": empty_program,
+                "status": "none",
+            }
+
+        owned_domain = [("student_id", "=", student.id)]
+        active_programs = request.env["internship.program"].search([
+            *owned_domain,
+            ("active", "=", True),
+            ("state", "=", "active"),
+        ], order="start_date desc, id desc", limit=2)
+        if len(active_programs) == 1:
+            return {
+                "program": active_programs,
+                "status": "active",
+            }
+        if len(active_programs) > 1:
+            return {
+                "program": empty_program,
+                "status": "multiple_active",
+            }
+
+        historical_program = request.env[
+            "internship.program"
+        ].with_context(active_test=False).search(
+            owned_domain,
+            order="start_date desc, id desc",
+            limit=1,
+        )
+        return {
+            "program": historical_program,
+            "status": "historical" if historical_program else "none",
+        }
+
+    def _portal_program_date_metrics(self, program, *, today=None):
+        metrics = {
+            "valid": False,
+            "total_program_days": 0,
+            "elapsed_program_days": 0,
+            "remaining_program_days": 0,
+        }
+        if (
+            not program
+            or not program.start_date
+            or not program.end_date
+            or program.end_date < program.start_date
+        ):
+            return metrics
+
+        today = today or self._portal_context_today()
+        total_days = (program.end_date - program.start_date).days + 1
+        if today < program.start_date:
+            elapsed_days = 0
+        elif today > program.end_date:
+            elapsed_days = total_days
+        else:
+            elapsed_days = (today - program.start_date).days + 1
+        metrics.update({
+            "valid": True,
+            "total_program_days": total_days,
+            "elapsed_program_days": elapsed_days,
+            "remaining_program_days": total_days - elapsed_days,
+        })
+        return metrics
+
+    def _portal_program_entry_domain(self, program, student):
+        return [
+            ("program_id", "=", program.id),
+            ("student_id", "=", student.id),
+            ("program_id.student_id", "=", student.id),
+            ("active", "=", True),
+        ]
+
+    def _portal_program_entry_metrics(self, program, student):
+        metrics = {
+            "total_entry_count": 0,
+            "draft_entry_count": 0,
+            "completed_entry_count": 0,
+            "other_entry_count": 0,
+            "total_work_hours": 0.0,
+        }
+        if not program or not student:
+            return metrics
+
+        entry_model = request.env["internship.daily.entry"]
+        domain = self._portal_program_entry_domain(program, student)
+        grouped_states = entry_model._read_group(
+            domain,
+            groupby=["state"],
+            aggregates=["__count"],
+        )
+        state_counts = {
+            state: count
+            for state, count in grouped_states
+        }
+        total_count = sum(state_counts.values())
+        valid_hours = entry_model._read_group(
+            [
+                *domain,
+                ("work_hours", ">", 0),
+                ("work_hours", "<=", 24),
+            ],
+            aggregates=["work_hours:sum"],
+        )
+        total_hours = valid_hours[0][0] if valid_hours else 0.0
+        draft_count = state_counts.get("draft", 0)
+        completed_count = state_counts.get("completed", 0)
+        metrics.update({
+            "total_entry_count": total_count,
+            "draft_entry_count": draft_count,
+            "completed_entry_count": completed_count,
+            "other_entry_count": (
+                total_count - draft_count - completed_count
+            ),
+            "total_work_hours": round(float(total_hours or 0.0), 2),
+        })
+        return metrics
+
+    def _portal_recent_daily_entries(self, program, student, limit=None):
+        if not program or not student:
+            return request.env["internship.daily.entry"]
+        return request.env["internship.daily.entry"].search(
+            self._portal_program_entry_domain(program, student),
+            order="entry_date desc, id desc",
+            limit=limit or self._DASHBOARD_RECENT_ENTRY_LIMIT,
+        )
+
+    def _portal_program_progress(self, program, student):
+        date_metrics = self._portal_program_date_metrics(program)
+        entry_metrics = self._portal_program_entry_metrics(
+            program,
+            student,
+        )
+        total_days = date_metrics["total_program_days"]
+        progress = (
+            entry_metrics["completed_entry_count"] / total_days * 100
+            if total_days > 0
+            else 0.0
+        )
+        return {
+            **date_metrics,
+            **entry_metrics,
+            "progress_percentage": round(
+                min(max(progress, 0.0), 100.0),
+                2,
+            ),
+        }
 
     def _empty_daily_entry_values(self):
         return {
@@ -266,11 +428,37 @@ class InternshipPortal(CustomerPortal):
 
     def _prepare_internship_portal_values(self, student):
         programs = self._portal_programs(student)
+        dashboard_selection = self._resolve_portal_dashboard_program(student)
+        dashboard_program = dashboard_selection["program"]
+        dashboard_status = dashboard_selection["status"]
+        program_metrics = (
+            self._portal_program_progress(dashboard_program, student)
+            if dashboard_program
+            else {}
+        )
         values = self._prepare_portal_layout_values()
         values.update({
             "page_name": "internship",
             "student": student,
             "programs": programs,
+            "dashboard_program": dashboard_program,
+            "dashboard_program_status": dashboard_status,
+            "program_metrics": program_metrics,
+            "recent_entries": self._portal_recent_daily_entries(
+                dashboard_program,
+                student,
+            ),
+            "program_workflow_labels": self._program_selection_labels(
+                "workflow_mode"
+            ),
+            "program_state_labels": self._program_selection_labels("state"),
+            "daily_entry_state_labels": self._daily_entry_state_labels(),
+            "can_create_daily_entry": (
+                dashboard_status == "active"
+                and bool(
+                    self._resolve_portal_entry_program(student)
+                )
+            ),
             "education_complete": bool(
                 student.university and student.department
             ),
@@ -362,6 +550,7 @@ class InternshipPortal(CustomerPortal):
         auth="user",
         website=True,
         methods=["GET"],
+        sitemap=False,
     )
     def portal_my_internship(self, **_ignored):
         if not self._is_portal_intern():

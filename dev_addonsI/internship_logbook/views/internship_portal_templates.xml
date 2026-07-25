@@ -45,7 +45,8 @@
                 Your education profile still needs university and department
                 information. Profile editing will be added during onboarding.
             </div>
-            <div t-if="not programs" class="card border-dashed">
+            <div t-if="dashboard_program_status == 'none'"
+                 class="card border-dashed">
                 <div class="card-body">
                     <h2 class="h4">Create Your First Internship</h2>
                     <p class="mb-2">
@@ -57,33 +58,344 @@
                     </a>
                 </div>
             </div>
-            <div t-else="" class="card">
-                <div class="card-body">
-                    <h2 class="h4">Current Internship</h2>
-                    <div t-foreach="programs" t-as="program">
+            <div t-elif="dashboard_program_status == 'multiple_active'"
+                 class="alert alert-warning"
+                 role="alert">
+                More than one active internship program was found. Progress
+                cannot be summarized until an administrator resolves the
+                active-program ambiguity.
+            </div>
+            <div t-elif="dashboard_program">
+                <div t-if="dashboard_program_status == 'historical'
+                           and dashboard_program.state == 'draft'"
+                     class="alert alert-info"
+                     role="status">
+                    This internship is in Draft and is waiting to be
+                    activated. It is shown below as a read-only summary.
+                </div>
+                <div t-elif="dashboard_program_status == 'historical'"
+                     class="alert alert-info"
+                     role="status">
+                    No current active internship was found. The most recent
+                    internship is shown below as a read-only summary.
+                </div>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-start
+                                    justify-content-between gap-2 mb-3">
+                            <div>
+                                <h2 t-if="dashboard_program_status == 'active'
+                                          or dashboard_program.state == 'draft'"
+                                    class="h4 mb-1">
+                                    Current Internship
+                                </h2>
+                                <h2 t-else="" class="h4 mb-1">
+                                    Internship Program
+                                </h2>
+                                <p class="text-muted mb-0"
+                                   t-out="dashboard_program.name"/>
+                            </div>
+                            <span class="badge text-bg-secondary"
+                                  t-out="program_state_labels.get(
+                                      dashboard_program.state,
+                                      dashboard_program.state or 'Unknown'
+                                  )"/>
+                        </div>
                         <dl class="row mb-0">
                             <dt class="col-sm-4">Company</dt>
-                            <dd class="col-sm-8" t-out="program.company_name"/>
+                            <dd class="col-sm-8"
+                                t-out="dashboard_program.company_name"/>
                             <dt class="col-sm-4">Department</dt>
-                            <dd class="col-sm-8" t-out="program.department"/>
+                            <dd class="col-sm-8"
+                                t-out="dashboard_program.department"/>
+                            <dt class="col-sm-4">Workflow</dt>
+                            <dd class="col-sm-8"
+                                t-out="program_workflow_labels.get(
+                                    dashboard_program.workflow_mode,
+                                    dashboard_program.workflow_mode
+                                    or 'Unknown'
+                                )"/>
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8"
+                                t-out="program_state_labels.get(
+                                    dashboard_program.state,
+                                    dashboard_program.state or 'Unknown'
+                                )"/>
                             <dt class="col-sm-4">Start date</dt>
                             <dd class="col-sm-8">
-                                <span t-field="program.start_date"/>
+                                <span t-field="dashboard_program.start_date"/>
                             </dd>
                             <dt class="col-sm-4">End date</dt>
                             <dd class="col-sm-8">
-                                <span t-field="program.end_date"/>
+                                <span t-field="dashboard_program.end_date"/>
                             </dd>
-                            <dt class="col-sm-4">Mode</dt>
-                            <dd class="col-sm-8">
-                                <span t-if="program.workflow_mode == 'independent'">
-                                    Independent
-                                </span>
-                                <span t-else="">Supervised</span>
-                            </dd>
-                            <dt class="col-sm-4">Status</dt>
-                            <dd class="col-sm-8" t-out="program.state"/>
                         </dl>
+                    </div>
+                </div>
+                <div t-if="program_metrics.get('valid')"
+                     class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <h2 class="h5 mb-1">Internship Progress</h2>
+                                <p class="small text-muted mb-2">
+                                    Based on completed daily entries and total
+                                    calendar days in the program.
+                                </p>
+                            </div>
+                            <strong>
+                                <span t-out="program_metrics.get(
+                                    'progress_percentage',
+                                    0
+                                )"/>%
+                            </strong>
+                        </div>
+                        <div class="progress"
+                             role="progressbar"
+                             aria-label="Internship Progress"
+                             aria-valuemin="0"
+                             aria-valuemax="100"
+                             t-att-aria-valuenow="program_metrics.get(
+                                 'progress_percentage',
+                                 0
+                             )">
+                            <div class="progress-bar"
+                                 t-attf-style="width: #{
+                                     program_metrics.get(
+                                         'progress_percentage',
+                                         0
+                                     )
+                                 }%"/>
+                        </div>
+                        <p class="small mt-2 mb-0">
+                            <span t-out="program_metrics.get(
+                                'completed_entry_count',
+                                0
+                            )"/>
+                            completed entries out of
+                            <span t-out="program_metrics.get(
+                                'total_program_days',
+                                0
+                            )"/>
+                            calendar days.
+                        </p>
+                    </div>
+                </div>
+                <div t-else=""
+                     class="alert alert-warning"
+                     role="alert">
+                    Progress and calendar-day metrics are unavailable because
+                    the program dates are incomplete or invalid.
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">Total Days</div>
+                                <div class="h4 mb-0"
+                                     data-metric="total-days"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'total_program_days',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'total_program_days',
+                                         0
+                                     ) if program_metrics.get('valid')
+                                     else 'N/A'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">Elapsed Days</div>
+                                <div class="h4 mb-0"
+                                     data-metric="elapsed-days"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'elapsed_program_days',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'elapsed_program_days',
+                                         0
+                                     ) if program_metrics.get('valid')
+                                     else 'N/A'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">
+                                    Remaining Days
+                                </div>
+                                <div class="h4 mb-0"
+                                     data-metric="remaining-days"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'remaining_program_days',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'remaining_program_days',
+                                         0
+                                     ) if program_metrics.get('valid')
+                                     else 'N/A'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">
+                                    Total Entries
+                                </div>
+                                <div class="h4 mb-0"
+                                     data-metric="total-entries"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'total_entry_count',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'total_entry_count',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">Draft</div>
+                                <div class="h4 mb-0"
+                                     data-metric="draft-entries"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'draft_entry_count',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'draft_entry_count',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">Completed</div>
+                                <div class="h4 mb-0"
+                                     data-metric="completed-entries"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'completed_entry_count',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'completed_entry_count',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div t-if="program_metrics.get('other_entry_count')"
+                         class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">
+                                    Other States
+                                </div>
+                                <div class="h4 mb-0"
+                                     data-metric="other-entries"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'other_entry_count',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'other_entry_count',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">
+                                    Recorded Hours
+                                </div>
+                                <div class="h4 mb-0"
+                                     data-metric="recorded-hours"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'total_work_hours',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'total_work_hours',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between
+                                    align-items-center gap-3 mb-3">
+                            <h2 class="h5 mb-0">Recent Daily Entries</h2>
+                            <a href="/my/internship/daily">
+                                View All Daily Entries
+                            </a>
+                        </div>
+                        <p t-if="not recent_entries"
+                           class="text-muted mb-0">
+                            No daily entries yet.
+                        </p>
+                        <div t-else="" class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Date</th>
+                                        <th scope="col">Title</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col"
+                                            class="text-end">Hours</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="recent_entries"
+                                        t-as="entry">
+                                        <td>
+                                            <span t-field="entry.entry_date"/>
+                                        </td>
+                                        <td t-out="entry.title"/>
+                                        <td t-out="daily_entry_state_labels.get(
+                                            entry.state,
+                                            entry.state or 'Unknown'
+                                        )"/>
+                                        <td class="text-end"
+                                            t-out="entry.work_hours"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -95,7 +407,12 @@
                     </p>
                     <a href="/my/internship/daily"
                        class="btn btn-outline-primary">
-                        Daily Entries
+                        View Daily Entries
+                    </a>
+                    <a t-if="can_create_daily_entry"
+                       href="/my/internship/daily/new"
+                       class="btn btn-primary ms-2">
+                        Create Daily Entry
                     </a>
                 </div>
             </div>
