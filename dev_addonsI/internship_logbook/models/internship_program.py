@@ -1,11 +1,19 @@
+import logging
+
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 
+_logger = logging.getLogger(__name__)
+
+
 class InternshipProgram(models.Model):
     _name = 'internship.program'
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = 'Internship Program'
     _order = 'start_date desc, id desc'
+    _missing_activity_summary = "Missing Daily Entries"
+    _ending_activity_summary = "Internship Program Ending Soon"
 
     name = fields.Char(
         string='Program Name',
@@ -355,6 +363,323 @@ class InternshipProgram(models.Model):
             ("id", "in" if wants_missing else "not in", missing_ids)
         ]
 
+    @api.model
+    def _find_missing_entries(self, today=None, limit=None, domain=None):
+        """Return caller-visible active supervised programs with missing days."""
+        search_domain = [
+            ("active", "=", True),
+            ("workflow_mode", "=", "supervised"),
+            ("state", "=", "active"),
+        ]
+        if domain:
+            search_domain.extend(domain)
+        programs = self.search(
+            search_domain, order="end_date asc, id asc", limit=limit
+        )
+        missing_counts = programs._missing_day_counts(today=today)
+        missing_ids = {
+            program_id
+            for program_id, count in missing_counts.items()
+            if count > 0
+        }
+        return programs.filtered(lambda program: program.id in missing_ids)
+
+    @api.model
+    def _find_programs_ending_soon(
+        self, days=7, today=None, limit=None, domain=None
+    ):
+        """Return caller-visible active programs ending in the date window."""
+        if not isinstance(days, int) or days < 0:
+            raise ValidationError(_("Reminder days must be a positive integer."))
+        today = fields.Date.to_date(today or fields.Date.context_today(self))
+        search_domain = [
+            ("active", "=", True),
+            ("state", "=", "active"),
+            ("end_date", ">=", today),
+            ("end_date", "<=", fields.Date.add(today, days=days)),
+        ]
+        if domain:
+            search_domain.extend(domain)
+        return self.search(
+            search_domain, order="end_date asc, id asc", limit=limit
+        )
+
+    @api.model
+    def _cron_manager_context_allowed(self):
+        return not self.env.su and self.env.user.has_group(
+            "internship_logbook.group_internship_manager"
+        )
+
+    def _program_reminder_activities(self, summary, user=None):
+        activities = self.activity_ids.filtered(
+            lambda activity: activity.summary == summary
+        )
+        if user:
+            activities = activities.filtered(
+                lambda activity: activity.user_id == user
+            )
+        return activities
+
+    def _schedule_unique_program_reminder(self, user, summary, note):
+        self.ensure_one()
+        if not user or self._program_reminder_activities(summary, user=user):
+            return self.env["mail.activity"]
+        return self.activity_schedule(
+            "mail.mail_activity_data_todo",
+            user_id=user.id,
+            summary=summary,
+            note=note,
+        )
+
+    def _valid_program_reminder_assignee(self, user):
+        self.ensure_one()
+        if not user or not user.active or user.share:
+            return False
+        try:
+            self.with_user(user).check_access("read")
+        except AccessError:
+            return False
+        return True
+
+    def _missing_entry_reminder_assignee(self):
+        self.ensure_one()
+        student_user = self.student_id.user_id
+        if (
+            student_user.has_group(
+                "internship_logbook.group_internship_intern"
+            )
+            and self._valid_program_reminder_assignee(student_user)
+        ):
+            return student_user
+        if self._valid_program_reminder_assignee(self.supervisor_id):
+            return self.supervisor_id
+        return self.env["res.users"]
+
+    def _ending_soon_reminder_assignee(self):
+        self.ensure_one()
+        if self._valid_program_reminder_assignee(self.supervisor_id):
+            return self.supervisor_id
+        return self.env["res.users"]
+
+    @api.model
+    def _cleanup_stale_program_reminders(
+        self, summary, today=None, days=7, batch_limit=200
+    ):
+        model_id = self.env["ir.model"]._get_id(self._name)
+        activities = self.env["mail.activity"].search([
+            ("res_model_id", "=", model_id),
+            ("summary", "=", summary),
+        ], order="id asc", limit=batch_limit)
+        programs = self.search([("id", "in", activities.mapped("res_id"))])
+        if summary == self._missing_activity_summary:
+            counts = programs._missing_day_counts(today=today)
+            eligible_ids = {
+                program_id
+                for program_id, count in counts.items()
+                if count > 0
+            }
+        else:
+            today = fields.Date.to_date(
+                today or fields.Date.context_today(self)
+            )
+            end_date = fields.Date.add(today, days=days)
+            eligible_ids = set(programs.filtered(lambda program: (
+                program.active
+                and program.state == "active"
+                and program.end_date
+                and today <= program.end_date <= end_date
+            )).ids)
+        stale = activities.filtered(
+            lambda activity: activity.res_id not in eligible_ids
+        )
+        if stale:
+            stale.action_feedback(
+                feedback=_("Automated reminder is no longer applicable.")
+            )
+        return len(stale)
+
+    @api.model
+    def _process_missing_entry_reminders(
+        self, today=None, domain=None, batch_limit=200
+    ):
+        stats = {
+            "found": 0,
+            "created": 0,
+            "existing": 0,
+            "skipped": 0,
+            "failed": 0,
+            "cleaned": 0,
+        }
+        programs = self._find_missing_entries(
+            today=today, limit=batch_limit, domain=domain
+        )
+        stats["found"] = len(programs)
+        stats["cleaned"] = self._cleanup_stale_program_reminders(
+            self._missing_activity_summary,
+            today=today,
+            batch_limit=batch_limit,
+        )
+        missing_counts = programs._missing_day_counts(today=today)
+        for program in programs:
+            try:
+                with self.env.cr.savepoint():
+                    assignee = program._missing_entry_reminder_assignee()
+                    if not assignee:
+                        stats["skipped"] += 1
+                        _logger.warning(
+                            "Missing entry reminder skipped: program_id=%s "
+                            "reason=no_internal_assignee",
+                            program.id,
+                        )
+                        continue
+                    if program._program_reminder_activities(
+                        program._missing_activity_summary,
+                        user=assignee,
+                    ):
+                        stats["existing"] += 1
+                        continue
+                    program._schedule_unique_program_reminder(
+                        assignee,
+                        program._missing_activity_summary,
+                        _(
+                            "Review %(program)s and complete the missing "
+                            "daily entries. Current missing-day count: %(count)s.",
+                            program=program.display_name,
+                            count=missing_counts.get(program.id, 0),
+                        ),
+                    )
+                    stats["created"] += 1
+            except (AccessError, UserError, ValidationError) as error:
+                stats["skipped"] += 1
+                _logger.warning(
+                    "Missing entry reminder skipped: program_id=%s "
+                    "error_type=%s",
+                    program.id,
+                    type(error).__name__,
+                )
+            except Exception:
+                stats["failed"] += 1
+                _logger.exception(
+                    "Missing entry reminder failed: program_id=%s",
+                    program.id,
+                )
+        return stats
+
+    @api.model
+    def _process_ending_soon_reminders(
+        self, days=7, today=None, domain=None, batch_limit=200
+    ):
+        stats = {
+            "found": 0,
+            "created": 0,
+            "existing": 0,
+            "skipped": 0,
+            "failed": 0,
+            "cleaned": 0,
+        }
+        programs = self._find_programs_ending_soon(
+            days=days, today=today, limit=batch_limit, domain=domain
+        )
+        stats["found"] = len(programs)
+        stats["cleaned"] = self._cleanup_stale_program_reminders(
+            self._ending_activity_summary,
+            today=today,
+            days=days,
+            batch_limit=batch_limit,
+        )
+        for program in programs:
+            try:
+                with self.env.cr.savepoint():
+                    assignee = program._ending_soon_reminder_assignee()
+                    if not assignee:
+                        stats["skipped"] += 1
+                        _logger.warning(
+                            "Ending-soon reminder skipped: program_id=%s "
+                            "reason=no_internal_supervisor",
+                            program.id,
+                        )
+                        continue
+                    if program._program_reminder_activities(
+                        program._ending_activity_summary,
+                        user=assignee,
+                    ):
+                        stats["existing"] += 1
+                        continue
+                    program._schedule_unique_program_reminder(
+                        assignee,
+                        program._ending_activity_summary,
+                        _(
+                            "Internship program %(program)s ends on %(date)s. "
+                            "Please review its current progress.",
+                            program=program.display_name,
+                            date=program.end_date,
+                        ),
+                    )
+                    stats["created"] += 1
+            except (AccessError, UserError, ValidationError) as error:
+                stats["skipped"] += 1
+                _logger.warning(
+                    "Ending-soon reminder skipped: program_id=%s "
+                    "error_type=%s",
+                    program.id,
+                    type(error).__name__,
+                )
+            except Exception:
+                stats["failed"] += 1
+                _logger.exception(
+                    "Ending-soon reminder failed: program_id=%s",
+                    program.id,
+                )
+        return stats
+
+    @api.model
+    def _cron_remind_missing_entries(self, batch_limit=200):
+        if not self._cron_manager_context_allowed():
+            stats = {
+                "found": 0, "created": 0, "existing": 0,
+                "skipped": 0, "failed": 1, "cleaned": 0,
+            }
+            _logger.error(
+                "Missing entry reminders refused: cron user must be an "
+                "internal Internship Manager and must not be superuser"
+            )
+            return stats
+        stats = self._process_missing_entry_reminders(
+            batch_limit=batch_limit
+        )
+        _logger.info(
+            "Missing entry reminders: found=%s created=%s existing=%s "
+            "skipped=%s failed=%s cleaned=%s",
+            stats["found"], stats["created"], stats["existing"],
+            stats["skipped"], stats["failed"], stats["cleaned"],
+        )
+        return stats
+
+    @api.model
+    def _cron_remind_programs_ending_soon(
+        self, days=7, batch_limit=200
+    ):
+        if not self._cron_manager_context_allowed():
+            stats = {
+                "found": 0, "created": 0, "existing": 0,
+                "skipped": 0, "failed": 1, "cleaned": 0,
+            }
+            _logger.error(
+                "Ending-soon reminders refused: cron user must be an "
+                "internal Internship Manager and must not be superuser"
+            )
+            return stats
+        stats = self._process_ending_soon_reminders(
+            days=days, batch_limit=batch_limit
+        )
+        _logger.info(
+            "Ending-soon reminders: found=%s created=%s existing=%s "
+            "skipped=%s failed=%s cleaned=%s",
+            stats["found"], stats["created"], stats["existing"],
+            stats["skipped"], stats["failed"], stats["cleaned"],
+        )
+        return stats
+
 
     @api.constrains("student_id", "start_date", "end_date")
     def _check_overlapping_internship_programs(self):
@@ -545,6 +870,27 @@ class InternshipProgram(models.Model):
     def _write_workflow_state(self, state):
         return super(InternshipProgram, self).write({"state": state})
 
+    def _complete_daily_entry_workflow_activities(self, feedback):
+        entries = self.daily_entry_ids
+        entries._complete_workflow_activities(
+            entries._review_activity_summary,
+            feedback,
+        )
+        entries._complete_workflow_activities(
+            entries._revision_activity_summary,
+            feedback,
+        )
+
+    def _complete_program_reminder_activities(self, feedback):
+        reminders = self.activity_ids.filtered(
+            lambda activity: activity.summary in {
+                self._missing_activity_summary,
+                self._ending_activity_summary,
+            }
+        )
+        if reminders:
+            reminders.action_feedback(feedback=feedback)
+
     def action_start(self):
         for record in self:
             record._check_supervised_workflow_actor()
@@ -594,6 +940,12 @@ class InternshipProgram(models.Model):
                 )
 
             record._write_workflow_state("completed")
+            record._complete_daily_entry_workflow_activities(
+                _("Internship program completed."),
+            )
+            record._complete_program_reminder_activities(
+                _("Internship program completed."),
+            )
 
     def action_reopen(self):
         for record in self:
@@ -617,6 +969,12 @@ class InternshipProgram(models.Model):
                     "Only draft or active internship programs can be cancelled."
                 )
             record._write_workflow_state("cancelled")
+            record._complete_daily_entry_workflow_activities(
+                _("Internship program cancelled."),
+            )
+            record._complete_program_reminder_activities(
+                _("Internship program cancelled."),
+            )
 
     def action_reset_to_draft(self):
         for record in self:

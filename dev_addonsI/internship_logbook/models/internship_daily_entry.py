@@ -17,6 +17,8 @@ class InternshipDailyEntry(models.Model):
     ]
     _description = "Internship Daily Entry"
     _order = "entry_date desc, id desc"
+    _review_activity_summary = "Review Daily Internship Entry"
+    _revision_activity_summary = "Revise Daily Internship Entry"
     _intern_content_fields = {
         "title",
         "entry_date",
@@ -683,6 +685,150 @@ class InternshipDailyEntry(models.Model):
                 "use the independent internship workflow."
             )
 
+    def _workflow_activities(self, summary, user=None):
+        activities = self.activity_ids.filtered(
+            lambda activity: activity.summary == summary
+        )
+        if user:
+            activities = activities.filtered(
+                lambda activity: activity.user_id == user
+            )
+        return activities
+
+    def _schedule_unique_workflow_activity(self, user, summary, note):
+        self.ensure_one()
+        if not user or self._workflow_activities(summary, user=user):
+            return self.env["mail.activity"]
+        return self.activity_schedule(
+            "mail.mail_activity_data_todo",
+            user_id=user.id,
+            summary=summary,
+            note=note,
+        )
+
+    def _complete_workflow_activities(self, summary, feedback, user=None):
+        activities = self._workflow_activities(summary, user=user)
+        if activities:
+            activities.action_feedback(feedback=feedback)
+
+    def _send_workflow_notification(self, template_xmlid):
+        self.ensure_one()
+        template = self.env.ref(template_xmlid, raise_if_not_found=False)
+        if template:
+            template.send_mail(self.id, force_send=False)
+
+    @api.model
+    def _find_pending_reviews(self, domain=None, limit=None):
+        """Return caller-visible supervised entries awaiting review."""
+        search_domain = [
+            ("active", "=", True),
+            ("workflow_mode", "=", "supervised"),
+            ("program_state", "=", "active"),
+            ("state", "=", "submitted"),
+        ]
+        if domain:
+            search_domain.extend(domain)
+        return self.search(
+            search_domain,
+            order="write_date asc, entry_date asc, id asc",
+            limit=limit,
+        )
+
+    @api.model
+    def _cron_manager_context_allowed(self):
+        return not self.env.su and self.env.user.has_group(
+            "internship_logbook.group_internship_manager"
+        )
+
+    @api.model
+    def _process_pending_review_reminders(
+        self, domain=None, batch_limit=200
+    ):
+        stats = {
+            "found": 0,
+            "created": 0,
+            "existing": 0,
+            "skipped": 0,
+            "failed": 0,
+        }
+        entries = self._find_pending_reviews(
+            domain=domain, limit=batch_limit
+        )
+        stats["found"] = len(entries)
+        for entry in entries:
+            try:
+                with self.env.cr.savepoint():
+                    supervisor = entry.supervisor_id
+                    if (
+                        not supervisor
+                        or not supervisor.active
+                        or supervisor.share
+                    ):
+                        stats["skipped"] += 1
+                        _logger.warning(
+                            "Pending review reminder skipped: entry_id=%s "
+                            "reason=no_internal_supervisor",
+                            entry.id,
+                        )
+                        continue
+                    entry.with_user(supervisor).check_access("read")
+                    if entry._workflow_activities(
+                        entry._review_activity_summary,
+                        user=supervisor,
+                    ):
+                        stats["existing"] += 1
+                        continue
+                    entry._schedule_unique_workflow_activity(
+                        supervisor,
+                        entry._review_activity_summary,
+                        _("Please review the submitted daily internship entry."),
+                    )
+                    stats["created"] += 1
+            except (AccessError, UserError, ValidationError) as error:
+                stats["skipped"] += 1
+                _logger.warning(
+                    "Pending review reminder skipped: entry_id=%s "
+                    "error_type=%s",
+                    entry.id,
+                    type(error).__name__,
+                )
+            except Exception:
+                stats["failed"] += 1
+                _logger.exception(
+                    "Pending review reminder failed: entry_id=%s",
+                    entry.id,
+                )
+        return stats
+
+    @api.model
+    def _cron_remind_pending_reviews(self, batch_limit=200):
+        if not self._cron_manager_context_allowed():
+            stats = {
+                "found": 0,
+                "created": 0,
+                "existing": 0,
+                "skipped": 0,
+                "failed": 1,
+            }
+            _logger.error(
+                "Pending review reminders refused: cron user must be an "
+                "internal Internship Manager and must not be superuser"
+            )
+            return stats
+        stats = self._process_pending_review_reminders(
+            batch_limit=batch_limit
+        )
+        _logger.info(
+            "Pending review reminders: found=%s created=%s existing=%s "
+            "skipped=%s failed=%s",
+            stats["found"],
+            stats["created"],
+            stats["existing"],
+            stats["skipped"],
+            stats["failed"],
+        )
+        return stats
+
     def action_submit(self):
         if not self.env.user.has_group(
             "internship_logbook.group_internship_intern"
@@ -719,18 +865,11 @@ class InternshipDailyEntry(models.Model):
             # If this entry was previously in revision state,
             # close the intern's revision activity
             if previous_state == "revision":
-                revision_activities = entry.activity_ids.filtered(
-                    lambda activity:
-                        activity.user_id == self.env.user
-                        and activity.summary == "Revise Daily Internship Entry"
+                entry._complete_workflow_activities(
+                    entry._revision_activity_summary,
+                    _("Daily internship entry revised and resubmitted."),
+                    user=entry.student_id.user_id,
                 )
-
-                if revision_activities:
-                    revision_activities.action_feedback(
-                        feedback=(
-                            "Daily internship entry revised and resubmitted."
-                        )
-                    )
 
             # Post a message to chatter
             entry.message_post(
@@ -747,26 +886,14 @@ class InternshipDailyEntry(models.Model):
                     ]
                 )
 
-                # Create review activity for supervisor
-                entry.activity_schedule(
-                    "mail.mail_activity_data_todo",
-                    user_id=entry.supervisor_id.id,
-                    summary="Review Daily Internship Entry",
-                    note=(
-                        "Please review the submitted daily internship entry."
-                    ),
+                entry._schedule_unique_workflow_activity(
+                    entry.supervisor_id,
+                    entry._review_activity_summary,
+                    _("Please review the submitted daily internship entry."),
                 )
-
-                template = self.env.ref(
+                entry._send_workflow_notification(
                     "internship_logbook.mail_template_daily_entry_submitted",
-                    raise_if_not_found=False,
                 )
-
-                if template:
-                    template.send_mail(
-                        entry.id,
-                        force_send=False,
-                    )
 
     def action_approve(self):
         self.ensure_one()
@@ -775,16 +902,12 @@ class InternshipDailyEntry(models.Model):
 
         self._write_workflow_state("approved")
 
-        template = self.env.ref(
-            "internship_logbook.mail_template_daily_entry_approved",
-            raise_if_not_found=False,
-        )
-        if template:
-            template.send_mail(self.id, force_send=False)
-
-        self.message_post(body="Daily internship entry approved.")
         self._complete_supervisor_review_activities(
             "Daily internship entry reviewed and approved."
+        )
+        self.message_post(body=_("Daily internship entry approved."))
+        self._send_workflow_notification(
+            "internship_logbook.mail_template_daily_entry_approved"
         )
         if self.env.context.get("skip_review_navigation"):
             return False
@@ -815,29 +938,17 @@ class InternshipDailyEntry(models.Model):
 
         student_user = self.student_id.user_id
         if student_user:
-            revision_activities = self.activity_ids.filtered(
-                lambda activity: (
-                    activity.user_id == student_user
-                    and activity.summary == "Revise Daily Internship Entry"
-                )
+            self._schedule_unique_workflow_activity(
+                student_user,
+                self._revision_activity_summary,
+                _(
+                    "Your supervisor requested a revision for this daily "
+                    "internship entry."
+                ),
             )
-            if not revision_activities:
-                self.activity_schedule(
-                    "mail.mail_activity_data_todo",
-                    user_id=student_user.id,
-                    summary="Revise Daily Internship Entry",
-                    note=(
-                        "Your supervisor requested a revision "
-                        "for this daily internship entry."
-                    ),
-                )
-
-            template = self.env.ref(
+            self._send_workflow_notification(
                 "internship_logbook.mail_template_daily_entry_revision",
-                raise_if_not_found=False,
             )
-            if template:
-                template.send_mail(self.id, force_send=False)
         if self.env.context.get("skip_review_navigation"):
             return False
         return self._action_open_next_review()
@@ -1031,14 +1142,11 @@ class InternshipDailyEntry(models.Model):
 
     def _complete_supervisor_review_activities(self, feedback):
         self.ensure_one()
-        activities = self.activity_ids.filtered(
-            lambda activity: (
-                activity.user_id == self.supervisor_id
-                and activity.summary == "Review Daily Internship Entry"
-            )
+        self._complete_workflow_activities(
+            self._review_activity_summary,
+            feedback,
+            user=self.supervisor_id,
         )
-        if activities:
-            activities.action_feedback(feedback=feedback)
 
     def _action_open_next_review(self):
         self.ensure_one()
@@ -1119,6 +1227,14 @@ class InternshipDailyEntry(models.Model):
                 )
 
             entry._write_workflow_state("draft")
+            entry._complete_workflow_activities(
+                entry._revision_activity_summary,
+                _("Revision request reset to draft."),
+                user=entry.student_id.user_id,
+            )
+            entry.message_post(
+                body=_("Daily internship entry reset to draft."),
+            )
 
     def action_complete(self):
         for entry in self:

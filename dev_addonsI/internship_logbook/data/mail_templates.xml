@@ -7,7 +7,7 @@
         <field name="name">Daily Entry Submitted</field>
         <field name="model_id" ref="model_internship_daily_entry"/>
         <field name="subject">
-            Daily Internship Entry Submitted - {{ object.title }}
+            [Internship Logbook] Daily Entry Submitted - {{ object.title }}
         </field>
         <field name="email_from">
             {{ user.email_formatted or '' }}
@@ -52,7 +52,7 @@
         <field name="name">Daily Entry Revision Requested</field>
         <field name="model_id" ref="model_internship_daily_entry"/>
         <field name="subject">
-            Revision Requested - {{ object.title }}
+            [Internship Logbook] Revision Requested - {{ object.title }}
         </field>
         <field name="email_from">
             {{ user.email_formatted or '' }}
@@ -97,7 +97,7 @@
         <field name="name">Daily Entry Approved</field>
         <field name="model_id" ref="model_internship_daily_entry"/>
         <field name="subject">
-            Daily Internship Entry Approved - {{ object.title }}
+            [Internship Logbook] Daily Entry Approved - {{ object.title }}
         </field>
         <field name="email_from">
             {{ user.email_formatted or '' }}

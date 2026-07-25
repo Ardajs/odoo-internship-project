@@ -14,4 +14,6 @@ from . import test_supervisor_dashboard
 from . import test_supervisor_review_workflow
 from . import test_backend_analytics
 from . import test_program_overview
+from . import test_notifications_activities
+from . import test_scheduled_automation
 from . import test_bulk_review_operations
