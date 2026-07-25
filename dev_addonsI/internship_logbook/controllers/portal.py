@@ -1,10 +1,12 @@
 import math
+from datetime import date, timedelta
 
 from werkzeug.exceptions import Forbidden
 
 from odoo import _, fields, http
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
+from odoo.tools.misc import format_date
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
 from odoo.addons.portal.controllers.portal import pager as portal_pager
@@ -14,6 +16,8 @@ class InternshipPortal(CustomerPortal):
     _ONBOARDING_TEXT_MAX = 200
     _DAILY_ENTRIES_PAGE_SIZE = 30
     _DASHBOARD_RECENT_ENTRY_LIMIT = 5
+    _MISSING_DATE_PREVIEW_LIMIT = 5
+    _MAX_CALENDAR_SPAN_DAYS = 1096
     _DAILY_ENTRY_TITLE_MAX = 200
     _DAILY_ENTRY_DESCRIPTION_MAX = 10000
 
@@ -259,6 +263,236 @@ class InternshipPortal(CustomerPortal):
             ),
         }
 
+    def _empty_portal_calendar_analysis(self, reason, *, today=None):
+        return {
+            "analysis_available": False,
+            "reason": reason,
+            "today": today or self._portal_context_today(),
+            "start_date": False,
+            "end_date": False,
+            "evaluation_end_date": False,
+            "missing_dates": [],
+            "missing_count": 0,
+            "missing_preview": [],
+            "status_by_date": {},
+            "status_counts": {
+                "completed": 0,
+                "draft": 0,
+                "other": 0,
+                "missing": 0,
+                "future": 0,
+            },
+            "month_groups": [],
+            "weekday_labels": [],
+        }
+
+    def _portal_daily_entry_status_priority(self, state):
+        if state == "completed":
+            return 3
+        if state == "draft":
+            return 1
+        return 2
+
+    def _portal_program_entry_status_by_date(
+        self,
+        program,
+        student,
+        start_date,
+        end_date,
+    ):
+        state_labels = self._daily_entry_state_labels()
+        entries = request.env["internship.daily.entry"].search(
+            [
+                *self._portal_program_entry_domain(program, student),
+                ("entry_date", ">=", start_date),
+                ("entry_date", "<=", end_date),
+            ],
+            order="entry_date asc, id asc",
+        )
+        status_by_date = {}
+        for entry in entries:
+            normalized_status = (
+                entry.state
+                if entry.state in ("completed", "draft")
+                else "other"
+            )
+            candidate = {
+                "status": normalized_status,
+                "status_label": {
+                    "completed": _("Completed"),
+                    "draft": _("Draft"),
+                    "other": _("Other"),
+                }[normalized_status],
+                "entry_state_label": state_labels.get(
+                    entry.state,
+                    entry.state or _("Unknown"),
+                ),
+                "entry_title": entry.title or "",
+                "work_hours": entry.work_hours,
+                "priority": self._portal_daily_entry_status_priority(
+                    entry.state
+                ),
+            }
+            current = status_by_date.get(entry.entry_date)
+            if not current or candidate["priority"] >= current["priority"]:
+                status_by_date[entry.entry_date] = candidate
+        return status_by_date
+
+    def _portal_calendar_months(self, calendar_days):
+        months = []
+        current_key = None
+        month = None
+        for day_info in calendar_days:
+            day = day_info["date"]
+            key = (day.year, day.month)
+            if key != current_key:
+                month_start = date(day.year, day.month, 1)
+                month = {
+                    "key": f"{day.year:04d}-{day.month:02d}",
+                    "label": format_date(
+                        request.env,
+                        month_start,
+                        date_format="MMMM y",
+                    ),
+                    "cells": [False] * month_start.weekday(),
+                    "weeks": [],
+                }
+                months.append(month)
+                current_key = key
+            month["cells"].append(day_info)
+
+        for month in months:
+            trailing_cells = (-len(month["cells"])) % 7
+            month["cells"].extend([False] * trailing_cells)
+            month["weeks"] = [
+                month["cells"][index:index + 7]
+                for index in range(0, len(month["cells"]), 7)
+            ]
+            del month["cells"]
+        return months
+
+    def _portal_program_calendar_analysis(
+        self,
+        program,
+        student,
+        *,
+        today=None,
+    ):
+        today = today or self._portal_context_today()
+        if not program or not student:
+            return self._empty_portal_calendar_analysis(
+                "no_program",
+                today=today,
+            )
+        if (
+            not program.start_date
+            or not program.end_date
+            or program.end_date < program.start_date
+        ):
+            return self._empty_portal_calendar_analysis(
+                "invalid_dates",
+                today=today,
+            )
+
+        start_date = program.start_date
+        end_date = program.end_date
+        total_days = (end_date - start_date).days + 1
+        if total_days > self._MAX_CALENDAR_SPAN_DAYS:
+            analysis = self._empty_portal_calendar_analysis(
+                "range_too_long",
+                today=today,
+            )
+            analysis.update({
+                "start_date": start_date,
+                "end_date": end_date,
+            })
+            return analysis
+
+        evaluation_end_date = min(today, end_date)
+        status_by_date = self._portal_program_entry_status_by_date(
+            program,
+            student,
+            start_date,
+            end_date,
+        )
+        missing_dates = []
+        calendar_days = []
+        status_counts = {
+            "completed": 0,
+            "draft": 0,
+            "other": 0,
+            "missing": 0,
+            "future": 0,
+        }
+        current_date = start_date
+        while current_date <= end_date:
+            entry_status = status_by_date.get(current_date)
+            if entry_status:
+                day_info = dict(entry_status)
+            elif current_date <= evaluation_end_date:
+                day_info = {
+                    "status": "missing",
+                    "status_label": _("Missing"),
+                    "entry_state_label": "",
+                    "entry_title": "",
+                    "work_hours": False,
+                }
+                missing_dates.append(current_date)
+            else:
+                day_info = {
+                    "status": "future",
+                    "status_label": _("Future"),
+                    "entry_state_label": "",
+                    "entry_title": "",
+                    "work_hours": False,
+                }
+            day_info.update({
+                "date": current_date,
+                "day_number": current_date.day,
+                "display_date": format_date(request.env, current_date),
+            })
+            day_info.pop("priority", None)
+            status_counts[day_info["status"]] += 1
+            calendar_days.append(day_info)
+            current_date += timedelta(days=1)
+
+        preview_dates = missing_dates[:self._MISSING_DATE_PREVIEW_LIMIT]
+        weekday_reference = date(2024, 1, 1)
+        return {
+            "analysis_available": True,
+            "reason": (
+                "not_started" if today < start_date else "available"
+            ),
+            "today": today,
+            "start_date": start_date,
+            "end_date": end_date,
+            "evaluation_end_date": (
+                evaluation_end_date
+                if evaluation_end_date >= start_date
+                else False
+            ),
+            "missing_dates": missing_dates,
+            "missing_count": len(missing_dates),
+            "missing_preview": [
+                {
+                    "date": missing_date,
+                    "display": format_date(request.env, missing_date),
+                }
+                for missing_date in preview_dates
+            ],
+            "status_by_date": status_by_date,
+            "status_counts": status_counts,
+            "month_groups": self._portal_calendar_months(calendar_days),
+            "weekday_labels": [
+                format_date(
+                    request.env,
+                    weekday_reference + timedelta(days=offset),
+                    date_format="EEE",
+                )
+                for offset in range(7)
+            ],
+        }
+
     def _empty_daily_entry_values(self):
         return {
             "entry_date": fields.Date.to_string(
@@ -436,6 +670,14 @@ class InternshipPortal(CustomerPortal):
             if dashboard_program
             else {}
         )
+        calendar_analysis = (
+            self._portal_program_calendar_analysis(
+                dashboard_program,
+                student,
+            )
+            if dashboard_program
+            else self._empty_portal_calendar_analysis(dashboard_status)
+        )
         values = self._prepare_portal_layout_values()
         values.update({
             "page_name": "internship",
@@ -444,6 +686,7 @@ class InternshipPortal(CustomerPortal):
             "dashboard_program": dashboard_program,
             "dashboard_program_status": dashboard_status,
             "program_metrics": program_metrics,
+            "calendar_analysis": calendar_analysis,
             "recent_entries": self._portal_recent_daily_entries(
                 dashboard_program,
                 student,
@@ -461,6 +704,33 @@ class InternshipPortal(CustomerPortal):
             ),
             "education_complete": bool(
                 student.university and student.department
+            ),
+        })
+        return values
+
+    def _prepare_internship_calendar_values(self, student):
+        dashboard_selection = self._resolve_portal_dashboard_program(student)
+        program = dashboard_selection["program"]
+        selection_status = dashboard_selection["status"]
+        analysis = (
+            self._portal_program_calendar_analysis(program, student)
+            if program
+            else self._empty_portal_calendar_analysis(selection_status)
+        )
+        values = self._prepare_portal_layout_values()
+        values.update({
+            "page_name": "internship_calendar",
+            "student": student,
+            "program": program,
+            "dashboard_program_status": selection_status,
+            "calendar_analysis": analysis,
+            "program_workflow_labels": self._program_selection_labels(
+                "workflow_mode"
+            ),
+            "program_state_labels": self._program_selection_labels("state"),
+            "can_create_daily_entry": (
+                selection_status == "active"
+                and bool(self._resolve_portal_entry_program(student))
             ),
         })
         return values
@@ -561,6 +831,25 @@ class InternshipPortal(CustomerPortal):
         return request.render(
             "internship_logbook.portal_my_internship",
             self._prepare_internship_portal_values(student),
+        )
+
+    @http.route(
+        "/my/internship/calendar",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET"],
+        sitemap=False,
+    )
+    def portal_internship_calendar(self, **_ignored):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+        return request.render(
+            "internship_logbook.portal_internship_calendar",
+            self._prepare_internship_calendar_values(student),
         )
 
     @http.route(

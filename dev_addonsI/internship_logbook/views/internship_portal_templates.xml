@@ -398,6 +398,75 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between
+                                    align-items-start gap-3">
+                            <div>
+                                <h2 class="h5 mb-1">
+                                    Missing Daily Entries
+                                </h2>
+                                <p t-if="not calendar_analysis.get(
+                                        'analysis_available'
+                                    )"
+                                   class="text-muted mb-0">
+                                    Missing-day analysis is unavailable because
+                                    the program dates are incomplete, invalid,
+                                    or outside the supported calendar range.
+                                </p>
+                                <p t-elif="calendar_analysis.get('reason')
+                                           == 'not_started'"
+                                   class="text-muted mb-0">
+                                    The internship has not started yet.
+                                </p>
+                                <p t-elif="calendar_analysis.get(
+                                        'missing_count'
+                                    )"
+                                   class="mb-1">
+                                    <strong data-metric="missing-days"
+                                            t-att-data-value="'{}'.format(
+                                                calendar_analysis.get(
+                                                    'missing_count',
+                                                    0
+                                                )
+                                            )"
+                                            t-out="calendar_analysis.get(
+                                                'missing_count',
+                                                0
+                                            )"/>
+                                    dates currently have no daily entry.
+                                </p>
+                                <p t-else="" class="mb-0">
+                                    No missing daily entries up to today.
+                                </p>
+                                <p t-if="calendar_analysis.get(
+                                        'analysis_available'
+                                    )"
+                                   class="small text-muted mb-0">
+                                    The analysis is based on calendar days up
+                                    to today.
+                                </p>
+                            </div>
+                            <a t-if="calendar_analysis.get(
+                                   'analysis_available'
+                               )"
+                               href="/my/internship/calendar"
+                               class="btn btn-outline-primary">
+                                View Calendar
+                            </a>
+                        </div>
+                        <ul t-if="calendar_analysis.get('missing_preview')"
+                            class="small mt-3 mb-0"
+                            aria-label="Earliest missing dates">
+                            <li t-foreach="calendar_analysis.get(
+                                    'missing_preview'
+                                )"
+                                t-as="missing_day"
+                                t-out="missing_day['display']"/>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="card mt-4">
                 <div class="card-body">
@@ -414,6 +483,230 @@
                        class="btn btn-primary ms-2">
                         Create Daily Entry
                     </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_internship_calendar"
+              name="Internship Calendar">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Internship Calendar</t>
+            </t>
+
+            <div class="d-flex flex-wrap justify-content-between
+                        align-items-center gap-2 mb-3">
+                <h1 class="h3 mb-0">Internship Calendar</h1>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/my/internship"
+                       class="btn btn-outline-secondary">
+                        Back to Internship Dashboard
+                    </a>
+                    <a href="/my/internship/daily"
+                       class="btn btn-outline-primary">
+                        View All Daily Entries
+                    </a>
+                    <a t-if="can_create_daily_entry"
+                       href="/my/internship/daily/new"
+                       class="btn btn-primary">
+                        Create Daily Entry
+                    </a>
+                </div>
+            </div>
+
+            <div t-if="dashboard_program_status == 'none'"
+                 class="alert alert-info"
+                 role="status">
+                No internship program has been created yet. Create your first
+                internship from the dashboard before viewing the calendar.
+            </div>
+            <div t-elif="dashboard_program_status == 'multiple_active'"
+                 class="alert alert-warning"
+                 role="alert">
+                More than one active internship program was found. A calendar
+                cannot be generated until an administrator resolves the
+                active-program ambiguity.
+            </div>
+            <div t-elif="program">
+                <div t-if="dashboard_program_status == 'historical'"
+                     class="alert alert-info"
+                     role="status">
+                    This is a read-only calendar for the most recent
+                    non-active internship program.
+                </div>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h5" t-out="program.name"/>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Workflow</dt>
+                            <dd class="col-sm-9"
+                                t-out="program_workflow_labels.get(
+                                    program.workflow_mode,
+                                    program.workflow_mode or 'Unknown'
+                                )"/>
+                            <dt class="col-sm-3">Status</dt>
+                            <dd class="col-sm-9"
+                                t-out="program_state_labels.get(
+                                    program.state,
+                                    program.state or 'Unknown'
+                                )"/>
+                            <dt class="col-sm-3">Program dates</dt>
+                            <dd class="col-sm-9">
+                                <span t-field="program.start_date"/>
+                                <span aria-hidden="true"> – </span>
+                                <span t-field="program.end_date"/>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div t-if="not calendar_analysis.get(
+                        'analysis_available'
+                    )"
+                     class="alert alert-warning"
+                     role="alert">
+                    <span t-if="calendar_analysis.get('reason')
+                                == 'range_too_long'">
+                        Calendar analysis is unavailable because the program
+                        spans more than three years.
+                    </span>
+                    <span t-else="">
+                        Calendar analysis is unavailable because the program
+                        dates are incomplete or invalid.
+                    </span>
+                </div>
+                <div t-else="">
+                    <div class="alert alert-secondary" role="status">
+                        This analysis uses inclusive calendar days. Saturdays,
+                        Sundays, and public holidays are not excluded.
+                        Weeks are displayed Monday first.
+                    </div>
+                    <div t-if="calendar_analysis.get('reason')
+                               == 'not_started'"
+                         class="alert alert-info"
+                         role="status">
+                        The internship has not started yet. All unrecorded
+                        program dates are shown as Future.
+                    </div>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h2 class="h5">Status Summary</h2>
+                            <div class="d-flex flex-wrap gap-2"
+                                 aria-label="Calendar status legend">
+                                <span class="badge text-bg-success">
+                                    Completed
+                                </span>
+                                <span class="badge text-bg-secondary">
+                                    Draft
+                                </span>
+                                <span class="badge text-bg-info">Other</span>
+                                <span class="badge text-bg-danger">
+                                    Missing
+                                </span>
+                                <span class="badge text-bg-light border
+                                             text-dark">
+                                    Future
+                                </span>
+                            </div>
+                            <p class="mt-3 mb-0">
+                                <strong data-calendar-missing-count="true"
+                                        t-out="calendar_analysis.get(
+                                            'missing_count',
+                                            0
+                                        )"/>
+                                missing calendar days up to today.
+                            </p>
+                        </div>
+                    </div>
+
+                    <section t-foreach="calendar_analysis.get('month_groups')"
+                             t-as="month"
+                             class="card mb-4"
+                             t-att-data-calendar-month="month['key']">
+                        <div class="card-header">
+                            <h2 class="h5 mb-0" t-out="month['label']"/>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0
+                                          align-middle"
+                                   style="min-width: 720px; table-layout: fixed;">
+                                <thead>
+                                    <tr>
+                                        <th t-foreach="calendar_analysis.get(
+                                                'weekday_labels'
+                                            )"
+                                            t-as="weekday"
+                                            scope="col"
+                                            class="text-center"
+                                            t-out="weekday"/>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="month['weeks']"
+                                        t-as="week">
+                                        <t t-foreach="week" t-as="day">
+                                            <td t-if="day"
+                                                class="p-2 align-top"
+                                                style="height: 112px;"
+                                                t-att-data-calendar-date="day[
+                                                    'date'
+                                                ]"
+                                                t-att-data-calendar-status="day[
+                                                    'status'
+                                                ]">
+                                                <div class="d-flex
+                                                            justify-content-between
+                                                            gap-1">
+                                                    <strong t-out="day[
+                                                        'day_number'
+                                                    ]"/>
+                                                    <span t-att-class="{
+                                                        'completed': 'badge text-bg-success',
+                                                        'draft': 'badge text-bg-secondary',
+                                                        'other': 'badge text-bg-info',
+                                                        'missing': 'badge text-bg-danger',
+                                                        'future': 'badge text-bg-light border text-dark',
+                                                    }.get(day['status'], 'badge text-bg-light border text-dark')"
+                                                          t-out="day[
+                                                              'status_label'
+                                                          ]"/>
+                                                </div>
+                                                <div t-if="day.get(
+                                                        'entry_title'
+                                                    )"
+                                                     class="small mt-2
+                                                            text-break"
+                                                     t-out="day[
+                                                         'entry_title'
+                                                     ]"/>
+                                                <div t-if="day.get(
+                                                        'status'
+                                                    ) == 'other'"
+                                                     class="small text-muted"
+                                                     t-out="day.get(
+                                                         'entry_state_label'
+                                                     )"/>
+                                                <div t-if="day.get(
+                                                        'work_hours'
+                                                    ) is not False"
+                                                     class="small text-muted">
+                                                    <span t-out="day[
+                                                        'work_hours'
+                                                    ]"/>
+                                                    hours
+                                                </div>
+                                            </td>
+                                            <td t-else=""
+                                                class="bg-light"
+                                                aria-hidden="true"/>
+                                        </t>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
             </div>
         </t>

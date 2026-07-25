@@ -8,3 +8,4 @@ from . import test_portal_daily_entry_creation
 from . import test_portal_daily_entry_editing
 from . import test_portal_daily_entry_submission
 from . import test_portal_progress_dashboard
+from . import test_portal_missing_calendar
