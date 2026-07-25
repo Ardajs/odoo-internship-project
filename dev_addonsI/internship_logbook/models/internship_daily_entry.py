@@ -68,6 +68,12 @@ class InternshipDailyEntry(models.Model):
         readonly=True,
     )
 
+    program_department = fields.Char(
+        related="program_id.department",
+        string="Department",
+        readonly=True,
+    )
+
     student_university = fields.Char(
         related="student_id.university",
         string="University",
@@ -759,129 +765,219 @@ class InternshipDailyEntry(models.Model):
                     )
 
     def action_approve(self):
-        if not self.env.user.has_group(
-            "internship_logbook.group_internship_supervisor"
-        ) and not self.env.user.has_group(
-            "internship_logbook.group_internship_manager"
-        ):
-            raise AccessError(
-                "Only internship supervisors or managers "
-                "can approve daily entries."
-            )
+        self.ensure_one()
+        self._lock_and_validate_supervised_review()
+        self._validate_reviewable_content()
 
-        for entry in self:
-            if entry.workflow_mode == "independent":
-                raise UserError(
-                    _("Independent daily entries cannot be approved.")
-                )
-            if entry.state != "submitted":
-                raise ValidationError(
-                    "Only submitted entries can be approved."
-                )
+        self._write_workflow_state("approved")
 
-            entry._write_workflow_state("approved")
+        template = self.env.ref(
+            "internship_logbook.mail_template_daily_entry_approved",
+            raise_if_not_found=False,
+        )
+        if template:
+            template.send_mail(self.id, force_send=False)
 
-            template = self.env.ref(
-                "internship_logbook.mail_template_daily_entry_approved",
-                raise_if_not_found=False,
-            )
-
-            if template:
-                template.send_mail(
-                    entry.id,
-                    force_send=False,
-                )
-
-            # Add message to Chatter
-            entry.message_post(
-                body="Daily internship entry approved."
-            )
-
-            # Complete supervisor's review activity
-            activities = entry.activity_ids.filtered(
-                lambda activity:
-                    activity.user_id == self.env.user
-                    and activity.summary == "Review Daily Internship Entry"
-            )
-
-            if activities:
-                activities.action_feedback(
-                    feedback="Daily internship entry reviewed and approved."
-                )
+        self.message_post(body="Daily internship entry approved.")
+        self._complete_supervisor_review_activities(
+            "Daily internship entry reviewed and approved."
+        )
+        return self._action_open_next_review()
 
 
     def action_request_revision(self):
-        if not self.env.user.has_group(
-            "internship_logbook.group_internship_supervisor"
-        ) and not self.env.user.has_group(
-            "internship_logbook.group_internship_manager"
-        ):
-            raise AccessError(
-                "Only internship supervisors or managers "
-                "can request a revision."
-            )
-
-        for entry in self:
-            if entry.workflow_mode == "independent":
-                raise UserError(
-                    _("Revisions cannot be requested for independent "
-                      "daily entries.")
-                )
-            if entry.state != "submitted":
-                raise ValidationError(
-                    "A revision can only be requested for "
-                    "a submitted entry."
-                )
-
-            entry._write_workflow_state("revision")
-
-            entry.message_post(
-                body=(
-                    "Revision requested by the internship supervisor."
+        self.ensure_one()
+        self._lock_and_validate_supervised_review()
+        comment = (self.supervisor_comment or "").strip()
+        if not comment:
+            raise ValidationError(
+                _(
+                    "Please enter a meaningful supervisor comment before "
+                    "requesting a revision."
                 )
             )
+        if comment != self.supervisor_comment:
+            self.write({"supervisor_comment": comment})
 
-
-        activities = entry.activity_ids.filtered(
-            lambda activity:
-                activity.user_id == self.env.user
-                and activity.summary == "Review Daily Internship Entry"
+        self._write_workflow_state("revision")
+        self.message_post(
+            body="Revision requested by the internship supervisor."
+        )
+        self._complete_supervisor_review_activities(
+            "Daily internship entry reviewed. Revision requested."
         )
 
-
-        if not entry.supervisor_comment:
-            raise ValidationError(
-                "Please enter a supervisor comment before requesting a revision."
-            )
-
-        if activities:
-            activities.action_feedback(
-                feedback="Daily internship entry reviewed. Revision requested."
-            )
-
-        student_user = entry.student_id.user_id
-
+        student_user = self.student_id.user_id
         if student_user:
-            entry.activity_schedule(
-                "mail.mail_activity_data_todo",
-                user_id=student_user.id,
-                summary="Revise Daily Internship Entry",
-                note=(
-                    "Your supervisor requested a revision "
-                    "for this daily internship entry."
-                ),
+            revision_activities = self.activity_ids.filtered(
+                lambda activity: (
+                    activity.user_id == student_user
+                    and activity.summary == "Revise Daily Internship Entry"
+                )
             )
+            if not revision_activities:
+                self.activity_schedule(
+                    "mail.mail_activity_data_todo",
+                    user_id=student_user.id,
+                    summary="Revise Daily Internship Entry",
+                    note=(
+                        "Your supervisor requested a revision "
+                        "for this daily internship entry."
+                    ),
+                )
 
             template = self.env.ref(
                 "internship_logbook.mail_template_daily_entry_revision",
                 raise_if_not_found=False,
             )
-
             if template:
-                template.send_mail(
-                    entry.id,
-                    force_send=False,
+                template.send_mail(self.id, force_send=False)
+        return self._action_open_next_review()
+
+    def _lock_and_validate_supervised_review(self):
+        """Lock and re-check one form review without bypassing access rules."""
+        self.ensure_one()
+        is_manager = self._is_internship_manager()
+        is_supervisor = self.env.user.has_group(
+            "internship_logbook.group_internship_supervisor"
+        )
+        if not is_manager and not is_supervisor:
+            raise AccessError(
+                _(
+                    "Only internship supervisors or managers can review "
+                    "daily entries."
                 )
+            )
+        self.check_access("write")
+        self.env.cr.execute(
+            "SELECT id FROM internship_daily_entry WHERE id = %s FOR UPDATE",
+            [self.id],
+        )
+        if not self.env.cr.fetchone():
+            raise AccessError(_("The daily entry is no longer available."))
+        self.invalidate_recordset()
+        if not self.active or not self.program_id.active:
+            raise UserError(_("Only active daily entries can be reviewed."))
+        if self.workflow_mode != "supervised":
+            raise UserError(
+                _("Independent daily entries cannot use supervisor review.")
+            )
+        if self.state != "submitted":
+            raise UserError(
+                _("This daily entry is no longer pending supervisor review.")
+            )
+        if self.program_id.state != "active":
+            raise UserError(
+                _("Daily entries can be reviewed only in an active program.")
+            )
+        if not is_manager and self.supervisor_id != self.env.user:
+            raise AccessError(
+                _("Supervisors can review only their assigned daily entries.")
+            )
+        if self.student_id != self.program_id.student_id:
+            raise ValidationError(
+                _("The daily entry and internship program do not match.")
+            )
+
+    def _validate_reviewable_content(self):
+        self.ensure_one()
+        if not (self.title or "").strip() or not (
+            self.work_description or ""
+        ).strip():
+            raise ValidationError(
+                _("The daily entry must contain a title and work description.")
+            )
+        if not math.isfinite(self.work_hours) or not 0 < self.work_hours <= 24:
+            raise ValidationError(
+                _("Work hours must be greater than zero and at most 24.")
+            )
+        program = self.program_id
+        if (
+            not self.entry_date
+            or not program.start_date
+            or not program.end_date
+            or self.entry_date < program.start_date
+            or self.entry_date > program.end_date
+        ):
+            raise ValidationError(
+                _("The daily entry date must be within the internship period.")
+            )
+
+    def _complete_supervisor_review_activities(self, feedback):
+        self.ensure_one()
+        activities = self.activity_ids.filtered(
+            lambda activity: (
+                activity.user_id == self.supervisor_id
+                and activity.summary == "Review Daily Internship Entry"
+            )
+        )
+        if activities:
+            activities.action_feedback(feedback=feedback)
+
+    def _action_open_next_review(self):
+        self.ensure_one()
+        next_entry = self.search(
+            [
+                ("id", "!=", self.id),
+                ("workflow_mode", "=", "supervised"),
+                ("state", "=", "submitted"),
+            ],
+            order="write_date desc, entry_date desc, id desc",
+            limit=1,
+        )
+        if next_entry:
+            return {
+                "type": "ir.actions.act_window",
+                "name": _("Review Daily Entry"),
+                "res_model": self._name,
+                "res_id": next_entry.id,
+                "view_mode": "form",
+                "views": [(
+                    self.env.ref(
+                        "internship_logbook.view_internship_daily_entry_form"
+                    ).id,
+                    "form",
+                )],
+                "target": "current",
+            }
+        return self.env["ir.actions.actions"]._for_xml_id(
+            "internship_logbook.action_internship_supervisor_review_queue"
+        )
+
+    def action_review_next(self):
+        self.ensure_one()
+        if not self._is_internship_manager() and not self.env.user.has_group(
+            "internship_logbook.group_internship_supervisor"
+        ):
+            raise AccessError(
+                _("Only internship supervisors or managers can review entries.")
+            )
+        self.check_access("read")
+        return self._action_open_next_review()
+
+    def action_open_student(self):
+        self.ensure_one()
+        self.check_access("read")
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Student"),
+            "res_model": "internship.student",
+            "res_id": self.student_id.id,
+            "view_mode": "form",
+            "target": "current",
+        }
+
+    def action_open_program(self):
+        self.ensure_one()
+        self.check_access("read")
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Internship Program"),
+            "res_model": "internship.program",
+            "res_id": self.program_id.id,
+            "view_mode": "form",
+            "target": "current",
+        }
 
     def action_reset_to_draft(self):
         for entry in self:

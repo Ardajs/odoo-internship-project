@@ -66,6 +66,13 @@
                         invisible="workflow_mode != 'supervised' or state != 'submitted'"/>
 
                     <button
+                        name="action_review_next"
+                        string="Review Next"
+                        type="object"
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+                        invisible="workflow_mode != 'supervised' or state != 'submitted'"/>
+
+                    <button
                         name="action_reset_to_draft"
                         string="Reset to Draft"
                         type="object"
@@ -102,6 +109,27 @@
 
                 <sheet>
 
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_student"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-user"
+                                groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Open Student</span>
+                            </div>
+                        </button>
+                        <button name="action_open_program"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-briefcase"
+                                groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Open Program</span>
+                            </div>
+                        </button>
+                    </div>
+
                     <div class="oe_title">
                         <label for="title"/>
                         <h1>
@@ -125,6 +153,10 @@
                                 name="supervisor_id"
                                 readonly="1"
                                 invisible="workflow_mode == 'independent'"/>
+
+                            <field name="company_name" readonly="1"/>
+
+                            <field name="program_department" readonly="1"/>
 
                         </group>
 
@@ -176,6 +208,11 @@
                     <group
                         string="Supervisor Evaluation"
                         invisible="workflow_mode == 'independent' or state == 'draft'">
+
+                        <div class="alert alert-info" role="alert"
+                             invisible="state != 'submitted'">
+                            Add a clear review comment before requesting a revision.
+                        </div>
 
                         <field
                             name="supervisor_comment"
