@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="report_portal_internship_logbook"
+              name="Portal Internship Logbook">
+        <t t-call="web.html_container">
+            <t t-call="web.basic_layout">
+                <div class="page" style="font-size: 11pt;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <h1 style="font-size: 26px; margin-bottom: 6px;"
+                            t-out="institution_title"/>
+                        <h2 style="font-size: 20px; margin-top: 0;">
+                            Official Internship Logbook
+                        </h2>
+                    </div>
+
+                    <h3>Intern Information</h3>
+                    <table class="table table-sm table-bordered"
+                           style="width: 100%; page-break-inside: avoid;">
+                        <tbody>
+                            <tr>
+                                <td style="width: 30%;"><strong>Name</strong></td>
+                                <td t-out="student.name"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Student Number</strong></td>
+                                <td t-out="student.student_number"/>
+                            </tr>
+                            <tr>
+                                <td><strong>University</strong></td>
+                                <td t-out="student.university or 'Not specified'"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Department</strong></td>
+                                <td t-out="student.department or 'Not specified'"/>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 style="margin-top: 24px;">Program Information</h3>
+                    <table class="table table-sm table-bordered"
+                           style="width: 100%; page-break-inside: avoid;">
+                        <tbody>
+                            <tr>
+                                <td style="width: 30%;"><strong>Program</strong></td>
+                                <td t-out="program.name"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Company</strong></td>
+                                <td t-out="program.company_name"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Department</strong></td>
+                                <td t-out="program.department"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Workflow</strong></td>
+                                <td t-out="workflow_labels.get(
+                                    program.workflow_mode,
+                                    program.workflow_mode or 'Unknown'
+                                )"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Program State</strong></td>
+                                <td t-out="program_state_labels.get(
+                                    program.state,
+                                    program.state or 'Unknown'
+                                )"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Start Date</strong></td>
+                                <td><span t-field="program.start_date"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>End Date</strong></td>
+                                <td><span t-field="program.end_date"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Generated</strong></td>
+                                <td t-out="generated_at_display"/>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 style="margin-top: 28px;">Daily Entries</h3>
+                    <div t-if="not entries"
+                         style="border: 1px solid #bbb; padding: 24px;
+                                text-align: center; page-break-inside: avoid;">
+                        No completed or otherwise exportable internship entries
+                        currently exist for this program.
+                    </div>
+
+                    <t t-foreach="entries" t-as="entry">
+                        <div style="border: 1px solid #999; padding: 14px;
+                                    margin-bottom: 16px;
+                                    page-break-inside: auto;">
+                            <table style="width: 100%; margin-bottom: 10px;">
+                                <tbody>
+                                    <tr>
+                                        <td style="width: 22%;"><strong>Date</strong></td>
+                                        <td><span t-field="entry.entry_date"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Title</strong></td>
+                                        <td t-out="entry.title"/>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Status</strong></td>
+                                        <td t-out="entry_state_labels.get(
+                                            entry.state,
+                                            entry.state or 'Unknown'
+                                        )"/>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Recorded Hours</strong></td>
+                                        <td t-out="entry.work_hours"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div style="white-space: pre-wrap;
+                                        overflow-wrap: anywhere;">
+                                <strong>Description</strong>
+                                <div t-out="entry.work_description"/>
+                            </div>
+                        </div>
+                    </t>
+
+                    <h3 style="margin-top: 24px;">Totals</h3>
+                    <table class="table table-sm table-bordered"
+                           style="width: 100%; page-break-inside: avoid;">
+                        <tbody>
+                            <tr>
+                                <td style="width: 70%;">
+                                    <strong>Exported Entries</strong>
+                                </td>
+                                <td t-out="entry_count"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Recorded Hours</strong></td>
+                                <td t-out="total_work_hours"/>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top: 70px; page-break-inside: avoid;">
+                        <table style="width: 100%; table-layout: fixed;">
+                            <tr>
+                                <td style="text-align: center;">
+                                    <strong>Student</strong><br/><br/><br/>
+                                    <span t-out="student.name"/><br/>
+                                    Signature
+                                </td>
+                                <td style="text-align: center;">
+                                    <strong>Supervisor</strong><br/><br/><br/>
+                                    <span t-out="program.supervisor_id.name
+                                                 if program.supervisor_id
+                                                 else 'Not assigned'"/><br/>
+                                    Signature
+                                </td>
+                                <td style="text-align: center;">
+                                    <strong>Company</strong><br/><br/><br/>
+                                    <span t-out="program.company_name"/><br/>
+                                    Signature / Stamp
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div style="position: fixed; bottom: 4mm; left: 0;
+                                right: 0; font-size: 9px; color: #666;">
+                        <span t-out="generated_at_display"/>
+                        <span style="float: right;">
+                            Page <span class="page"/> / <span class="topage"/>
+                        </span>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

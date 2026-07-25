@@ -40,6 +40,7 @@ This module allows companies to manage:
 
     "report/internship_paperformat.xml",
     "report/internship_report_template.xml",
+    "report/portal_internship_report_template.xml",
     "report/internship_report.xml",
 
     "views/self_registration_templates.xml",

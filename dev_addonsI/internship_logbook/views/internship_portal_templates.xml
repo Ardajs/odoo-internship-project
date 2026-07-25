@@ -483,6 +483,11 @@
                        class="btn btn-primary ms-2">
                         Create Daily Entry
                     </a>
+                    <a t-if="dashboard_program"
+                       href="/my/internship/export/pdf"
+                       class="btn btn-outline-secondary ms-2">
+                        Download Logbook PDF
+                    </a>
                 </div>
             </div>
         </t>
@@ -512,6 +517,11 @@
                        href="/my/internship/daily/new"
                        class="btn btn-primary">
                         Create Daily Entry
+                    </a>
+                    <a t-if="program"
+                       href="/my/internship/export/pdf"
+                       class="btn btn-outline-secondary">
+                        Download Logbook PDF
                     </a>
                 </div>
             </div>
@@ -709,6 +719,30 @@
                     </section>
                 </div>
             </div>
+        </t>
+    </template>
+
+    <template id="portal_internship_export_unavailable"
+              name="Internship Logbook Export Unavailable">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Internship Logbook Export</t>
+            </t>
+            <div class="alert alert-info" role="status">
+                <h1 class="h4">Nothing to export</h1>
+                <p t-if="export_status == 'multiple_active'" class="mb-0">
+                    More than one active internship program was found. A PDF
+                    cannot be generated until an administrator resolves the
+                    active-program ambiguity.
+                </p>
+                <p t-else="" class="mb-0">
+                    No internship program is currently available for export.
+                </p>
+            </div>
+            <a href="/my/internship" class="btn btn-outline-primary">
+                Back to Internship Dashboard
+            </a>
         </t>
     </template>
 

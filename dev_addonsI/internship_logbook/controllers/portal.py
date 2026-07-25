@@ -5,7 +5,7 @@ from werkzeug.exceptions import Forbidden
 
 from odoo import _, fields, http
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.http import request
+from odoo.http import content_disposition, request
 from odoo.tools.misc import format_date
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
@@ -850,6 +850,50 @@ class InternshipPortal(CustomerPortal):
         return request.render(
             "internship_logbook.portal_internship_calendar",
             self._prepare_internship_calendar_values(student),
+        )
+
+    @http.route(
+        "/my/internship/export/pdf",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET"],
+        sitemap=False,
+    )
+    def portal_internship_export_pdf(self, **_ignored):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+
+        selection = self._resolve_portal_dashboard_program(student)
+        program = selection["program"]
+        if not program:
+            return request.render(
+                "internship_logbook.portal_internship_export_unavailable",
+                {
+                    "page_name": "internship_export",
+                    "export_status": selection["status"],
+                },
+            )
+
+        pdf, _output_type = request.env[
+            "ir.actions.report"
+        ].with_context(report_pdf_no_attachment=True)._render_qweb_pdf(
+            "internship_logbook.action_report_portal_internship_logbook",
+            res_ids=program.ids,
+        )
+        filename = _("Internship Logbook - %s.pdf") % program.name
+        return request.make_response(
+            pdf,
+            headers=[
+                ("Content-Type", "application/pdf"),
+                ("Content-Length", str(len(pdf))),
+                ("Content-Disposition", content_disposition(filename)),
+                ("X-Content-Type-Options", "nosniff"),
+                ("Cache-Control", "private, no-store"),
+            ],
         )
 
     @http.route(
