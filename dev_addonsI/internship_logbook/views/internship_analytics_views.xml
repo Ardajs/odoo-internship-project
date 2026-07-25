@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_internship_daily_entry_analytics_pivot" model="ir.ui.view">
+        <field name="name">internship.daily.entry.analytics.pivot</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <pivot string="Internship Entry Analytics">
+                <field name="supervisor_id" type="row"/>
+                <field name="company_name" type="row"/>
+                <field name="student_university" type="row"/>
+                <field name="student_id" type="row"/>
+                <field name="program_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="entry_date" interval="month" type="col"/>
+                <field name="work_hours" type="measure" string="Recorded Hours"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_internship_entries_by_month_graph" model="ir.ui.view">
+        <field name="name">internship.daily.entry.entries.by.month.graph</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <graph string="Entries by Month" type="bar">
+                <field name="entry_date" interval="month"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_internship_hours_by_month_graph" model="ir.ui.view">
+        <field name="name">internship.daily.entry.hours.by.month.graph</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <graph string="Hours by Month" type="bar">
+                <field name="entry_date" interval="month"/>
+                <field name="work_hours" type="measure" string="Recorded Hours"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_internship_entries_by_company_graph" model="ir.ui.view">
+        <field name="name">internship.daily.entry.entries.by.company.graph</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <graph string="Entries by Company" type="bar">
+                <field name="company_name"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_internship_entries_by_university_graph" model="ir.ui.view">
+        <field name="name">internship.daily.entry.entries.by.university.graph</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <graph string="Entries by University" type="bar">
+                <field name="student_university"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_internship_entries_by_supervisor_graph" model="ir.ui.view">
+        <field name="name">internship.daily.entry.entries.by.supervisor.graph</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <graph string="Entries by Supervisor" type="bar">
+                <field name="supervisor_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_internship_approved_revision_graph" model="ir.ui.view">
+        <field name="name">internship.daily.entry.approved.revision.graph</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <graph string="Approved vs Revision Requested" type="pie">
+                <field name="state"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_internship_submitted_approved_graph" model="ir.ui.view">
+        <field name="name">internship.daily.entry.submitted.approved.graph</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <graph string="Submitted vs Approved" type="pie">
+                <field name="state"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_internship_daily_entry_analytics" model="ir.actions.act_window">
+        <field name="name">Analytics</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="view_id" ref="view_internship_daily_entry_analytics_pivot"/>
+        <field name="search_view_id" ref="view_internship_daily_entry_search"/>
+    </record>
+
+    <record id="action_internship_monthly_report" model="ir.actions.act_window">
+        <field name="name">Monthly Report</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_internship_entries_by_month_graph"/>
+        <field name="search_view_id" ref="view_internship_daily_entry_search"/>
+    </record>
+
+    <record id="action_internship_company_report" model="ir.actions.act_window">
+        <field name="name">Company Report</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_internship_entries_by_company_graph"/>
+        <field name="search_view_id" ref="view_internship_daily_entry_search"/>
+    </record>
+
+    <record id="action_internship_monthly_hours_report" model="ir.actions.act_window">
+        <field name="name">Hours by Month</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_internship_hours_by_month_graph"/>
+        <field name="search_view_id" ref="view_internship_daily_entry_search"/>
+    </record>
+
+    <record id="action_internship_university_report" model="ir.actions.act_window">
+        <field name="name">University Report</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_internship_entries_by_university_graph"/>
+        <field name="search_view_id" ref="view_internship_daily_entry_search"/>
+    </record>
+
+    <record id="action_internship_supervisor_report" model="ir.actions.act_window">
+        <field name="name">Supervisor Report</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_internship_entries_by_supervisor_graph"/>
+        <field name="search_view_id" ref="view_internship_daily_entry_search"/>
+    </record>
+
+    <record id="action_internship_approved_revision_report" model="ir.actions.act_window">
+        <field name="name">Approved vs Revision Requested</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_internship_approved_revision_graph"/>
+        <field name="search_view_id" ref="view_internship_daily_entry_search"/>
+        <field name="domain">[('state', 'in', ('approved', 'revision'))]</field>
+    </record>
+
+    <record id="action_internship_submitted_approved_report" model="ir.actions.act_window">
+        <field name="name">Submitted vs Approved</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_internship_submitted_approved_graph"/>
+        <field name="search_view_id" ref="view_internship_daily_entry_search"/>
+        <field name="domain">[('state', 'in', ('submitted', 'approved'))]</field>
+    </record>
+</odoo>

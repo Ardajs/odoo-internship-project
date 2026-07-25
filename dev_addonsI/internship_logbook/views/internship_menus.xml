@@ -61,4 +61,51 @@
         groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
         sequence="30"/>
 
+    <menuitem
+        id="menu_internship_analytics"
+        name="Analytics"
+        parent="menu_internship_root"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_internship_analytics_overview"
+        name="Analytics Overview"
+        parent="menu_internship_analytics"
+        action="action_internship_daily_entry_analytics"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_internship_monthly_report"
+        name="Monthly Report"
+        parent="menu_internship_analytics"
+        action="action_internship_monthly_report"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_internship_company_report"
+        name="Company Report"
+        parent="menu_internship_analytics"
+        action="action_internship_company_report"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_internship_university_report"
+        name="University Report"
+        parent="menu_internship_analytics"
+        action="action_internship_university_report"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="40"/>
+
+    <menuitem
+        id="menu_internship_supervisor_report"
+        name="Supervisor Report"
+        parent="menu_internship_analytics"
+        action="action_internship_supervisor_report"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="50"/>
+
 </odoo>

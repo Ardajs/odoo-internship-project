@@ -317,6 +317,36 @@
                     domain="[('entry_date', '&gt;=', (context_today() - relativedelta(days=context_today().weekday())).strftime('%Y-%m-%d')), ('entry_date', '&lt;=', (context_today() + relativedelta(days=6-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
 
                 <filter
+                    name="filter_last_30_days"
+                    string="Last 30 Days"
+                    domain="[('entry_date', '&gt;=', (context_today() - relativedelta(days=29)).strftime('%Y-%m-%d')), ('entry_date', '&lt;=', context_today().strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_current_month"
+                    string="Current Month"
+                    domain="[('entry_date', '&gt;=', context_today().replace(day=1).strftime('%Y-%m-%d')), ('entry_date', '&lt;', (context_today().replace(day=1) + relativedelta(months=1)).strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_previous_month"
+                    string="Previous Month"
+                    domain="[('entry_date', '&gt;=', (context_today().replace(day=1) - relativedelta(months=1)).strftime('%Y-%m-%d')), ('entry_date', '&lt;', context_today().replace(day=1).strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_current_year"
+                    string="Current Year"
+                    domain="[('entry_date', '&gt;=', context_today().replace(month=1, day=1).strftime('%Y-%m-%d')), ('entry_date', '&lt;', (context_today().replace(month=1, day=1) + relativedelta(years=1)).strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_high_hours"
+                    string="High Hour Entries"
+                    domain="[('work_hours', '&gt;', 8)]"/>
+
+                <filter
+                    name="filter_low_hours"
+                    string="Low Hour Entries"
+                    domain="[('work_hours', '&lt;', 8)]"/>
+
+                <filter
                     name="filter_missing_days"
                     string="Missing Days"
                     domain="[('program_id.has_missing_days', '=', True)]"/>
