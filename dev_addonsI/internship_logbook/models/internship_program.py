@@ -30,6 +30,14 @@ class InternshipProgram(models.Model):
         required=True,
     )
 
+    student_university = fields.Char(
+        related="student_id.university",
+        string="University",
+        store=True,
+        index=True,
+        readonly=True,
+    )
+
     workflow_mode = fields.Selection(
         selection=[
             ("supervised", "Supervised"),
@@ -94,6 +102,22 @@ class InternshipProgram(models.Model):
     completed_entry_count = fields.Integer(
         string="Completed Entry Count",
         compute="_compute_daily_entry_statistics",
+    )
+
+    submitted_entry_count = fields.Integer(
+        string="Pending Review",
+        compute="_compute_daily_entry_statistics",
+    )
+
+    missing_day_count = fields.Integer(
+        string="Missing Days",
+        compute="_compute_missing_day_count",
+    )
+
+    has_missing_days = fields.Boolean(
+        string="Has Missing Days",
+        compute="_compute_missing_day_count",
+        search="_search_has_missing_days",
     )
 
     total_work_hours = fields.Float(
@@ -183,10 +207,14 @@ class InternshipProgram(models.Model):
             completed_entries = entries.filtered(
                 lambda entry: entry.state == "completed"
             )
+            submitted_entries = entries.filtered(
+                lambda entry: entry.state == "submitted"
+            )
 
             # Number of approved entries
             program.approved_entry_count = len(approved_entries)
             program.completed_entry_count = len(completed_entries)
+            program.submitted_entry_count = len(submitted_entries)
 
             # Work hours of all entries
             program.total_work_hours = sum(
@@ -216,6 +244,95 @@ class InternshipProgram(models.Model):
                 ) * 100
             else:
                 program.completion_percentage = 0.0
+
+    def _missing_day_counts(self, *, today=None):
+        """Return elapsed calendar dates without an active daily entry.
+
+        The SQL query is restricted to the caller-accessible recordset. It
+        mirrors the portal calendar-day definition without reading portal
+        routes or bypassing record rules.
+        """
+        today = fields.Date.to_date(today or fields.Date.context_today(self))
+        programs = self.filtered(
+            lambda program: (
+                program.active
+                and program.workflow_mode == "supervised"
+                and program.state == "active"
+                and program.start_date
+                and program.end_date
+                and program.end_date >= program.start_date
+                and program.start_date <= today
+            )
+        )
+        if not programs:
+            return {}
+
+        programs.flush_recordset([
+            "active",
+            "workflow_mode",
+            "state",
+            "start_date",
+            "end_date",
+        ])
+        self.env["internship.daily.entry"].flush_model([
+            "program_id",
+            "entry_date",
+            "active",
+        ])
+        self.env.cr.execute(
+            """
+                SELECT
+                    program.id,
+                    GREATEST(
+                        (
+                            LEAST(program.end_date, %s::date)
+                            - program.start_date
+                            + 1
+                        )
+                        - COUNT(DISTINCT entry.entry_date)::integer,
+                        0
+                    )::integer
+                  FROM internship_program AS program
+                  LEFT JOIN internship_daily_entry AS entry
+                    ON entry.program_id = program.id
+                   AND entry.entry_date >= program.start_date
+                   AND entry.entry_date <= LEAST(
+                       program.end_date,
+                       %s::date
+                   )
+                   AND entry.active = TRUE
+                 WHERE program.id = ANY(%s)
+                 GROUP BY
+                    program.id,
+                    program.start_date,
+                    program.end_date
+            """,
+            [today, today, programs.ids],
+        )
+        return dict(self.env.cr.fetchall())
+
+    def _compute_missing_day_count(self):
+        counts = self._missing_day_counts()
+        for program in self:
+            program.missing_day_count = counts.get(program.id, 0)
+            program.has_missing_days = bool(program.missing_day_count)
+
+    @api.model
+    def _search_has_missing_days(self, operator, value):
+        if operator not in ("=", "!=") or not isinstance(value, bool):
+            raise UserError(
+                _("The Missing Days filter supports only true/false values.")
+            )
+        programs = self.search([
+            ("active", "=", True),
+            ("workflow_mode", "=", "supervised"),
+            ("state", "=", "active"),
+        ])
+        missing_ids = list(programs._missing_day_counts())
+        wants_missing = value if operator == "=" else not value
+        return [
+            ("id", "in" if wants_missing else "not in", missing_ids)
+        ]
 
 
     @api.constrains("student_id", "start_date", "end_date")
@@ -504,4 +621,57 @@ class InternshipProgram(models.Model):
             "context": {
                 "default_program_id": self.id,
             },
+        }
+
+    def action_view_review_queue(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Review Queue"),
+            "res_model": "internship.daily.entry",
+            "view_mode": "list,form,pivot,graph",
+            "views": [
+                (
+                    self.env.ref(
+                        "internship_logbook."
+                        "view_internship_supervisor_review_queue_list"
+                    ).id,
+                    "list",
+                ),
+                (False, "form"),
+                (False, "pivot"),
+                (False, "graph"),
+            ],
+            "domain": [
+                ("program_id", "=", self.id),
+                ("workflow_mode", "=", "supervised"),
+                ("state", "=", "submitted"),
+            ],
+        }
+
+    def action_view_missing_days(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Program Missing Days"),
+            "res_model": "internship.program",
+            "view_mode": "list,form",
+            "domain": [("id", "=", self.id)],
+            "context": {"search_default_filter_missing_days": 1},
+        }
+
+    def action_view_student_overview(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Student Overview"),
+            "res_model": "internship.student",
+            "res_id": self.student_id.id,
+            "view_mode": "form",
+            "views": [(
+                self.env.ref(
+                    "internship_logbook.view_internship_student_form"
+                ).id,
+                "form",
+            )],
         }

@@ -60,6 +60,22 @@ class InternshipDailyEntry(models.Model):
         readonly=True,
     )
 
+    company_name = fields.Char(
+        related="program_id.company_name",
+        string="Company",
+        store=True,
+        index=True,
+        readonly=True,
+    )
+
+    student_university = fields.Char(
+        related="student_id.university",
+        string="University",
+        store=True,
+        index=True,
+        readonly=True,
+    )
+
     workflow_mode = fields.Selection(
         related="program_id.workflow_mode",
         string="Workflow Mode",

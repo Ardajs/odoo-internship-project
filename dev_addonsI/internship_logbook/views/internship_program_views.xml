@@ -18,6 +18,7 @@
                 <field name="student_id"/>
                 <field name="company_name"/>
                 <field name="department"/>
+                <field name="student_university" optional="hide"/>
                 <field name="workflow_mode"/>
                 <field name="supervisor_id"/>
                 <field name="start_date"/>
@@ -111,6 +112,43 @@
                                 widget="statinfo"
                                 string="Daily Entries"/>
 
+                        </button>
+
+                        <button
+                            name="action_view_review_queue"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-inbox"
+                            invisible="workflow_mode != 'supervised'"
+                            groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <field
+                                name="submitted_entry_count"
+                                widget="statinfo"
+                                string="Review Queue"/>
+                        </button>
+
+                        <button
+                            name="action_view_missing_days"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-calendar-times-o"
+                            invisible="workflow_mode != 'supervised'"
+                            groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <field
+                                name="missing_day_count"
+                                widget="statinfo"
+                                string="Missing Days"/>
+                        </button>
+
+                        <button
+                            name="action_view_student_overview"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-user"
+                            groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Student Overview</span>
+                            </div>
                         </button>
 
                     </div>
@@ -284,6 +322,7 @@
                 <field name="department"/>
                 <field name="workflow_mode"/>
                 <field name="supervisor_id"/>
+                <field name="student_university"/>
 
                 <separator/>
 
@@ -335,6 +374,21 @@
                     domain="['|', ('student_id.user_id', '=', uid), ('supervisor_id', '=', uid)]"
                 />
 
+                <filter
+                    name="filter_my_students"
+                    string="My Students"
+                    domain="[('workflow_mode', '=', 'supervised'), ('supervisor_id', '=', uid)]"/>
+
+                <filter
+                    name="filter_missing_days"
+                    string="Missing Days"
+                    domain="[('has_missing_days', '=', True)]"/>
+
+                <filter
+                    name="filter_ending_soon"
+                    string="Ending Soon"
+                    domain="[('workflow_mode', '=', 'supervised'), ('state', '=', 'active'), ('end_date', '&gt;=', context_today().strftime('%Y-%m-%d')), ('end_date', '&lt;=', (context_today() + relativedelta(days=14)).strftime('%Y-%m-%d'))]"/>
+
                 <separator/>
 
                 <!-- Archived records -->
@@ -363,6 +417,12 @@
                         name="group_by_supervisor"
                         string="Supervisor"
                         context="{'group_by': 'supervisor_id'}"
+                    />
+
+                    <filter
+                        name="group_by_university"
+                        string="University"
+                        context="{'group_by': 'student_university'}"
                     />
 
                     <filter

@@ -12,6 +12,14 @@
 
     <!-- Management -->
     <menuitem
+        id="menu_internship_supervisor_dashboard"
+        name="Supervisor Dashboard"
+        parent="menu_internship_root"
+        action="action_server_internship_supervisor_dashboard"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="5"/>
+
+    <menuitem
         id="menu_internship_management"
         name="Management"
         parent="menu_internship_root"
@@ -37,6 +45,14 @@
         sequence="20"/>
 
     <!-- Daily Entries -->
+    <menuitem
+        id="menu_internship_supervisor_review_queue"
+        name="Review Queue"
+        parent="menu_internship_management"
+        action="action_internship_supervisor_review_queue"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="25"/>
+
     <menuitem
         id="menu_internship_daily_entry"
         name="Daily Entries"

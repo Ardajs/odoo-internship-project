@@ -10,3 +10,4 @@ from . import test_portal_daily_entry_submission
 from . import test_portal_progress_dashboard
 from . import test_portal_missing_calendar
 from . import test_portal_pdf_export
+from . import test_supervisor_dashboard
