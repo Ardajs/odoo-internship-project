@@ -38,6 +38,18 @@ class InternshipProgram(models.Model):
         readonly=True,
     )
 
+    student_number = fields.Char(
+        related="student_id.student_number",
+        string="Student Number",
+        readonly=True,
+    )
+
+    student_department = fields.Char(
+        related="student_id.department",
+        string="Student Department",
+        readonly=True,
+    )
+
     workflow_mode = fields.Selection(
         selection=[
             ("supervised", "Supervised"),
@@ -106,6 +118,11 @@ class InternshipProgram(models.Model):
 
     submitted_entry_count = fields.Integer(
         string="Pending Review",
+        compute="_compute_daily_entry_statistics",
+    )
+
+    revision_entry_count = fields.Integer(
+        string="Revision Requested",
         compute="_compute_daily_entry_statistics",
     )
 
@@ -210,11 +227,15 @@ class InternshipProgram(models.Model):
             submitted_entries = entries.filtered(
                 lambda entry: entry.state == "submitted"
             )
+            revision_entries = entries.filtered(
+                lambda entry: entry.state == "revision"
+            )
 
             # Number of approved entries
             program.approved_entry_count = len(approved_entries)
             program.completed_entry_count = len(completed_entries)
             program.submitted_entry_count = len(submitted_entries)
+            program.revision_entry_count = len(revision_entries)
 
             # Work hours of all entries
             program.total_work_hours = sum(
@@ -675,3 +696,17 @@ class InternshipProgram(models.Model):
                 "form",
             )],
         }
+
+    def action_view_analytics(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "internship_logbook.action_internship_daily_entry_analytics"
+        )
+        action["domain"] = [("program_id", "=", self.id)]
+        return action
+
+    def action_export_pdf(self):
+        self.ensure_one()
+        return self.env.ref(
+            "internship_logbook.action_report_internship_logbook"
+        ).report_action(self)

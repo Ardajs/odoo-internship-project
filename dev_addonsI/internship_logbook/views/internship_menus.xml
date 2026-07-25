@@ -69,6 +69,14 @@
         sequence="20"/>
 
     <menuitem
+        id="menu_internship_program_overview"
+        name="Program Overview"
+        parent="menu_internship_management"
+        action="action_internship_program_overview"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="22"/>
+
+    <menuitem
         id="menu_internship_analytics_overview"
         name="Analytics Overview"
         parent="menu_internship_analytics"
