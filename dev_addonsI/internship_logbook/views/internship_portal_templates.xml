@@ -1,0 +1,1245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="portal_my_home_internship"
+              name="My Internship Portal Card"
+              inherit_id="portal.portal_my_home"
+              priority="35">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t groups="internship_logbook.group_internship_portal_intern"
+               t-call="portal.portal_docs_entry">
+                <t t-set="title">My Internship</t>
+                <t t-set="url" t-value="'/my/internship'"/>
+                <t t-set="text">
+                    View your Internship Logbook onboarding status
+                </t>
+                <t t-set="placeholder_count"
+                   t-value="'internship_program_count'"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_my_internship" name="My Internship">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">My Internship</t>
+            </t>
+            <div class="alert alert-success" role="status">
+                <strong>Account verified.</strong>
+                Your student profile has been created.
+            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="h4" t-out="student.name"/>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Student number</dt>
+                        <dd class="col-sm-8" t-out="student.student_number"/>
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8" t-out="student.email"/>
+                    </dl>
+                </div>
+            </div>
+            <div t-if="not education_complete"
+                 class="alert alert-info" role="status">
+                Your education profile still needs university and department
+                information. Profile editing will be added during onboarding.
+            </div>
+            <div t-if="dashboard_program_status == 'none'"
+                 class="card border-dashed">
+                <div class="card-body">
+                    <h2 class="h4">Create Your First Internship</h2>
+                    <p class="mb-2">
+                        No internship program has been created yet.
+                    </p>
+                    <a href="/my/internship/create"
+                       class="btn btn-primary">
+                        Create Your First Internship
+                    </a>
+                </div>
+            </div>
+            <div t-elif="dashboard_program_status == 'multiple_active'"
+                 class="alert alert-warning"
+                 role="alert">
+                More than one active internship program was found. Progress
+                cannot be summarized until an administrator resolves the
+                active-program ambiguity.
+            </div>
+            <div t-elif="dashboard_program">
+                <div t-if="dashboard_program_status == 'historical'
+                           and dashboard_program.state == 'draft'"
+                     class="alert alert-info"
+                     role="status">
+                    This internship is in Draft and is waiting to be
+                    activated. It is shown below as a read-only summary.
+                </div>
+                <div t-elif="dashboard_program_status == 'historical'"
+                     class="alert alert-info"
+                     role="status">
+                    No current active internship was found. The most recent
+                    internship is shown below as a read-only summary.
+                </div>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap align-items-start
+                                    justify-content-between gap-2 mb-3">
+                            <div>
+                                <h2 t-if="dashboard_program_status == 'active'
+                                          or dashboard_program.state == 'draft'"
+                                    class="h4 mb-1">
+                                    Current Internship
+                                </h2>
+                                <h2 t-else="" class="h4 mb-1">
+                                    Internship Program
+                                </h2>
+                                <p class="text-muted mb-0"
+                                   t-out="dashboard_program.name"/>
+                            </div>
+                            <span class="badge text-bg-secondary"
+                                  t-out="program_state_labels.get(
+                                      dashboard_program.state,
+                                      dashboard_program.state or 'Unknown'
+                                  )"/>
+                        </div>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Company</dt>
+                            <dd class="col-sm-8"
+                                t-out="dashboard_program.company_name"/>
+                            <dt class="col-sm-4">Department</dt>
+                            <dd class="col-sm-8"
+                                t-out="dashboard_program.department"/>
+                            <dt class="col-sm-4">Workflow</dt>
+                            <dd class="col-sm-8"
+                                t-out="program_workflow_labels.get(
+                                    dashboard_program.workflow_mode,
+                                    dashboard_program.workflow_mode
+                                    or 'Unknown'
+                                )"/>
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8"
+                                t-out="program_state_labels.get(
+                                    dashboard_program.state,
+                                    dashboard_program.state or 'Unknown'
+                                )"/>
+                            <dt class="col-sm-4">Start date</dt>
+                            <dd class="col-sm-8">
+                                <span t-field="dashboard_program.start_date"/>
+                            </dd>
+                            <dt class="col-sm-4">End date</dt>
+                            <dd class="col-sm-8">
+                                <span t-field="dashboard_program.end_date"/>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                <div t-if="program_metrics.get('valid')"
+                     class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <h2 class="h5 mb-1">Internship Progress</h2>
+                                <p class="small text-muted mb-2">
+                                    Based on completed daily entries and total
+                                    calendar days in the program.
+                                </p>
+                            </div>
+                            <strong>
+                                <span t-out="program_metrics.get(
+                                    'progress_percentage',
+                                    0
+                                )"/>%
+                            </strong>
+                        </div>
+                        <div class="progress"
+                             role="progressbar"
+                             aria-label="Internship Progress"
+                             aria-valuemin="0"
+                             aria-valuemax="100"
+                             t-att-aria-valuenow="program_metrics.get(
+                                 'progress_percentage',
+                                 0
+                             )">
+                            <div class="progress-bar"
+                                 t-attf-style="width: #{
+                                     program_metrics.get(
+                                         'progress_percentage',
+                                         0
+                                     )
+                                 }%"/>
+                        </div>
+                        <p class="small mt-2 mb-0">
+                            <span t-out="program_metrics.get(
+                                'completed_entry_count',
+                                0
+                            )"/>
+                            completed entries out of
+                            <span t-out="program_metrics.get(
+                                'total_program_days',
+                                0
+                            )"/>
+                            calendar days.
+                        </p>
+                    </div>
+                </div>
+                <div t-else=""
+                     class="alert alert-warning"
+                     role="alert">
+                    Progress and calendar-day metrics are unavailable because
+                    the program dates are incomplete or invalid.
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">Total Days</div>
+                                <div class="h4 mb-0"
+                                     data-metric="total-days"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'total_program_days',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'total_program_days',
+                                         0
+                                     ) if program_metrics.get('valid')
+                                     else 'N/A'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">Elapsed Days</div>
+                                <div class="h4 mb-0"
+                                     data-metric="elapsed-days"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'elapsed_program_days',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'elapsed_program_days',
+                                         0
+                                     ) if program_metrics.get('valid')
+                                     else 'N/A'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">
+                                    Remaining Days
+                                </div>
+                                <div class="h4 mb-0"
+                                     data-metric="remaining-days"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'remaining_program_days',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'remaining_program_days',
+                                         0
+                                     ) if program_metrics.get('valid')
+                                     else 'N/A'"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">
+                                    Total Entries
+                                </div>
+                                <div class="h4 mb-0"
+                                     data-metric="total-entries"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'total_entry_count',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'total_entry_count',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">Draft</div>
+                                <div class="h4 mb-0"
+                                     data-metric="draft-entries"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'draft_entry_count',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'draft_entry_count',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">Completed</div>
+                                <div class="h4 mb-0"
+                                     data-metric="completed-entries"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'completed_entry_count',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'completed_entry_count',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div t-if="program_metrics.get('other_entry_count')"
+                         class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">
+                                    Other States
+                                </div>
+                                <div class="h4 mb-0"
+                                     data-metric="other-entries"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'other_entry_count',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'other_entry_count',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="small text-muted">
+                                    Recorded Hours
+                                </div>
+                                <div class="h4 mb-0"
+                                     data-metric="recorded-hours"
+                                     t-att-data-value="'{}'.format(
+                                         program_metrics.get(
+                                             'total_work_hours',
+                                             0
+                                         )
+                                     )"
+                                     t-out="program_metrics.get(
+                                         'total_work_hours',
+                                         0
+                                     )"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between
+                                    align-items-center gap-3 mb-3">
+                            <h2 class="h5 mb-0">Recent Daily Entries</h2>
+                            <a href="/my/internship/daily">
+                                View All Daily Entries
+                            </a>
+                        </div>
+                        <p t-if="not recent_entries"
+                           class="text-muted mb-0">
+                            No daily entries yet.
+                        </p>
+                        <div t-else="" class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Date</th>
+                                        <th scope="col">Title</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col"
+                                            class="text-end">Hours</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="recent_entries"
+                                        t-as="entry">
+                                        <td>
+                                            <span t-field="entry.entry_date"/>
+                                        </td>
+                                        <td t-out="entry.title"/>
+                                        <td t-out="daily_entry_state_labels.get(
+                                            entry.state,
+                                            entry.state or 'Unknown'
+                                        )"/>
+                                        <td class="text-end"
+                                            t-out="entry.work_hours"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between
+                                    align-items-start gap-3">
+                            <div>
+                                <h2 class="h5 mb-1">
+                                    Missing Daily Entries
+                                </h2>
+                                <p t-if="not calendar_analysis.get(
+                                        'analysis_available'
+                                    )"
+                                   class="text-muted mb-0">
+                                    Missing-day analysis is unavailable because
+                                    the program dates are incomplete, invalid,
+                                    or outside the supported calendar range.
+                                </p>
+                                <p t-elif="calendar_analysis.get('reason')
+                                           == 'not_started'"
+                                   class="text-muted mb-0">
+                                    The internship has not started yet.
+                                </p>
+                                <p t-elif="calendar_analysis.get(
+                                        'missing_count'
+                                    )"
+                                   class="mb-1">
+                                    <strong data-metric="missing-days"
+                                            t-att-data-value="'{}'.format(
+                                                calendar_analysis.get(
+                                                    'missing_count',
+                                                    0
+                                                )
+                                            )"
+                                            t-out="calendar_analysis.get(
+                                                'missing_count',
+                                                0
+                                            )"/>
+                                    dates currently have no daily entry.
+                                </p>
+                                <p t-else="" class="mb-0">
+                                    No missing daily entries up to today.
+                                </p>
+                                <p t-if="calendar_analysis.get(
+                                        'analysis_available'
+                                    )"
+                                   class="small text-muted mb-0">
+                                    The analysis is based on calendar days up
+                                    to today.
+                                </p>
+                            </div>
+                            <a t-if="calendar_analysis.get(
+                                   'analysis_available'
+                               )"
+                               href="/my/internship/calendar"
+                               class="btn btn-outline-primary">
+                                View Calendar
+                            </a>
+                        </div>
+                        <ul t-if="calendar_analysis.get('missing_preview')"
+                            class="small mt-3 mb-0"
+                            aria-label="Earliest missing dates">
+                            <li t-foreach="calendar_analysis.get(
+                                    'missing_preview'
+                                )"
+                                t-as="missing_day"
+                                t-out="missing_day['display']"/>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h2 class="h4">Daily Entries</h2>
+                    <p class="mb-2">
+                        Review the daily internship entries in your logbook.
+                    </p>
+                    <a href="/my/internship/daily"
+                       class="btn btn-outline-primary">
+                        View Daily Entries
+                    </a>
+                    <a t-if="can_create_daily_entry"
+                       href="/my/internship/daily/new"
+                       class="btn btn-primary ms-2">
+                        Create Daily Entry
+                    </a>
+                    <a t-if="dashboard_program"
+                       href="/my/internship/export/pdf"
+                       class="btn btn-outline-secondary ms-2">
+                        Download Logbook PDF
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_internship_calendar"
+              name="Internship Calendar">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Internship Calendar</t>
+            </t>
+
+            <div class="d-flex flex-wrap justify-content-between
+                        align-items-center gap-2 mb-3">
+                <h1 class="h3 mb-0">Internship Calendar</h1>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/my/internship"
+                       class="btn btn-outline-secondary">
+                        Back to Internship Dashboard
+                    </a>
+                    <a href="/my/internship/daily"
+                       class="btn btn-outline-primary">
+                        View All Daily Entries
+                    </a>
+                    <a t-if="can_create_daily_entry"
+                       href="/my/internship/daily/new"
+                       class="btn btn-primary">
+                        Create Daily Entry
+                    </a>
+                    <a t-if="program"
+                       href="/my/internship/export/pdf"
+                       class="btn btn-outline-secondary">
+                        Download Logbook PDF
+                    </a>
+                </div>
+            </div>
+
+            <div t-if="dashboard_program_status == 'none'"
+                 class="alert alert-info"
+                 role="status">
+                No internship program has been created yet. Create your first
+                internship from the dashboard before viewing the calendar.
+            </div>
+            <div t-elif="dashboard_program_status == 'multiple_active'"
+                 class="alert alert-warning"
+                 role="alert">
+                More than one active internship program was found. A calendar
+                cannot be generated until an administrator resolves the
+                active-program ambiguity.
+            </div>
+            <div t-elif="program">
+                <div t-if="dashboard_program_status == 'historical'"
+                     class="alert alert-info"
+                     role="status">
+                    This is a read-only calendar for the most recent
+                    non-active internship program.
+                </div>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h5" t-out="program.name"/>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Workflow</dt>
+                            <dd class="col-sm-9"
+                                t-out="program_workflow_labels.get(
+                                    program.workflow_mode,
+                                    program.workflow_mode or 'Unknown'
+                                )"/>
+                            <dt class="col-sm-3">Status</dt>
+                            <dd class="col-sm-9"
+                                t-out="program_state_labels.get(
+                                    program.state,
+                                    program.state or 'Unknown'
+                                )"/>
+                            <dt class="col-sm-3">Program dates</dt>
+                            <dd class="col-sm-9">
+                                <span t-field="program.start_date"/>
+                                <span aria-hidden="true"> – </span>
+                                <span t-field="program.end_date"/>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div t-if="not calendar_analysis.get(
+                        'analysis_available'
+                    )"
+                     class="alert alert-warning"
+                     role="alert">
+                    <span t-if="calendar_analysis.get('reason')
+                                == 'range_too_long'">
+                        Calendar analysis is unavailable because the program
+                        spans more than three years.
+                    </span>
+                    <span t-else="">
+                        Calendar analysis is unavailable because the program
+                        dates are incomplete or invalid.
+                    </span>
+                </div>
+                <div t-else="">
+                    <div class="alert alert-secondary" role="status">
+                        This analysis uses inclusive calendar days. Saturdays,
+                        Sundays, and public holidays are not excluded.
+                        Weeks are displayed Monday first.
+                    </div>
+                    <div t-if="calendar_analysis.get('reason')
+                               == 'not_started'"
+                         class="alert alert-info"
+                         role="status">
+                        The internship has not started yet. All unrecorded
+                        program dates are shown as Future.
+                    </div>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h2 class="h5">Status Summary</h2>
+                            <div class="d-flex flex-wrap gap-2"
+                                 aria-label="Calendar status legend">
+                                <span class="badge text-bg-success">
+                                    Completed
+                                </span>
+                                <span class="badge text-bg-secondary">
+                                    Draft
+                                </span>
+                                <span class="badge text-bg-info">Other</span>
+                                <span class="badge text-bg-danger">
+                                    Missing
+                                </span>
+                                <span class="badge text-bg-light border
+                                             text-dark">
+                                    Future
+                                </span>
+                            </div>
+                            <p class="mt-3 mb-0">
+                                <strong data-calendar-missing-count="true"
+                                        t-out="calendar_analysis.get(
+                                            'missing_count',
+                                            0
+                                        )"/>
+                                missing calendar days up to today.
+                            </p>
+                        </div>
+                    </div>
+
+                    <section t-foreach="calendar_analysis.get('month_groups')"
+                             t-as="month"
+                             class="card mb-4"
+                             t-att-data-calendar-month="month['key']">
+                        <div class="card-header">
+                            <h2 class="h5 mb-0" t-out="month['label']"/>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0
+                                          align-middle"
+                                   style="min-width: 720px; table-layout: fixed;">
+                                <thead>
+                                    <tr>
+                                        <th t-foreach="calendar_analysis.get(
+                                                'weekday_labels'
+                                            )"
+                                            t-as="weekday"
+                                            scope="col"
+                                            class="text-center"
+                                            t-out="weekday"/>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="month['weeks']"
+                                        t-as="week">
+                                        <t t-foreach="week" t-as="day">
+                                            <td t-if="day"
+                                                class="p-2 align-top"
+                                                style="height: 112px;"
+                                                t-att-data-calendar-date="day[
+                                                    'date'
+                                                ]"
+                                                t-att-data-calendar-status="day[
+                                                    'status'
+                                                ]">
+                                                <div class="d-flex
+                                                            justify-content-between
+                                                            gap-1">
+                                                    <strong t-out="day[
+                                                        'day_number'
+                                                    ]"/>
+                                                    <span t-att-class="{
+                                                        'completed': 'badge text-bg-success',
+                                                        'draft': 'badge text-bg-secondary',
+                                                        'other': 'badge text-bg-info',
+                                                        'missing': 'badge text-bg-danger',
+                                                        'future': 'badge text-bg-light border text-dark',
+                                                    }.get(day['status'], 'badge text-bg-light border text-dark')"
+                                                          t-out="day[
+                                                              'status_label'
+                                                          ]"/>
+                                                </div>
+                                                <div t-if="day.get(
+                                                        'entry_title'
+                                                    )"
+                                                     class="small mt-2
+                                                            text-break"
+                                                     t-out="day[
+                                                         'entry_title'
+                                                     ]"/>
+                                                <div t-if="day.get(
+                                                        'status'
+                                                    ) == 'other'"
+                                                     class="small text-muted"
+                                                     t-out="day.get(
+                                                         'entry_state_label'
+                                                     )"/>
+                                                <div t-if="day.get(
+                                                        'work_hours'
+                                                    ) is not False"
+                                                     class="small text-muted">
+                                                    <span t-out="day[
+                                                        'work_hours'
+                                                    ]"/>
+                                                    hours
+                                                </div>
+                                            </td>
+                                            <td t-else=""
+                                                class="bg-light"
+                                                aria-hidden="true"/>
+                                        </t>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_internship_export_unavailable"
+              name="Internship Logbook Export Unavailable">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Internship Logbook Export</t>
+            </t>
+            <div class="alert alert-info" role="status">
+                <h1 class="h4">Nothing to export</h1>
+                <p t-if="export_status == 'multiple_active'" class="mb-0">
+                    More than one active internship program was found. A PDF
+                    cannot be generated until an administrator resolves the
+                    active-program ambiguity.
+                </p>
+                <p t-else="" class="mb-0">
+                    No internship program is currently available for export.
+                </p>
+            </div>
+            <a href="/my/internship" class="btn btn-outline-primary">
+                Back to Internship Dashboard
+            </a>
+        </t>
+    </template>
+
+    <template id="portal_daily_entries"
+              name="Daily Internship Entries">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Daily Internship Entries</t>
+            </t>
+            <div t-if="daily_entry_saved"
+                 class="alert alert-success"
+                 role="status">
+                Daily entry saved as draft.
+            </div>
+            <div t-if="daily_entry_updated"
+                 class="alert alert-success"
+                 role="status">
+                Daily entry updated.
+            </div>
+            <div t-if="daily_entry_edit_denied"
+                 class="alert alert-warning"
+                 role="alert">
+                Only draft entries in an active internship can be edited.
+            </div>
+            <div t-if="daily_entry_completed"
+                 class="alert alert-success"
+                 role="status">
+                Daily entry completed successfully.
+            </div>
+            <div t-if="daily_entry_submit_state_denied"
+                 class="alert alert-warning"
+                 role="alert">
+                This daily entry is no longer available for submission.
+            </div>
+            <div t-if="daily_entry_submit_program_denied"
+                 class="alert alert-warning"
+                 role="alert">
+                Daily entries can be submitted only while the independent
+                internship program is active.
+            </div>
+            <div t-if="eligible_program"
+                 class="d-flex justify-content-end mb-3">
+                <a href="/my/internship/daily/new"
+                   class="btn btn-primary">
+                    Create Daily Entry
+                </a>
+            </div>
+            <div t-elif="programs"
+                 class="alert alert-info"
+                 role="status">
+                Daily entries can be created only while exactly one
+                independent internship program is active.
+            </div>
+            <div t-if="not programs"
+                 class="card border-dashed">
+                <div class="card-body">
+                    <h1 class="h4">Daily Internship Entries</h1>
+                    <p>
+                        Create your first internship from the dashboard before
+                        viewing daily entries.
+                    </p>
+                    <a href="/my/internship"
+                       class="btn btn-primary">
+                        Back to My Internship
+                    </a>
+                </div>
+            </div>
+            <div t-elif="not entries"
+                 class="card border-dashed">
+                <div class="card-body">
+                    <h1 class="h4">Daily Internship Entries</h1>
+                    <p class="mb-0">No daily entries yet.</p>
+                </div>
+            </div>
+            <div t-else="">
+                <h1 class="h3 mb-3">Daily Internship Entries</h1>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th scope="col">Date</th>
+                                <th scope="col">Work Title</th>
+                                <th scope="col">Status</th>
+                                <th scope="col"
+                                    class="text-end">Work Hours</th>
+                                <th scope="col"
+                                    class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="entries" t-as="entry">
+                                <td>
+                                    <span t-field="entry.entry_date"/>
+                                </td>
+                                <td t-out="entry.title"/>
+                                <td t-out="daily_entry_state_labels.get(
+                                    entry.state,
+                                    entry.state or 'Unknown'
+                                )"/>
+                                <td class="text-end"
+                                     t-out="entry.work_hours"/>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-2">
+                                        <a t-if="entry.state == 'draft'
+                                                 and entry.program_state == 'active'"
+                                           t-att-href="'/my/internship/daily/%s/edit' % entry.id"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Edit
+                                        </a>
+                                        <a t-if="entry.state == 'draft'
+                                                 and entry.program_id.active
+                                                 and entry.program_state == 'active'
+                                                 and entry.workflow_mode == 'independent'"
+                                           t-att-href="'/my/internship/daily/%s/submit-confirm' % entry.id"
+                                           class="btn btn-sm btn-primary">
+                                            Submit
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_create_daily_entry"
+              name="Create Daily Entry">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Create Daily Entry</t>
+            </t>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h1 class="h3">Create Daily Entry</h1>
+                    <p class="text-muted">
+                        Save today's internship work as a draft entry.
+                    </p>
+                    <div t-if="form_error"
+                         class="alert alert-danger"
+                         role="alert"
+                         t-out="form_error"/>
+                    <form action="/my/internship/daily/new"
+                          method="post"
+                          class="card">
+                        <div class="card-body">
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <div class="mb-3">
+                                <label for="daily_entry_date"
+                                       class="form-label">Entry Date</label>
+                                <input id="daily_entry_date"
+                                       name="entry_date"
+                                       type="date"
+                                       required="required"
+                                       t-att-min="program.start_date"
+                                       t-att-max="program.end_date"
+                                       t-att-value="form_values.get('entry_date')"
+                                       t-att-class="'form-control is-invalid' if errors.get('entry_date') else 'form-control'"/>
+                                <div t-if="errors.get('entry_date')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('entry_date')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_title"
+                                       class="form-label">Work Title</label>
+                                <input id="daily_entry_title"
+                                       name="title"
+                                       type="text"
+                                       required="required"
+                                       maxlength="200"
+                                       t-att-value="form_values.get('title')"
+                                       t-att-class="'form-control is-invalid' if errors.get('title') else 'form-control'"/>
+                                <div t-if="errors.get('title')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('title')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_description"
+                                       class="form-label">
+                                    Work Description
+                                </label>
+                                <textarea id="daily_entry_description"
+                                          name="work_description"
+                                          required="required"
+                                          maxlength="10000"
+                                          rows="8"
+                                          t-att-class="'form-control is-invalid' if errors.get('work_description') else 'form-control'"
+                                          t-out="form_values.get('work_description')"/>
+                                <div t-if="errors.get('work_description')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('work_description')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_hours"
+                                       class="form-label">Work Hours</label>
+                                <input id="daily_entry_hours"
+                                       name="work_hours"
+                                       type="number"
+                                       required="required"
+                                       min="0.01"
+                                       max="24"
+                                       step="0.25"
+                                       t-att-value="form_values.get('work_hours')"
+                                       t-att-class="'form-control is-invalid' if errors.get('work_hours') else 'form-control'"/>
+                                <div t-if="errors.get('work_hours')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('work_hours')"/>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Save Draft
+                            </button>
+                            <a href="/my/internship/daily"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_submit_daily_entry"
+              name="Submit Daily Entry">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Submit Daily Entry</t>
+            </t>
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+                    <h1 class="h3">Submit Daily Entry</h1>
+                    <div t-if="form_error"
+                         class="alert alert-danger"
+                         role="alert"
+                         t-out="form_error"/>
+                    <div class="card">
+                        <div class="card-body">
+                            <dl class="row mb-3">
+                                <dt class="col-sm-4">Entry Date</dt>
+                                <dd class="col-sm-8">
+                                    <span t-field="entry.entry_date"/>
+                                </dd>
+                                <dt class="col-sm-4">Work Title</dt>
+                                <dd class="col-sm-8"
+                                    t-out="entry.title"/>
+                            </dl>
+                            <div class="alert alert-warning mb-0"
+                                 role="alert">
+                                After submission, this daily entry can no
+                                longer be edited from the portal.
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <form t-att-action="'/my/internship/daily/%s/submit' % entry.id"
+                                  method="post"
+                                  class="d-flex gap-2">
+                                <input type="hidden"
+                                       name="csrf_token"
+                                       t-att-value="request.csrf_token()"/>
+                                <button type="submit"
+                                        class="btn btn-primary">
+                                    Confirm Submission
+                                </button>
+                                <a href="/my/internship/daily"
+                                   class="btn btn-outline-secondary">
+                                    Cancel
+                                </a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_edit_daily_entry"
+              name="Edit Daily Entry">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Edit Daily Entry</t>
+            </t>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h1 class="h3">Edit Daily Entry</h1>
+                    <p class="text-muted">
+                        Update this draft internship entry.
+                    </p>
+                    <div t-if="form_error"
+                         class="alert alert-danger"
+                         role="alert"
+                         t-out="form_error"/>
+                    <form t-att-action="'/my/internship/daily/%s/edit' % entry.id"
+                          method="post"
+                          class="card">
+                        <div class="card-body">
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <div class="mb-3">
+                                <label for="daily_entry_edit_date"
+                                       class="form-label">Entry Date</label>
+                                <input id="daily_entry_edit_date"
+                                       name="entry_date"
+                                       type="date"
+                                       required="required"
+                                       t-att-min="program.start_date"
+                                       t-att-max="program.end_date"
+                                       t-att-value="form_values.get('entry_date')"
+                                       t-att-class="'form-control is-invalid' if errors.get('entry_date') else 'form-control'"/>
+                                <div t-if="errors.get('entry_date')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('entry_date')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_edit_title"
+                                       class="form-label">Work Title</label>
+                                <input id="daily_entry_edit_title"
+                                       name="title"
+                                       type="text"
+                                       required="required"
+                                       maxlength="200"
+                                       t-att-value="form_values.get('title')"
+                                       t-att-class="'form-control is-invalid' if errors.get('title') else 'form-control'"/>
+                                <div t-if="errors.get('title')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('title')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_edit_description"
+                                       class="form-label">
+                                    Work Description
+                                </label>
+                                <textarea id="daily_entry_edit_description"
+                                          name="work_description"
+                                          required="required"
+                                          maxlength="10000"
+                                          rows="8"
+                                          t-att-class="'form-control is-invalid' if errors.get('work_description') else 'form-control'"
+                                          t-out="form_values.get('work_description')"/>
+                                <div t-if="errors.get('work_description')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('work_description')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="daily_entry_edit_hours"
+                                       class="form-label">Work Hours</label>
+                                <input id="daily_entry_edit_hours"
+                                       name="work_hours"
+                                       type="number"
+                                       required="required"
+                                       min="0.01"
+                                       max="24"
+                                       step="0.25"
+                                       t-att-value="form_values.get('work_hours')"
+                                       t-att-class="'form-control is-invalid' if errors.get('work_hours') else 'form-control'"/>
+                                <div t-if="errors.get('work_hours')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('work_hours')"/>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Save Changes
+                            </button>
+                            <a href="/my/internship/daily"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_create_internship"
+              name="Create Your First Internship">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Create Your First Internship</t>
+            </t>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h1 class="h3">Create Your First Internship</h1>
+                    <p class="text-muted">
+                        Enter the basic information for your personal
+                        internship logbook.
+                    </p>
+                    <div t-if="form_error"
+                         class="alert alert-danger"
+                         role="alert"
+                         t-out="form_error"/>
+                    <form action="/my/internship/create"
+                          method="post"
+                          class="card">
+                        <div class="card-body">
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <div class="mb-3">
+                                <label for="internship_company"
+                                       class="form-label">Company</label>
+                                <input id="internship_company"
+                                       name="company_name"
+                                       type="text"
+                                       required="required"
+                                       maxlength="200"
+                                       t-att-class="'form-control is-invalid' if errors.get('company_name') else 'form-control'"
+                                       t-att-value="form_values.get('company_name')"/>
+                                <div t-if="errors.get('company_name')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('company_name')"/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="internship_department"
+                                       class="form-label">Department</label>
+                                <input id="internship_department"
+                                       name="department"
+                                       type="text"
+                                       required="required"
+                                       maxlength="200"
+                                       t-att-class="'form-control is-invalid' if errors.get('department') else 'form-control'"
+                                       t-att-value="form_values.get('department')"/>
+                                <div t-if="errors.get('department')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('department')"/>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="internship_start_date"
+                                           class="form-label">Start Date</label>
+                                    <input id="internship_start_date"
+                                           name="start_date"
+                                           type="date"
+                                           required="required"
+                                           t-att-class="'form-control is-invalid' if errors.get('start_date') else 'form-control'"
+                                           t-att-value="form_values.get('start_date')"/>
+                                    <div t-if="errors.get('start_date')"
+                                         class="invalid-feedback"
+                                         t-out="errors.get('start_date')"/>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="internship_end_date"
+                                           class="form-label">End Date</label>
+                                    <input id="internship_end_date"
+                                           name="end_date"
+                                           type="date"
+                                           required="required"
+                                           t-att-class="'form-control is-invalid' if errors.get('end_date') else 'form-control'"
+                                           t-att-value="form_values.get('end_date')"/>
+                                    <div t-if="errors.get('end_date')"
+                                         class="invalid-feedback"
+                                         t-out="errors.get('end_date')"/>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="internship_workflow_mode"
+                                       class="form-label">Internship Mode</label>
+                                <select id="internship_workflow_mode"
+                                        name="workflow_mode"
+                                        required="required"
+                                        t-att-class="'form-select is-invalid' if errors.get('workflow_mode') else 'form-select'">
+                                    <option value="independent"
+                                            t-att-selected="form_values.get('workflow_mode') == 'independent'">
+                                        Independent
+                                    </option>
+                                </select>
+                                <div t-if="errors.get('workflow_mode')"
+                                     class="invalid-feedback"
+                                     t-out="errors.get('workflow_mode')"/>
+                                <div class="form-text">
+                                    Supervisor onboarding is not included in
+                                    this release.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Create Internship
+                            </button>
+                            <a href="/my/internship"
+                               class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

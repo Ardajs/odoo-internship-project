@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_internship_supervisor_dashboard" model="ir.ui.view">
+        <field name="name">internship.supervisor.dashboard.form</field>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <form string="Supervisor Dashboard"
+                  create="0" edit="0" delete="0">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Supervisor Dashboard</h1>
+                        <p class="text-muted">
+                            Review assigned supervised internships and entries
+                            that require attention.
+                        </p>
+                    </div>
+
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_internship_pending_review"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-inbox">
+                            <field name="internship_pending_review_count"
+                                   widget="statinfo"
+                                   string="Pending Review"/>
+                        </button>
+                        <button name="action_internship_revision_requested"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-refresh">
+                            <field name="internship_revision_requested_count"
+                                   widget="statinfo"
+                                   string="Revision Requested"/>
+                        </button>
+                        <button name="action_internship_approved_entries"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-check-circle">
+                            <field name="internship_approved_entries_count"
+                                   widget="statinfo"
+                                   string="Approved Entries"/>
+                        </button>
+                        <button name="action_internship_completed_programs"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-flag-checkered">
+                            <field name="internship_completed_programs_count"
+                                   widget="statinfo"
+                                   string="Completed Internships"/>
+                        </button>
+                        <button name="action_internship_active_programs"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-play-circle">
+                            <field name="internship_active_programs_count"
+                                   widget="statinfo"
+                                   string="Active Internships"/>
+                        </button>
+                        <button name="action_internship_ending_soon"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-hourglass-end">
+                            <field name="internship_ending_soon_count"
+                                   widget="statinfo"
+                                   string="Ending Soon"/>
+                        </button>
+                        <button name="action_internship_students_missing_days"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-calendar-times-o">
+                            <field name="internship_students_missing_days_count"
+                                   widget="statinfo"
+                                   string="Missing Days"/>
+                        </button>
+                        <button name="action_internship_assigned_students"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-users">
+                            <field name="internship_assigned_students_count"
+                                   widget="statinfo"
+                                   string="Assigned Students"/>
+                        </button>
+                    </div>
+
+                    <group string="Dashboard Scope">
+                        <field name="name" readonly="1"/>
+                        <field name="login" readonly="1"/>
+                    </group>
+                    <div class="alert alert-info" role="status">
+                        Missing days use inclusive calendar dates through today.
+                        Weekends and public holidays are not excluded because
+                        the internship model does not define working calendars.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_server_internship_supervisor_dashboard"
+            model="ir.actions.server">
+        <field name="name">Supervisor Dashboard</field>
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="group_ids"
+               eval="[Command.link(ref('group_internship_supervisor')), Command.link(ref('group_internship_manager'))]"/>
+        <field name="state">code</field>
+        <field name="code">
+action = model.action_open_internship_supervisor_dashboard()
+        </field>
+    </record>
+</odoo>

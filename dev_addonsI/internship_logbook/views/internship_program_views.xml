@@ -18,6 +18,7 @@
                 <field name="student_id"/>
                 <field name="company_name"/>
                 <field name="department"/>
+                <field name="student_university" optional="hide"/>
                 <field name="workflow_mode"/>
                 <field name="supervisor_id"/>
                 <field name="start_date"/>
@@ -113,6 +114,65 @@
 
                         </button>
 
+                        <button
+                            name="action_view_review_queue"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-inbox"
+                            invisible="workflow_mode != 'supervised'"
+                            groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <field
+                                name="submitted_entry_count"
+                                widget="statinfo"
+                                string="Review Queue"/>
+                        </button>
+
+                        <button
+                            name="action_view_missing_days"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-calendar-times-o"
+                            invisible="workflow_mode != 'supervised'"
+                            groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <field
+                                name="missing_day_count"
+                                widget="statinfo"
+                                string="Missing Days"/>
+                        </button>
+
+                        <button
+                            name="action_view_student_overview"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-user"
+                            groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Student Overview</span>
+                            </div>
+                        </button>
+
+                        <button
+                            name="action_view_analytics"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-bar-chart"
+                            groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Analytics</span>
+                            </div>
+                        </button>
+
+                        <button
+                            name="action_export_pdf"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-file-pdf-o"
+                            groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Export PDF</span>
+                            </div>
+                        </button>
+
                     </div>
 
                     <div class="oe_title">
@@ -125,11 +185,15 @@
                         </h1>
                     </div>
 
-                    <group>
+                    <group string="Program Overview">
                         <group string="Student Information">
                             <field
                                 name="student_id"
                                 readonly="state != 'draft'"/>
+
+                            <field name="student_number" readonly="1"/>
+                            <field name="student_university" readonly="1"/>
+                            <field name="student_department" readonly="1"/>
 
                             <field
                                 name="workflow_mode"
@@ -148,7 +212,8 @@
                                 readonly="state in ('completed', 'cancelled')"/>
                         </group>
 
-                        <group string="Company Information">
+                        <group string="Program and Company">
+                            <field name="name" readonly="1"/>
                             <field
                                 name="company_name"
                                 readonly="state != 'draft'"/>
@@ -156,6 +221,7 @@
                             <field
                                 name="department"
                                 readonly="state != 'draft'"/>
+                            <field name="state" readonly="1"/>
                         </group>
                     </group>
 
@@ -184,7 +250,7 @@
                     </group>
 
                     <group
-                        string="Approval Statistics"
+                        string="Progress"
                         invisible="workflow_mode != 'supervised'">
 
                         <group>
@@ -196,6 +262,10 @@
                             <field
                                 name="approved_entry_count"
                                 readonly="1"/>
+
+                            <field name="submitted_entry_count" readonly="1"/>
+
+                            <field name="revision_entry_count" readonly="1"/>
 
                             <field
                                 name="approval_percentage"
@@ -214,12 +284,14 @@
                                 name="approved_work_hours"
                                 readonly="1"/>
 
+                            <field name="missing_day_count" readonly="1"/>
+
                         </group>
 
                     </group>
 
                     <group
-                        string="Completion Statistics"
+                        string="Progress"
                         invisible="workflow_mode != 'independent'">
                         <group>
                             <field name="daily_entry_count" readonly="1"/>
@@ -249,7 +321,7 @@
                             <field name="daily_entry_ids"
                             context="{'default_program_id': id}">
 
-                                <list>
+                                <list default_order="entry_date desc, id desc">
                                     <field name="entry_date"/>
                                     <field name="day_number"/>
                                     <field name="title"/>
@@ -284,6 +356,7 @@
                 <field name="department"/>
                 <field name="workflow_mode"/>
                 <field name="supervisor_id"/>
+                <field name="student_university"/>
 
                 <separator/>
 
@@ -335,6 +408,21 @@
                     domain="['|', ('student_id.user_id', '=', uid), ('supervisor_id', '=', uid)]"
                 />
 
+                <filter
+                    name="filter_my_students"
+                    string="My Students"
+                    domain="[('workflow_mode', '=', 'supervised'), ('supervisor_id', '=', uid)]"/>
+
+                <filter
+                    name="filter_missing_days"
+                    string="Missing Days"
+                    domain="[('has_missing_days', '=', True)]"/>
+
+                <filter
+                    name="filter_ending_soon"
+                    string="Ending Soon"
+                    domain="[('workflow_mode', '=', 'supervised'), ('state', '=', 'active'), ('end_date', '&gt;=', context_today().strftime('%Y-%m-%d')), ('end_date', '&lt;=', (context_today() + relativedelta(days=14)).strftime('%Y-%m-%d'))]"/>
+
                 <separator/>
 
                 <!-- Archived records -->
@@ -363,6 +451,12 @@
                         name="group_by_supervisor"
                         string="Supervisor"
                         context="{'group_by': 'supervisor_id'}"
+                    />
+
+                    <filter
+                        name="group_by_university"
+                        string="University"
+                        context="{'group_by': 'student_university'}"
                     />
 
                     <filter
@@ -407,6 +501,13 @@
                 Manage students, companies, supervisors and internship dates.
             </p>
         </field>
+    </record>
+
+    <record id="action_internship_program_overview" model="ir.actions.act_window">
+        <field name="name">Program Overview</field>
+        <field name="res_model">internship.program</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_internship_program_search"/>
     </record>
 
 </odoo>

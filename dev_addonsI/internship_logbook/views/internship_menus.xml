@@ -12,6 +12,14 @@
 
     <!-- Management -->
     <menuitem
+        id="menu_internship_supervisor_dashboard"
+        name="Supervisor Dashboard"
+        parent="menu_internship_root"
+        action="action_server_internship_supervisor_dashboard"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="5"/>
+
+    <menuitem
         id="menu_internship_management"
         name="Management"
         parent="menu_internship_root"
@@ -38,11 +46,97 @@
 
     <!-- Daily Entries -->
     <menuitem
+        id="menu_internship_supervisor_review_queue"
+        name="Review Queue"
+        parent="menu_internship_management"
+        action="action_internship_supervisor_review_queue"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="25"/>
+
+    <menuitem
         id="menu_internship_daily_entry"
         name="Daily Entries"
         parent="menu_internship_management"
         action="action_internship_daily_entry"
         groups="internship_logbook.group_internship_intern,internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
         sequence="30"/>
+
+    <menuitem
+        id="menu_internship_analytics"
+        name="Analytics"
+        parent="menu_internship_root"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_internship_program_overview"
+        name="Program Overview"
+        parent="menu_internship_management"
+        action="action_internship_program_overview"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="22"/>
+
+    <menuitem
+        id="menu_internship_analytics_overview"
+        name="Analytics Overview"
+        parent="menu_internship_analytics"
+        action="action_internship_daily_entry_analytics"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_internship_monthly_report"
+        name="Monthly Report"
+        parent="menu_internship_analytics"
+        action="action_internship_monthly_report"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_internship_company_report"
+        name="Company Report"
+        parent="menu_internship_analytics"
+        action="action_internship_company_report"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_internship_university_report"
+        name="University Report"
+        parent="menu_internship_analytics"
+        action="action_internship_university_report"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="40"/>
+
+    <menuitem
+        id="menu_internship_supervisor_report"
+        name="Supervisor Report"
+        parent="menu_internship_analytics"
+        action="action_internship_supervisor_report"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="50"/>
+
+    <menuitem
+        id="menu_internship_communication"
+        name="Communication"
+        parent="menu_internship_root"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_internship_entry_communications"
+        name="Entry Communications"
+        parent="menu_internship_communication"
+        action="action_internship_entry_communications"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_internship_program_reminders"
+        name="Program Reminders"
+        parent="menu_internship_communication"
+        action="action_internship_program_reminders"
+        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+        sequence="20"/>
 
 </odoo>

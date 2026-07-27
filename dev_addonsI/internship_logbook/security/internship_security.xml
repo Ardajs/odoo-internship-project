@@ -18,6 +18,10 @@
         <field name="name">Internship / Manager</field>
     </record>
 
+    <record id="group_internship_portal_intern" model="res.groups">
+        <field name="name">Internship / Portal Intern</field>
+        <field name="implied_ids" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
 
     <!-- ===================================================== -->
     <!-- INTERN RECORD RULES                                    -->
@@ -51,6 +55,35 @@
         <field
             name="groups"
             eval="[Command.link(ref('group_internship_intern'))]"/>
+        <field name="domain_force">
+            [('student_id.user_id', '=', user.id)]
+        </field>
+    </record>
+
+    <!-- Portal interns have read-only access to their own ownership chain. -->
+    <record id="rule_internship_student_portal_intern" model="ir.rule">
+        <field name="name">Portal Intern: Own Student Record</field>
+        <field name="model_id" ref="model_internship_student"/>
+        <field name="groups"
+               eval="[Command.link(ref('group_internship_portal_intern'))]"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+    </record>
+
+    <record id="rule_internship_program_portal_intern" model="ir.rule">
+        <field name="name">Portal Intern: Own Internship Programs</field>
+        <field name="model_id" ref="model_internship_program"/>
+        <field name="groups"
+               eval="[Command.link(ref('group_internship_portal_intern'))]"/>
+        <field name="domain_force">
+            [('student_id.user_id', '=', user.id)]
+        </field>
+    </record>
+
+    <record id="rule_internship_daily_entry_portal_intern" model="ir.rule">
+        <field name="name">Portal Intern: Own Daily Entries</field>
+        <field name="model_id" ref="model_internship_daily_entry"/>
+        <field name="groups"
+               eval="[Command.link(ref('group_internship_portal_intern'))]"/>
         <field name="domain_force">
             [('student_id.user_id', '=', user.id)]
         </field>

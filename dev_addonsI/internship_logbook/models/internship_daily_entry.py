@@ -1,5 +1,13 @@
+import logging
+import math
+
+from psycopg2 import IntegrityError
+
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
+
+
+_logger = logging.getLogger(__name__)
 
 class InternshipDailyEntry(models.Model):
     _name = "internship.daily.entry"
@@ -9,6 +17,8 @@ class InternshipDailyEntry(models.Model):
     ]
     _description = "Internship Daily Entry"
     _order = "entry_date desc, id desc"
+    _review_activity_summary = "Review Daily Internship Entry"
+    _revision_activity_summary = "Revise Daily Internship Entry"
     _intern_content_fields = {
         "title",
         "entry_date",
@@ -53,6 +63,28 @@ class InternshipDailyEntry(models.Model):
         string="Supervisor",
         related="program_id.supervisor_id",
         store=True,
+        readonly=True,
+    )
+
+    company_name = fields.Char(
+        related="program_id.company_name",
+        string="Company",
+        store=True,
+        index=True,
+        readonly=True,
+    )
+
+    program_department = fields.Char(
+        related="program_id.department",
+        string="Department",
+        readonly=True,
+    )
+
+    student_university = fields.Char(
+        related="student_id.university",
+        string="University",
+        store=True,
+        index=True,
         readonly=True,
     )
 
@@ -299,6 +331,340 @@ class InternshipDailyEntry(models.Model):
             "internship_logbook.group_internship_manager"
         )
 
+    @api.model
+    @api.private
+    def _portal_prepare_daily_entry_values(self, values):
+        """Normalize the scalar values accepted by portal create/edit."""
+        allowed_fields = {
+            "entry_date",
+            "title",
+            "work_description",
+            "work_hours",
+        }
+        if set(values) - allowed_fields:
+            raise AccessError(_("Unsupported daily entry values."))
+
+        title = (values.get("title") or "").strip()
+        work_description = (
+            values.get("work_description") or ""
+        ).strip()
+        try:
+            entry_date = fields.Date.to_date(values.get("entry_date"))
+        except (TypeError, ValueError):
+            entry_date = False
+        try:
+            work_hours = float(values.get("work_hours"))
+        except (TypeError, ValueError):
+            work_hours = 0.0
+
+        if not title or not work_description or not entry_date:
+            raise ValidationError(
+                _("Complete all required daily entry fields.")
+            )
+        if len(title) > 200 or len(work_description) > 10000:
+            raise ValidationError(
+                _("The daily entry text exceeds the allowed length.")
+            )
+        if (
+            not math.isfinite(work_hours)
+            or work_hours <= 0
+            or work_hours > 24
+        ):
+            raise ValidationError(
+                _("Work hours must be greater than zero and at most 24.")
+            )
+        return {
+            "entry_date": entry_date,
+            "title": title,
+            "work_description": work_description,
+            "work_hours": work_hours,
+        }
+
+    @api.model
+    @api.private
+    def _portal_create_draft_entry(self, user_id, program_id, values):
+        """Create one owned portal draft after repeating all trust checks."""
+        prepared_values = self._portal_prepare_daily_entry_values(values)
+
+        user = self.env["res.users"].browse(user_id).exists()
+        if (
+            len(user) != 1
+            or not user.share
+            or not user.has_group(
+                "internship_logbook.group_internship_portal_intern"
+            )
+        ):
+            raise AccessError(
+                _("This account cannot create portal daily entries.")
+            )
+
+        students = self.env["internship.student"].search(
+            [("user_id", "=", user.id), ("active", "=", True)],
+            limit=2,
+        )
+        if len(students) != 1:
+            raise AccessError(
+                _("A valid student profile is required.")
+            )
+        student = students
+
+        eligible_programs = self.env["internship.program"].search([
+            ("student_id", "=", student.id),
+            ("workflow_mode", "=", "independent"),
+            ("state", "=", "active"),
+            ("active", "=", True),
+        ], limit=2)
+        program = eligible_programs.filtered(
+            lambda candidate: candidate.id == program_id
+        )
+        if len(eligible_programs) != 1 or len(program) != 1:
+            raise AccessError(
+                _("Exactly one active independent internship is required.")
+            )
+
+        with self.env.cr.savepoint():
+            self.env.cr.execute(
+                "SELECT id FROM internship_program WHERE id = %s FOR UPDATE",
+                [program.id],
+            )
+            if self.with_context(active_test=False).search_count([
+                ("program_id", "=", program.id),
+                ("entry_date", "=", prepared_values["entry_date"]),
+            ], limit=1):
+                raise UserError(
+                    _("A daily entry already exists for this date.")
+                )
+            entry = self.create({
+                "program_id": program.id,
+                **prepared_values,
+                "state": "draft",
+            })
+            if entry.student_id != student:
+                raise AccessError(
+                    _("The daily entry ownership could not be verified.")
+                )
+            return entry
+
+    @api.model
+    @api.private
+    def _portal_update_draft_entry(self, user_id, entry_id, values):
+        """Update one owned draft through a narrow portal-only service."""
+        prepared_values = self._portal_prepare_daily_entry_values(values)
+
+        user = self.env["res.users"].browse(user_id).exists()
+        if (
+            len(user) != 1
+            or not user.share
+            or not user.has_group(
+                "internship_logbook.group_internship_portal_intern"
+            )
+        ):
+            raise AccessError(
+                _("This account cannot edit portal daily entries.")
+            )
+
+        students = self.env["internship.student"].search(
+            [("user_id", "=", user.id), ("active", "=", True)],
+            limit=2,
+        )
+        if len(students) != 1:
+            raise AccessError(_("A valid student profile is required."))
+        student = students
+
+        entry = self.with_context(active_test=False).search([
+            ("id", "=", entry_id),
+            ("student_id", "=", student.id),
+            ("program_id.student_id", "=", student.id),
+        ], limit=1)
+        if not entry:
+            raise AccessError(_("The daily entry could not be found."))
+
+        program = entry.program_id
+        try:
+            with self.env.cr.savepoint():
+                self.env.cr.execute(
+                    "SELECT id FROM internship_program "
+                    "WHERE id = %s FOR UPDATE",
+                    [program.id],
+                )
+                self.env.cr.execute(
+                    "SELECT id FROM internship_daily_entry "
+                    "WHERE id = %s FOR UPDATE",
+                    [entry.id],
+                )
+                program.invalidate_recordset(["state", "active"])
+                entry.invalidate_recordset()
+                entry = self.with_context(active_test=False).search([
+                    ("id", "=", entry_id),
+                    ("student_id", "=", student.id),
+                    ("program_id", "=", program.id),
+                    ("program_id.student_id", "=", student.id),
+                ], limit=1)
+                if not entry:
+                    raise AccessError(
+                        _("The daily entry could not be found.")
+                    )
+                if (
+                    entry.state != "draft"
+                    or not entry.program_id.active
+                    or entry.program_id.state != "active"
+                ):
+                    raise UserError(
+                        _(
+                            "Only draft entries in an active internship "
+                            "can be edited."
+                        )
+                    )
+
+                if self.with_context(active_test=False).search_count([
+                    ("program_id", "=", program.id),
+                    ("entry_date", "=", prepared_values["entry_date"]),
+                    ("id", "!=", entry.id),
+                ], limit=1):
+                    raise UserError(
+                        _("A daily entry already exists for this date.")
+                    )
+
+                entry.write(prepared_values)
+                entry.invalidate_recordset()
+                if (
+                    entry.student_id != student
+                    or entry.program_id != program
+                    or entry.state != "draft"
+                ):
+                    raise AccessError(
+                        _("The daily entry update could not be verified.")
+                    )
+                return entry
+        except IntegrityError as error:
+            if (
+                error.diag.constraint_name
+                != "internship_daily_entry_program_entry_date_unique"
+            ):
+                raise
+            raise UserError(
+                _("A daily entry already exists for this date.")
+            ) from None
+
+    @api.model
+    @api.private
+    def _portal_submit_draft_entry(self, user_id, entry_id):
+        """Complete one owned Independent draft through its real workflow."""
+        user = self.env["res.users"].browse(user_id).exists()
+        if (
+            len(user) != 1
+            or not user.share
+            or not user.has_group(
+                "internship_logbook.group_internship_portal_intern"
+            )
+        ):
+            raise AccessError(
+                _("This account cannot submit portal daily entries.")
+            )
+
+        students = self.env["internship.student"].search(
+            [("user_id", "=", user.id), ("active", "=", True)],
+            limit=2,
+        )
+        if len(students) != 1:
+            raise AccessError(_("A valid student profile is required."))
+        student = students
+
+        entry = self.with_context(active_test=False).search([
+            ("id", "=", entry_id),
+            ("student_id", "=", student.id),
+            ("program_id.student_id", "=", student.id),
+        ], limit=1)
+        if not entry:
+            raise AccessError(_("The daily entry could not be found."))
+        program = entry.program_id
+
+        with self.env.cr.savepoint():
+            self.env.cr.execute(
+                "SELECT id FROM internship_program "
+                "WHERE id = %s FOR UPDATE",
+                [program.id],
+            )
+            self.env.cr.execute(
+                "SELECT id FROM internship_daily_entry "
+                "WHERE id = %s FOR UPDATE",
+                [entry.id],
+            )
+            program.invalidate_recordset(
+                ["active", "state", "workflow_mode", "student_id"]
+            )
+            entry.invalidate_recordset()
+            entry = self.with_context(active_test=False).search([
+                ("id", "=", entry_id),
+                ("student_id", "=", student.id),
+                ("program_id", "=", program.id),
+                ("program_id.student_id", "=", student.id),
+            ], limit=1)
+            if not entry:
+                raise AccessError(_("The daily entry could not be found."))
+            if (
+                entry.program_id != program
+                or program.student_id != student
+            ):
+                raise AccessError(
+                    _("The daily entry ownership could not be verified.")
+                )
+            if (
+                not program.active
+                or program.state != "active"
+                or program.workflow_mode != "independent"
+            ):
+                raise UserError(
+                    _(
+                        "Daily entries can be submitted only while the "
+                        "independent internship program is active."
+                    )
+                )
+            if entry.state != "draft":
+                raise UserError(
+                    _(
+                        "This daily entry is no longer available "
+                        "for submission."
+                    )
+                )
+
+            self._portal_prepare_daily_entry_values({
+                "entry_date": entry.entry_date,
+                "title": entry.title,
+                "work_description": entry.work_description,
+                "work_hours": entry.work_hours,
+            })
+            if (
+                entry.entry_date < program.start_date
+                or entry.entry_date > program.end_date
+            ):
+                raise ValidationError(
+                    _(
+                        "The daily entry date must be within the "
+                        "internship period."
+                    )
+                )
+            if self.with_context(active_test=False).search_count([
+                ("program_id", "=", program.id),
+                ("entry_date", "=", entry.entry_date),
+                ("id", "!=", entry.id),
+            ], limit=1):
+                raise ValidationError(
+                    _("A daily entry already exists for this date.")
+                )
+
+            entry.action_complete()
+            entry.invalidate_recordset()
+            if (
+                entry.state != "completed"
+                or entry.student_id != student
+                or entry.program_id != program
+            ):
+                raise AccessError(
+                    _("The daily entry submission could not be verified.")
+                )
+            return entry
+
     def _is_owning_intern(self, entry=None, program=None):
         target_program = program or entry.program_id
         return self.env.user.has_group(
@@ -318,6 +684,166 @@ class InternshipDailyEntry(models.Model):
                 "Only the owning intern or an internship manager can "
                 "use the independent internship workflow."
             )
+
+    def _workflow_activities(self, summary, user=None):
+        activities = self.activity_ids.filtered(
+            lambda activity: activity.summary == summary
+        )
+        if user:
+            activities = activities.filtered(
+                lambda activity: activity.user_id == user
+            )
+        return activities
+
+    def _schedule_unique_workflow_activity(self, user, summary, note):
+        self.ensure_one()
+        if not user or self._workflow_activities(summary, user=user):
+            return self.env["mail.activity"]
+        return self.activity_schedule(
+            "mail.mail_activity_data_todo",
+            user_id=user.id,
+            summary=summary,
+            note=note,
+        )
+
+    def _complete_workflow_activities(self, summary, feedback, user=None):
+        activities = self._workflow_activities(summary, user=user)
+        if activities:
+            activities.action_feedback(feedback=feedback)
+
+    def _send_workflow_notification(self, template_xmlid):
+        self.ensure_one()
+        template = self.env.ref(template_xmlid, raise_if_not_found=False)
+        if template:
+            template.send_mail(self.id, force_send=False)
+
+    def action_open_communication_center(self):
+        self.ensure_one()
+        self.check_access("read")
+        self.env["internship.communication.service"]._check_operator()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Communication Center"),
+            "res_model": "internship.communication.center.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "active_model": self._name,
+                "active_id": self.id,
+            },
+        }
+
+    @api.model
+    def _find_pending_reviews(self, domain=None, limit=None):
+        """Return caller-visible supervised entries awaiting review."""
+        search_domain = [
+            ("active", "=", True),
+            ("workflow_mode", "=", "supervised"),
+            ("program_state", "=", "active"),
+            ("state", "=", "submitted"),
+        ]
+        if domain:
+            search_domain.extend(domain)
+        return self.search(
+            search_domain,
+            order="write_date asc, entry_date asc, id asc",
+            limit=limit,
+        )
+
+    @api.model
+    def _cron_manager_context_allowed(self):
+        return not self.env.su and self.env.user.has_group(
+            "internship_logbook.group_internship_manager"
+        )
+
+    @api.model
+    def _process_pending_review_reminders(
+        self, domain=None, batch_limit=200
+    ):
+        stats = {
+            "found": 0,
+            "created": 0,
+            "existing": 0,
+            "skipped": 0,
+            "failed": 0,
+        }
+        entries = self._find_pending_reviews(
+            domain=domain, limit=batch_limit
+        )
+        stats["found"] = len(entries)
+        for entry in entries:
+            try:
+                with self.env.cr.savepoint():
+                    supervisor = entry.supervisor_id
+                    if (
+                        not supervisor
+                        or not supervisor.active
+                        or supervisor.share
+                    ):
+                        stats["skipped"] += 1
+                        _logger.warning(
+                            "Pending review reminder skipped: entry_id=%s "
+                            "reason=no_internal_supervisor",
+                            entry.id,
+                        )
+                        continue
+                    entry.with_user(supervisor).check_access("read")
+                    if entry._workflow_activities(
+                        entry._review_activity_summary,
+                        user=supervisor,
+                    ):
+                        stats["existing"] += 1
+                        continue
+                    entry._schedule_unique_workflow_activity(
+                        supervisor,
+                        entry._review_activity_summary,
+                        _("Please review the submitted daily internship entry."),
+                    )
+                    stats["created"] += 1
+            except (AccessError, UserError, ValidationError) as error:
+                stats["skipped"] += 1
+                _logger.warning(
+                    "Pending review reminder skipped: entry_id=%s "
+                    "error_type=%s",
+                    entry.id,
+                    type(error).__name__,
+                )
+            except Exception:
+                stats["failed"] += 1
+                _logger.exception(
+                    "Pending review reminder failed: entry_id=%s",
+                    entry.id,
+                )
+        return stats
+
+    @api.model
+    def _cron_remind_pending_reviews(self, batch_limit=200):
+        if not self._cron_manager_context_allowed():
+            stats = {
+                "found": 0,
+                "created": 0,
+                "existing": 0,
+                "skipped": 0,
+                "failed": 1,
+            }
+            _logger.error(
+                "Pending review reminders refused: cron user must be an "
+                "internal Internship Manager and must not be superuser"
+            )
+            return stats
+        stats = self._process_pending_review_reminders(
+            batch_limit=batch_limit
+        )
+        _logger.info(
+            "Pending review reminders: found=%s created=%s existing=%s "
+            "skipped=%s failed=%s",
+            stats["found"],
+            stats["created"],
+            stats["existing"],
+            stats["skipped"],
+            stats["failed"],
+        )
+        return stats
 
     def action_submit(self):
         if not self.env.user.has_group(
@@ -355,18 +881,11 @@ class InternshipDailyEntry(models.Model):
             # If this entry was previously in revision state,
             # close the intern's revision activity
             if previous_state == "revision":
-                revision_activities = entry.activity_ids.filtered(
-                    lambda activity:
-                        activity.user_id == self.env.user
-                        and activity.summary == "Revise Daily Internship Entry"
+                entry._complete_workflow_activities(
+                    entry._revision_activity_summary,
+                    _("Daily internship entry revised and resubmitted."),
+                    user=entry.student_id.user_id,
                 )
-
-                if revision_activities:
-                    revision_activities.action_feedback(
-                        feedback=(
-                            "Daily internship entry revised and resubmitted."
-                        )
-                    )
 
             # Post a message to chatter
             entry.message_post(
@@ -383,151 +902,332 @@ class InternshipDailyEntry(models.Model):
                     ]
                 )
 
-                # Create review activity for supervisor
-                entry.activity_schedule(
-                    "mail.mail_activity_data_todo",
-                    user_id=entry.supervisor_id.id,
-                    summary="Review Daily Internship Entry",
-                    note=(
-                        "Please review the submitted daily internship entry."
-                    ),
+                entry._schedule_unique_workflow_activity(
+                    entry.supervisor_id,
+                    entry._review_activity_summary,
+                    _("Please review the submitted daily internship entry."),
                 )
-
-                template = self.env.ref(
+                entry._send_workflow_notification(
                     "internship_logbook.mail_template_daily_entry_submitted",
-                    raise_if_not_found=False,
                 )
-
-                if template:
-                    template.send_mail(
-                        entry.id,
-                        force_send=False,
-                    )
 
     def action_approve(self):
-        if not self.env.user.has_group(
-            "internship_logbook.group_internship_supervisor"
-        ) and not self.env.user.has_group(
-            "internship_logbook.group_internship_manager"
-        ):
-            raise AccessError(
-                "Only internship supervisors or managers "
-                "can approve daily entries."
-            )
+        self.ensure_one()
+        self._lock_and_validate_supervised_review()
+        self._validate_reviewable_content()
 
-        for entry in self:
-            if entry.workflow_mode == "independent":
-                raise UserError(
-                    _("Independent daily entries cannot be approved.")
-                )
-            if entry.state != "submitted":
-                raise ValidationError(
-                    "Only submitted entries can be approved."
-                )
+        self._write_workflow_state("approved")
 
-            entry._write_workflow_state("approved")
-
-            template = self.env.ref(
-                "internship_logbook.mail_template_daily_entry_approved",
-                raise_if_not_found=False,
-            )
-
-            if template:
-                template.send_mail(
-                    entry.id,
-                    force_send=False,
-                )
-
-            # Add message to Chatter
-            entry.message_post(
-                body="Daily internship entry approved."
-            )
-
-            # Complete supervisor's review activity
-            activities = entry.activity_ids.filtered(
-                lambda activity:
-                    activity.user_id == self.env.user
-                    and activity.summary == "Review Daily Internship Entry"
-            )
-
-            if activities:
-                activities.action_feedback(
-                    feedback="Daily internship entry reviewed and approved."
-                )
+        self._complete_supervisor_review_activities(
+            "Daily internship entry reviewed and approved."
+        )
+        self.message_post(body=_("Daily internship entry approved."))
+        self._send_workflow_notification(
+            "internship_logbook.mail_template_daily_entry_approved"
+        )
+        if self.env.context.get("skip_review_navigation"):
+            return False
+        return self._action_open_next_review()
 
 
     def action_request_revision(self):
-        if not self.env.user.has_group(
-            "internship_logbook.group_internship_supervisor"
-        ) and not self.env.user.has_group(
-            "internship_logbook.group_internship_manager"
-        ):
-            raise AccessError(
-                "Only internship supervisors or managers "
-                "can request a revision."
-            )
-
-        for entry in self:
-            if entry.workflow_mode == "independent":
-                raise UserError(
-                    _("Revisions cannot be requested for independent "
-                      "daily entries.")
-                )
-            if entry.state != "submitted":
-                raise ValidationError(
-                    "A revision can only be requested for "
-                    "a submitted entry."
-                )
-
-            entry._write_workflow_state("revision")
-
-            entry.message_post(
-                body=(
-                    "Revision requested by the internship supervisor."
+        self.ensure_one()
+        self._lock_and_validate_supervised_review()
+        comment = (self.supervisor_comment or "").strip()
+        if not comment:
+            raise ValidationError(
+                _(
+                    "Please enter a meaningful supervisor comment before "
+                    "requesting a revision."
                 )
             )
+        if comment != self.supervisor_comment:
+            self.write({"supervisor_comment": comment})
 
-
-        activities = entry.activity_ids.filtered(
-            lambda activity:
-                activity.user_id == self.env.user
-                and activity.summary == "Review Daily Internship Entry"
+        self._write_workflow_state("revision")
+        self.message_post(
+            body="Revision requested by the internship supervisor."
+        )
+        self._complete_supervisor_review_activities(
+            "Daily internship entry reviewed. Revision requested."
         )
 
-
-        if not entry.supervisor_comment:
-            raise ValidationError(
-                "Please enter a supervisor comment before requesting a revision."
-            )
-
-        if activities:
-            activities.action_feedback(
-                feedback="Daily internship entry reviewed. Revision requested."
-            )
-
-        student_user = entry.student_id.user_id
-
+        student_user = self.student_id.user_id
         if student_user:
-            entry.activity_schedule(
-                "mail.mail_activity_data_todo",
-                user_id=student_user.id,
-                summary="Revise Daily Internship Entry",
-                note=(
-                    "Your supervisor requested a revision "
-                    "for this daily internship entry."
+            self._schedule_unique_workflow_activity(
+                student_user,
+                self._revision_activity_summary,
+                _(
+                    "Your supervisor requested a revision for this daily "
+                    "internship entry."
                 ),
             )
-
-            template = self.env.ref(
+            self._send_workflow_notification(
                 "internship_logbook.mail_template_daily_entry_revision",
-                raise_if_not_found=False,
+            )
+        if self.env.context.get("skip_review_navigation"):
+            return False
+        return self._action_open_next_review()
+
+    def _bulk_review_notification(self, results, operation):
+        success_label = (
+            _("Approved")
+            if operation == "approve"
+            else _("Revision Requested")
+        )
+        labels = (
+            ("success", success_label),
+            ("rejected", _("Rejected")),
+            ("approved", _("Already Approved")),
+            ("revision", _("Already Revision Requested")),
+            ("unauthorized", _("Unauthorized")),
+            ("independent", _("Independent Workflow")),
+            ("other", _("Other Errors")),
+        )
+        lines = []
+        for key, label in labels:
+            names = results[key]
+            line = _("%(label)s: %(count)s", label=label, count=len(names))
+            if names and key != "unauthorized":
+                line += " — " + ", ".join(names[:5])
+                if len(names) > 5:
+                    line += _(" and %(count)s more", count=len(names) - 5)
+            lines.append(line)
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Bulk Review Summary"),
+                "message": "\n".join(lines),
+                "type": "success" if results["success"] else "warning",
+                "sticky": bool(
+                    results["rejected"]
+                    or results["unauthorized"]
+                    or results["independent"]
+                    or results["other"]
+                ),
+                "next": self.env["ir.actions.actions"]._for_xml_id(
+                    "internship_logbook."
+                    "action_internship_supervisor_review_queue"
+                ),
+            },
+        }
+
+    def _action_bulk_review(self, operation):
+        if not self:
+            raise UserError(_("Select at least one daily entry to review."))
+        if not self._is_internship_manager() and not self.env.user.has_group(
+            "internship_logbook.group_internship_supervisor"
+        ):
+            raise AccessError(
+                _("Only internship supervisors or managers can review entries.")
+            )
+        results = {
+            key: []
+            for key in (
+                "success",
+                "rejected",
+                "approved",
+                "revision",
+                "unauthorized",
+                "independent",
+                "other",
+            )
+        }
+        for entry in self.sorted("id"):
+            try:
+                entry.check_access("write")
+                entry.invalidate_recordset(
+                    ["state", "workflow_mode", "title"]
+                )
+                name = entry.display_name
+                if entry.workflow_mode == "independent":
+                    results["independent"].append(name)
+                    continue
+                if entry.state == "approved":
+                    results["approved"].append(name)
+                    continue
+                if entry.state == "revision":
+                    results["revision"].append(name)
+                    continue
+                if entry.state != "submitted":
+                    results["rejected"].append(name)
+                    continue
+                try:
+                    with self.env.cr.savepoint():
+                        review_entry = entry.with_context(
+                            skip_review_navigation=True
+                        )
+                        if operation == "approve":
+                            review_entry.action_approve()
+                        else:
+                            review_entry.action_request_revision()
+                except AccessError:
+                    entry.invalidate_recordset()
+                    results["unauthorized"].append(str(entry.id))
+                except (UserError, ValidationError):
+                    entry.invalidate_recordset()
+                    results["rejected"].append(name)
+                except Exception:
+                    entry.invalidate_recordset()
+                    _logger.exception(
+                        "Unexpected bulk review error for daily entry id=%s",
+                        entry.id,
+                    )
+                    results["other"].append(name)
+                else:
+                    results["success"].append(name)
+            except AccessError:
+                results["unauthorized"].append(str(entry.id))
+        return self._bulk_review_notification(results, operation)
+
+    def action_bulk_approve(self):
+        return self._action_bulk_review("approve")
+
+    def action_bulk_request_revision(self):
+        return self._action_bulk_review("revision")
+
+    def _lock_and_validate_supervised_review(self):
+        """Lock and re-check one form review without bypassing access rules."""
+        self.ensure_one()
+        is_manager = self._is_internship_manager()
+        is_supervisor = self.env.user.has_group(
+            "internship_logbook.group_internship_supervisor"
+        )
+        if not is_manager and not is_supervisor:
+            raise AccessError(
+                _(
+                    "Only internship supervisors or managers can review "
+                    "daily entries."
+                )
+            )
+        self.check_access("write")
+        self.env.cr.execute(
+            "SELECT id FROM internship_daily_entry WHERE id = %s FOR UPDATE",
+            [self.id],
+        )
+        if not self.env.cr.fetchone():
+            raise AccessError(_("The daily entry is no longer available."))
+        self.invalidate_recordset()
+        if not self.active or not self.program_id.active:
+            raise UserError(_("Only active daily entries can be reviewed."))
+        if self.workflow_mode != "supervised":
+            raise UserError(
+                _("Independent daily entries cannot use supervisor review.")
+            )
+        if self.state != "submitted":
+            raise UserError(
+                _("This daily entry is no longer pending supervisor review.")
+            )
+        if self.program_id.state != "active":
+            raise UserError(
+                _("Daily entries can be reviewed only in an active program.")
+            )
+        if not is_manager and self.supervisor_id != self.env.user:
+            raise AccessError(
+                _("Supervisors can review only their assigned daily entries.")
+            )
+        if self.student_id != self.program_id.student_id:
+            raise ValidationError(
+                _("The daily entry and internship program do not match.")
             )
 
-            if template:
-                template.send_mail(
-                    entry.id,
-                    force_send=False,
-                )
+    def _validate_reviewable_content(self):
+        self.ensure_one()
+        if not (self.title or "").strip() or not (
+            self.work_description or ""
+        ).strip():
+            raise ValidationError(
+                _("The daily entry must contain a title and work description.")
+            )
+        if not math.isfinite(self.work_hours) or not 0 < self.work_hours <= 24:
+            raise ValidationError(
+                _("Work hours must be greater than zero and at most 24.")
+            )
+        program = self.program_id
+        if (
+            not self.entry_date
+            or not program.start_date
+            or not program.end_date
+            or self.entry_date < program.start_date
+            or self.entry_date > program.end_date
+        ):
+            raise ValidationError(
+                _("The daily entry date must be within the internship period.")
+            )
+
+    def _complete_supervisor_review_activities(self, feedback):
+        self.ensure_one()
+        self._complete_workflow_activities(
+            self._review_activity_summary,
+            feedback,
+            user=self.supervisor_id,
+        )
+
+    def _action_open_next_review(self):
+        self.ensure_one()
+        next_entry = self.search(
+            [
+                ("id", "!=", self.id),
+                ("workflow_mode", "=", "supervised"),
+                ("state", "=", "submitted"),
+            ],
+            order="write_date desc, entry_date desc, id desc",
+            limit=1,
+        )
+        if next_entry:
+            return {
+                "type": "ir.actions.act_window",
+                "name": _("Review Daily Entry"),
+                "res_model": self._name,
+                "res_id": next_entry.id,
+                "view_mode": "form",
+                "views": [(
+                    self.env.ref(
+                        "internship_logbook.view_internship_daily_entry_form"
+                    ).id,
+                    "form",
+                )],
+                "target": "current",
+            }
+        return self.env["ir.actions.actions"]._for_xml_id(
+            "internship_logbook.action_internship_supervisor_review_queue"
+        )
+
+    def action_review_next(self):
+        self.ensure_one()
+        if not self._is_internship_manager() and not self.env.user.has_group(
+            "internship_logbook.group_internship_supervisor"
+        ):
+            raise AccessError(
+                _("Only internship supervisors or managers can review entries.")
+            )
+        self.check_access("read")
+        return self._action_open_next_review()
+
+    def action_open_student(self):
+        self.ensure_one()
+        self.check_access("read")
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Student"),
+            "res_model": "internship.student",
+            "res_id": self.student_id.id,
+            "view_mode": "form",
+            "target": "current",
+        }
+
+    def action_open_program(self):
+        self.ensure_one()
+        self.check_access("read")
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Internship Program"),
+            "res_model": "internship.program",
+            "res_id": self.program_id.id,
+            "view_mode": "form",
+            "target": "current",
+        }
 
     def action_reset_to_draft(self):
         for entry in self:
@@ -543,6 +1243,14 @@ class InternshipDailyEntry(models.Model):
                 )
 
             entry._write_workflow_state("draft")
+            entry._complete_workflow_activities(
+                entry._revision_activity_summary,
+                _("Revision request reset to draft."),
+                user=entry.student_id.user_id,
+            )
+            entry.message_post(
+                body=_("Daily internship entry reset to draft."),
+            )
 
     def action_complete(self):
         for entry in self:

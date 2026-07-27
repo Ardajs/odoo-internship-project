@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_server_internship_bulk_approve" model="ir.actions.server">
+        <field name="name">Bulk Approve</field>
+        <field name="model_id" ref="model_internship_daily_entry"/>
+        <field name="binding_model_id" ref="model_internship_daily_entry"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids" eval="[
+            Command.link(ref('group_internship_supervisor')),
+            Command.link(ref('group_internship_manager')),
+        ]"/>
+        <field name="state">code</field>
+        <field name="code">action = records.action_bulk_approve()</field>
+    </record>
+
+    <record id="action_server_internship_bulk_request_revision"
+            model="ir.actions.server">
+        <field name="name">Bulk Request Revision</field>
+        <field name="model_id" ref="model_internship_daily_entry"/>
+        <field name="binding_model_id" ref="model_internship_daily_entry"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids" eval="[
+            Command.link(ref('group_internship_supervisor')),
+            Command.link(ref('group_internship_manager')),
+        ]"/>
+        <field name="state">code</field>
+        <field name="code">action = records.action_bulk_request_revision()</field>
+    </record>
+</odoo>

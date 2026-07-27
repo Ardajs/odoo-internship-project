@@ -1,6 +1,6 @@
 {
     "name": "Internship Logbook",
-    "version": "19.0.2.0.0",
+    "version": "19.0.4.0.0",
     "summary": "Manage internship programs and daily internship records",
     "description": """
 Internship Logbook Management
@@ -20,24 +20,45 @@ This module allows companies to manage:
     "depends": [
         "base",
         "mail",
+        "auth_signup",
+        "portal",
+        "website",
     ],
     "data": [
     "security/internship_security.xml",
     "security/ir.model.access.csv",
 
+    "data/internship_student_sequence.xml",
+    "data/self_registration_mail_template.xml",
+    "data/communication_subtypes.xml",
     "data/mail_templates.xml",
+    "data/bulk_review_actions.xml",
+    "data/ir_cron.xml",
 
     "views/internship_student_views.xml",
     "views/internship_program_views.xml",
     "views/internship_daily_entry_views.xml",
+    "views/internship_supervisor_dashboard_views.xml",
+    "views/internship_analytics_views.xml",
     "wizard/ai_assistant_wizard_views.xml",
+    "wizard/communication_center_wizard_views.xml",
+    "views/communication_center_views.xml",
     "views/internship_menus.xml",
 
     "report/internship_paperformat.xml",
     "report/internship_report_template.xml",
+    "report/portal_internship_report_template.xml",
     "report/internship_report.xml",
 
+    "views/self_registration_templates.xml",
+    "views/internship_portal_templates.xml",
+
     ],
+    "assets": {
+        "web.assets_frontend": [
+            "internship_logbook/static/src/js/verification_token.js",
+        ],
+    },
     "application": True,
     "installable": True,
     "auto_install": False,

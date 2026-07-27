@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="self_registration_form" name="Internship Registration">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure">
+                <section class="container py-5">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-6">
+                            <h1>Create your Internship Logbook account</h1>
+                            <p class="text-muted">
+                                Enter your name and email. You will set your
+                                password after verifying your email address.
+                            </p>
+                            <div t-if="error" class="alert alert-danger"
+                                 role="alert" t-out="error"/>
+                            <form action="/internship/register" method="post"
+                                  data-captcha="signup">
+                                <input type="hidden" name="csrf_token"
+                                       t-att-value="request.csrf_token()"/>
+                                <div class="mb-3">
+                                    <label for="registration_name"
+                                           class="form-label">Full name</label>
+                                    <input id="registration_name" name="name"
+                                           type="text" required="required"
+                                           maxlength="200"
+                                           class="form-control"
+                                           t-att-value="name"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="registration_email"
+                                           class="form-label">Email</label>
+                                    <input id="registration_email" name="email"
+                                           type="email" required="required"
+                                           maxlength="254"
+                                           autocomplete="email"
+                                           class="form-control"
+                                           t-att-value="email"/>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    Send verification email
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="self_registration_sent"
+              name="Internship Registration Sent">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure">
+                <section class="container py-5 text-center">
+                    <h1>Check your email</h1>
+                    <p>
+                        If the address can be registered, a verification
+                        message will arrive shortly.
+                    </p>
+                    <p class="text-muted">
+                        This response is the same for new and existing accounts.
+                    </p>
+                    <a href="/web/login" class="btn btn-outline-primary">
+                        Go to sign in
+                    </a>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="self_registration_verify"
+              name="Verify Internship Registration">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure">
+                <section class="container py-5">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-6">
+                            <h1>Verify your account</h1>
+                            <p>Choose a password to finish registration.</p>
+                            <div t-if="error" class="alert alert-danger"
+                                 role="alert" t-out="error"/>
+                            <form action="/internship/verify" method="post"
+                                  class="o_internship_verification_form">
+                                <input type="hidden" name="csrf_token"
+                                       t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="selector"
+                                       t-att-value="selector"/>
+                                <input type="hidden" name="secret" value=""/>
+                                <div class="mb-3">
+                                    <label for="registration_password"
+                                           class="form-label">Password</label>
+                                    <input id="registration_password"
+                                           name="password" type="password"
+                                           required="required"
+                                           autocomplete="new-password"
+                                           class="form-control"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="registration_password_confirm"
+                                           class="form-label">
+                                        Confirm password
+                                    </label>
+                                    <input id="registration_password_confirm"
+                                           name="password_confirmation"
+                                           type="password" required="required"
+                                           autocomplete="new-password"
+                                           class="form-control"/>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    Verify and create account
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+</odoo>

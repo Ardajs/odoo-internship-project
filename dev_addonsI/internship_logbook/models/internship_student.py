@@ -12,6 +12,11 @@ class InternshipStudent(models.Model):
         "The student number must be unique.",
     )
 
+    _user_unique = models.Constraint(
+        "UNIQUE(user_id)",
+        "A user can be linked to only one internship student profile.",
+    )
+
     name = fields.Char(
         string="Full Name",
         required=True,
@@ -20,6 +25,9 @@ class InternshipStudent(models.Model):
     student_number = fields.Char(
         string="Student Number",
         required=True,
+        default=lambda self: self.env["ir.sequence"].next_by_code(
+            "internship.student"
+        ),
     )
 
     user_id = fields.Many2one(
@@ -31,7 +39,7 @@ class InternshipStudent(models.Model):
 
     university = fields.Char(
         string="University",
-        required=True,
+        help="Complete this field before creating an internship program.",
     )
 
     faculty = fields.Char(
@@ -40,7 +48,7 @@ class InternshipStudent(models.Model):
 
     department = fields.Char(
         string="Department",
-        required=True,
+        help="Complete this field before creating an internship program.",
     )
 
     class_year = fields.Selection(

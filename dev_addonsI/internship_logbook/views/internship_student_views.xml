@@ -123,6 +123,11 @@
                     domain="[('active', '=', True)]"/>
 
                 <filter
+                    name="my_supervised_students"
+                    string="My Students"
+                    domain="[('program_ids.workflow_mode', '=', 'supervised'), ('program_ids.supervisor_id', '=', uid)]"/>
+
+                <filter
                     name="archived_students"
                     string="Archived Students"
                     domain="[('active', '=', False)]"/>

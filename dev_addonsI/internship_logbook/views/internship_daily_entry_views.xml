@@ -21,6 +21,8 @@
                 <field name="program_id"/>
                 <field name="workflow_mode" optional="show"/>
                 <field name="supervisor_id" optional="hide"/>
+                <field name="company_name" optional="hide"/>
+                <field name="student_university" optional="hide"/>
                 <field name="work_hours"/>
                 <field name="state" widget="badge"/>
 
@@ -64,6 +66,13 @@
                         invisible="workflow_mode != 'supervised' or state != 'submitted'"/>
 
                     <button
+                        name="action_review_next"
+                        string="Review Next"
+                        type="object"
+                        groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
+                        invisible="workflow_mode != 'supervised' or state != 'submitted'"/>
+
+                    <button
                         name="action_reset_to_draft"
                         string="Reset to Draft"
                         type="object"
@@ -100,6 +109,27 @@
 
                 <sheet>
 
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_student"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-user"
+                                groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Open Student</span>
+                            </div>
+                        </button>
+                        <button name="action_open_program"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-briefcase"
+                                groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Open Program</span>
+                            </div>
+                        </button>
+                    </div>
+
                     <div class="oe_title">
                         <label for="title"/>
                         <h1>
@@ -123,6 +153,10 @@
                                 name="supervisor_id"
                                 readonly="1"
                                 invisible="workflow_mode == 'independent'"/>
+
+                            <field name="company_name" readonly="1"/>
+
+                            <field name="program_department" readonly="1"/>
 
                         </group>
 
@@ -175,6 +209,11 @@
                         string="Supervisor Evaluation"
                         invisible="workflow_mode == 'independent' or state == 'draft'">
 
+                        <div class="alert alert-info" role="alert"
+                             invisible="state != 'submitted'">
+                            Add a clear review comment before requesting a revision.
+                        </div>
+
                         <field
                             name="supervisor_comment"
                             readonly="state != 'submitted'"
@@ -216,6 +255,8 @@
                 <field name="student_id"/>
                 <field name="workflow_mode"/>
                 <field name="supervisor_id"/>
+                <field name="company_name"/>
+                <field name="student_university"/>
                 <field name="entry_date"/>
                 <field name="technologies"/>
 
@@ -253,6 +294,68 @@
                     string="My Supervised Entries"
                     domain="[('supervisor_id', '=', uid)]"/>
 
+                <filter
+                    name="filter_my_students"
+                    string="My Students"
+                    domain="[('workflow_mode', '=', 'supervised'), ('supervisor_id', '=', uid)]"/>
+
+                <separator/>
+
+                <filter
+                    name="filter_pending_review"
+                    string="Pending Review"
+                    domain="[('workflow_mode', '=', 'supervised'), ('state', '=', 'submitted')]"/>
+
+                <filter
+                    name="filter_submitted_today"
+                    string="Submitted Today"
+                    domain="[('state', '=', 'submitted'), ('write_date', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), ('write_date', '&lt;', (context_today() + relativedelta(days=1)).strftime('%Y-%m-%d 00:00:00'))]"/>
+
+                <filter
+                    name="filter_this_week"
+                    string="This Week"
+                    domain="[('entry_date', '&gt;=', (context_today() - relativedelta(days=context_today().weekday())).strftime('%Y-%m-%d')), ('entry_date', '&lt;=', (context_today() + relativedelta(days=6-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_last_30_days"
+                    string="Last 30 Days"
+                    domain="[('entry_date', '&gt;=', (context_today() - relativedelta(days=29)).strftime('%Y-%m-%d')), ('entry_date', '&lt;=', context_today().strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_current_month"
+                    string="Current Month"
+                    domain="[('entry_date', '&gt;=', context_today().replace(day=1).strftime('%Y-%m-%d')), ('entry_date', '&lt;', (context_today().replace(day=1) + relativedelta(months=1)).strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_previous_month"
+                    string="Previous Month"
+                    domain="[('entry_date', '&gt;=', (context_today().replace(day=1) - relativedelta(months=1)).strftime('%Y-%m-%d')), ('entry_date', '&lt;', context_today().replace(day=1).strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_current_year"
+                    string="Current Year"
+                    domain="[('entry_date', '&gt;=', context_today().replace(month=1, day=1).strftime('%Y-%m-%d')), ('entry_date', '&lt;', (context_today().replace(month=1, day=1) + relativedelta(years=1)).strftime('%Y-%m-%d'))]"/>
+
+                <filter
+                    name="filter_high_hours"
+                    string="High Hour Entries"
+                    domain="[('work_hours', '&gt;', 8)]"/>
+
+                <filter
+                    name="filter_low_hours"
+                    string="Low Hour Entries"
+                    domain="[('work_hours', '&lt;', 8)]"/>
+
+                <filter
+                    name="filter_missing_days"
+                    string="Missing Days"
+                    domain="[('program_id.has_missing_days', '=', True)]"/>
+
+                <filter
+                    name="filter_ending_soon"
+                    string="Ending Soon"
+                    domain="[('program_id.state', '=', 'active'), ('program_id.end_date', '&gt;=', context_today().strftime('%Y-%m-%d')), ('program_id.end_date', '&lt;=', (context_today() + relativedelta(days=14)).strftime('%Y-%m-%d'))]"/>
+
                 <separator/>
 
                 <filter
@@ -273,6 +376,21 @@
                         context="{'group_by': 'program_id'}"/>
 
                     <filter
+                        name="group_by_supervisor"
+                        string="Supervisor"
+                        context="{'group_by': 'supervisor_id'}"/>
+
+                    <filter
+                        name="group_by_company"
+                        string="Company"
+                        context="{'group_by': 'company_name'}"/>
+
+                    <filter
+                        name="group_by_university"
+                        string="University"
+                        context="{'group_by': 'student_university'}"/>
+
+                    <filter
                         name="group_by_state"
                         string="Status"
                         context="{'group_by': 'state'}"/>
@@ -288,12 +406,79 @@
         </field>
     </record>
 
+    <record id="view_internship_supervisor_review_queue_list"
+            model="ir.ui.view">
+        <field name="name">internship.daily.entry.supervisor.review.list</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <list string="Supervisor Review Queue"
+                  default_order="write_date desc, entry_date desc, id desc"
+                  decoration-warning="state == 'submitted'">
+                <field name="write_date"
+                       string="Submitted / Updated"
+                       optional="show"/>
+                <field name="entry_date"/>
+                <field name="title"/>
+                <field name="student_id"/>
+                <field name="program_id"/>
+                <field name="company_name" optional="show"/>
+                <field name="student_university" optional="hide"/>
+                <field name="work_hours"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_internship_daily_entry_pivot" model="ir.ui.view">
+        <field name="name">internship.daily.entry.pivot</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <pivot string="Daily Entry Analysis">
+                <field name="student_id" type="row"/>
+                <field name="program_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="work_hours" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_internship_daily_entry_graph" model="ir.ui.view">
+        <field name="name">internship.daily.entry.graph</field>
+        <field name="model">internship.daily.entry</field>
+        <field name="arch" type="xml">
+            <graph string="Daily Entry Analysis" type="bar" stacked="1">
+                <field name="entry_date" interval="month"/>
+                <field name="state"/>
+                <field name="work_hours" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_internship_supervisor_review_queue"
+            model="ir.actions.act_window">
+        <field name="name">Review Queue</field>
+        <field name="res_model">internship.daily.entry</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="view_id"
+               ref="view_internship_supervisor_review_queue_list"/>
+        <field name="search_view_id"
+               ref="view_internship_daily_entry_search"/>
+        <field name="domain">
+            [('workflow_mode', '=', 'supervised'), ('state', '=', 'submitted')]
+        </field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No daily entries are waiting for review.
+            </p>
+        </field>
+    </record>
+
 
     <!-- Daily Entry Window Action -->
     <record id="action_internship_daily_entry" model="ir.actions.act_window">
         <field name="name">Daily Entries</field>
         <field name="res_model">internship.daily.entry</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list,form,pivot,graph</field>
         <field
             name="search_view_id"
             ref="view_internship_daily_entry_search"/>

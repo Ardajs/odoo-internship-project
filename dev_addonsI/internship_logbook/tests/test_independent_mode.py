@@ -43,6 +43,11 @@ class TestIndependentInternshipMode(TransactionCase):
             "other_independent_mode_intern",
             internal_group | intern_group,
         )
+        cls.supervised_intern_user = cls._create_user(
+            "Supervised Intern",
+            "supervised_mode_intern",
+            internal_group | intern_group,
+        )
         cls.supervisor_user = cls._create_user(
             "Independent Mode Supervisor",
             "independent_mode_supervisor",
@@ -67,7 +72,7 @@ class TestIndependentInternshipMode(TransactionCase):
         cls.supervised_student = cls._create_student(
             "Supervised Student",
             "SUP-001",
-            cls.intern_user,
+            cls.supervised_intern_user,
         )
 
         cls.independent_program = cls.env["internship.program"].create(
@@ -115,15 +120,15 @@ class TestIndependentInternshipMode(TransactionCase):
 
     @classmethod
     def _create_student(cls, name, number, user):
-        return cls.env["internship.student"].create(
-            {
-                "name": name,
-                "student_number": number,
-                "user_id": user.id,
-                "university": "Test University",
-                "department": "Software Engineering",
-            }
-        )
+        values = {
+            "name": name,
+            "student_number": number,
+            "university": "Test University",
+            "department": "Software Engineering",
+        }
+        if user:
+            values["user_id"] = user.id
+        return cls.env["internship.student"].create(values)
 
     @classmethod
     def _program_values(
@@ -185,7 +190,7 @@ class TestIndependentInternshipMode(TransactionCase):
         return self._create_student(
             f"Temporary Student {suffix}",
             f"TMP-{suffix}",
-            user or self.intern_user,
+            user,
         )
 
     def _new_program(
@@ -194,8 +199,9 @@ class TestIndependentInternshipMode(TransactionCase):
         workflow_mode="independent",
         state="draft",
         supervisor=None,
+        student=None,
     ):
-        student = self._new_student(suffix)
+        student = student or self._new_student(suffix)
         return self.env["internship.program"].create(
             self._program_values(
                 student,
@@ -431,7 +437,10 @@ class TestIndependentInternshipMode(TransactionCase):
         ))
 
     def test_complete_and_reopen_require_active_program(self):
-        draft_program = self._new_program("INACTIVE")
+        draft_program = self._new_program(
+            "INACTIVE",
+            student=self.student,
+        )
         entry = self.env["internship.daily.entry"].create(
             self._entry_values(draft_program, "2027-01-02")
         )
@@ -666,7 +675,7 @@ class TestIndependentInternshipMode(TransactionCase):
     def test_supervised_workflow_regression(self):
         with patch.object(MailTemplate, "send_mail") as send_mail:
             self.supervised_entry.with_user(
-                self.intern_user
+                self.supervised_intern_user
             ).action_submit()
             review_activity = self.supervised_entry.activity_ids.filtered(
                 lambda activity:
@@ -684,12 +693,12 @@ class TestIndependentInternshipMode(TransactionCase):
             self.assertEqual(self.supervised_entry.state, "revision")
             self.assertTrue(self.supervised_entry.activity_ids.filtered(
                 lambda activity:
-                    activity.user_id == self.intern_user
+                    activity.user_id == self.supervised_intern_user
                     and activity.summary == "Revise Daily Internship Entry"
             ))
 
             self.supervised_entry.with_user(
-                self.intern_user
+                self.supervised_intern_user
             ).action_submit()
             self.supervised_entry.with_user(
                 self.supervisor_user
@@ -706,7 +715,9 @@ class TestIndependentInternshipMode(TransactionCase):
         self.assertEqual(self.supervised_program.state, "completed")
 
     def test_supervised_report_and_statistics_regression(self):
-        self.supervised_entry.with_user(self.intern_user).action_submit()
+        self.supervised_entry.with_user(
+            self.supervised_intern_user
+        ).action_submit()
         self.supervised_entry.with_user(
             self.supervisor_user
         ).action_approve()
@@ -734,12 +745,14 @@ class TestIndependentInternshipMode(TransactionCase):
             return_value=self.AI_RESULT,
         ):
             action = self.supervised_entry.with_user(
-                self.intern_user
+                self.supervised_intern_user
             ).action_ai_improve_writing()
         wizard = self.env["internship.ai.assistant.wizard"].browse(
             action["res_id"]
-        ).with_user(self.intern_user)
-        self.supervised_entry.with_user(self.intern_user).write(
+        ).with_user(self.supervised_intern_user)
+        self.supervised_entry.with_user(
+            self.supervised_intern_user
+        ).write(
             {"work_description": "A newer supervised description."}
         )
         with self.assertRaises(UserError):
