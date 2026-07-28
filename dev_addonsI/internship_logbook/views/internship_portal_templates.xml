@@ -789,54 +789,67 @@
             <t t-call="portal.portal_searchbar">
                 <t t-set="title">Daily Internship Entries</t>
             </t>
+            <main class="o_internship_saas o_internship_daily_list"
+                  aria-labelledby="internship-daily-list-title">
+            <header class="o_internship_daily_list_header">
+                <div class="o_internship_daily_list_heading">
+                    <p class="o_saas-eyebrow mb-2">Daily Entries</p>
+                    <h1 id="internship-daily-list-title"
+                        class="o_saas-heading mb-3">
+                        My Internship Journal
+                    </h1>
+                    <p class="o_internship_daily_list_intro mb-0">
+                        Review your internship records and monitor their
+                        current workflow status.
+                    </p>
+                </div>
+                <a t-if="eligible_program"
+                   href="/my/internship/daily/new"
+                   class="btn btn-primary o_internship_daily_list_new">
+                    New Daily Entry
+                </a>
+            </header>
             <div t-if="daily_entry_saved"
-                 class="alert alert-success"
+                 class="alert alert-success o_internship_daily_list_notice"
                  role="status">
                 Daily entry saved as draft.
             </div>
             <div t-if="daily_entry_updated"
-                 class="alert alert-success"
+                 class="alert alert-success o_internship_daily_list_notice"
                  role="status">
                 Daily entry updated.
             </div>
             <div t-if="daily_entry_edit_denied"
-                 class="alert alert-warning"
+                 class="alert alert-warning o_internship_daily_list_notice"
                  role="alert">
                 Only draft entries in an active internship can be edited.
             </div>
             <div t-if="daily_entry_completed"
-                 class="alert alert-success"
+                 class="alert alert-success o_internship_daily_list_notice"
                  role="status">
                 Daily entry completed successfully.
             </div>
             <div t-if="daily_entry_submit_state_denied"
-                 class="alert alert-warning"
+                 class="alert alert-warning o_internship_daily_list_notice"
                  role="alert">
                 This daily entry is no longer available for submission.
             </div>
             <div t-if="daily_entry_submit_program_denied"
-                 class="alert alert-warning"
+                 class="alert alert-warning o_internship_daily_list_notice"
                  role="alert">
                 Daily entries can be submitted only while the independent
                 internship program is active.
             </div>
-            <div t-if="eligible_program"
-                 class="d-flex justify-content-end mb-3">
-                <a href="/my/internship/daily/new"
-                   class="btn btn-primary">
-                    Create Daily Entry
-                </a>
-            </div>
-            <div t-elif="programs"
-                 class="alert alert-info"
+            <div t-if="not eligible_program and programs"
+                 class="alert alert-info o_internship_daily_list_notice"
                  role="status">
                 Daily entries can be created only while exactly one
                 independent internship program is active.
             </div>
             <div t-if="not programs"
-                 class="card border-dashed">
+                 class="card border-dashed o_internship_daily_list_empty">
                 <div class="card-body">
-                    <h1 class="h4">Daily Internship Entries</h1>
+                    <h2 class="h4">Your journal is not ready yet</h2>
                     <p>
                         Create your first internship from the dashboard before
                         viewing daily entries.
@@ -848,16 +861,34 @@
                 </div>
             </div>
             <div t-elif="not entries"
-                 class="card border-dashed">
+                 class="card border-dashed o_internship_daily_list_empty">
                 <div class="card-body">
-                    <h1 class="h4">Daily Internship Entries</h1>
-                    <p class="mb-0">No daily entries yet.</p>
+                    <h2 class="h4">No daily entries yet.</h2>
+                    <p t-attf-class="#{'mb-3' if eligible_program else 'mb-0'}">
+                        Your internship journal does not contain any entries.
+                    </p>
+                    <a t-if="eligible_program"
+                       href="/my/internship/daily/new"
+                       class="btn btn-primary">
+                        Create First Entry
+                    </a>
                 </div>
             </div>
-            <div t-else="">
-                <h1 class="h3 mb-3">Daily Internship Entries</h1>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+            <section t-else=""
+                     class="o_internship_daily_list_content"
+                     aria-labelledby="internship-daily-list-records-title">
+                <div class="o_internship_daily_list_section_header">
+                    <div>
+                        <h2 id="internship-daily-list-records-title"
+                            class="h4 mb-1">Daily Entry Records</h2>
+                        <p class="text-muted mb-0">
+                            <span t-out="entry_count"/> entries in your
+                            internship journal
+                        </p>
+                    </div>
+                </div>
+                <div class="table-responsive o_internship_daily_list_table_wrap">
+                    <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
                                 <th scope="col">Date</th>
@@ -871,18 +902,24 @@
                         </thead>
                         <tbody>
                             <tr t-foreach="entries" t-as="entry">
-                                <td>
+                                <td data-label="Date">
                                     <span t-field="entry.entry_date"/>
                                 </td>
-                                <td t-out="entry.title"/>
-                                <td t-out="daily_entry_state_labels.get(
-                                    entry.state,
-                                    entry.state or 'Unknown'
-                                )"/>
-                                <td class="text-end"
+                                <td data-label="Work Title"
+                                    class="o_internship_daily_list_title"
+                                    t-out="entry.title"/>
+                                <td data-label="Status">
+                                    <span t-attf-class="badge o_internship_entry_status o_internship_entry_status_#{entry.state or 'unknown'}"
+                                          t-out="daily_entry_state_labels.get(
+                                              entry.state,
+                                              entry.state or 'Unknown'
+                                          )"/>
+                                </td>
+                                <td data-label="Work Hours"
+                                     class="text-end"
                                      t-out="entry.work_hours"/>
-                                <td class="text-end">
-                                    <div class="d-inline-flex gap-2">
+                                <td data-label="Actions" class="text-end">
+                                    <div class="d-inline-flex flex-wrap justify-content-end gap-2">
                                         <a t-if="entry.state == 'draft'
                                                  and entry.program_state == 'active'"
                                            t-att-href="'/my/internship/daily/%s/edit' % entry.id"
@@ -903,8 +940,11 @@
                         </tbody>
                     </table>
                 </div>
-                <t t-call="portal.pager"/>
-            </div>
+                <div class="o_internship_daily_list_pager">
+                    <t t-call="portal.pager"/>
+                </div>
+            </section>
+            </main>
         </t>
     </template>
 

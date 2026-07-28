@@ -1,3 +1,5 @@
+from lxml import html
+
 from odoo import Command
 from odoo.tests import tagged
 from odoo.tests.common import HttpCase
@@ -58,6 +60,22 @@ class TestPortalDailyEntries(HttpCase):
     def _authenticate(self, user):
         self.authenticate(user.login, self.PASSWORD)
 
+    def _document(self, response):
+        return html.fromstring(response.content)
+
+    def _frontend_css(self, response):
+        links = self._document(response).xpath(
+            "//link[contains(@href, '/web/assets/') "
+            "and contains(@href, '.css')]/@href"
+        )
+        self.assertTrue(links)
+        styles = []
+        for link in links:
+            asset = self.url_open(link)
+            self.assertEqual(asset.status_code, 200)
+            styles.append(asset.text)
+        return "\n".join(styles)
+
     def test_valid_portal_intern_can_open_daily_list(self):
         user, student = self._create_portal_user("valid")
         self._create_program(student, "valid")
@@ -67,6 +85,28 @@ class TestPortalDailyEntries(HttpCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Daily Internship Entries", response.text)
+        document = self._document(response)
+        self.assertEqual(document.xpath("count(//main//h1)"), 1.0)
+        self.assertEqual(
+            document.xpath(
+                "count(//*[contains(concat(' ', normalize-space(@class), "
+                " ' '), ' o_internship_daily_list ')])"
+            ),
+            1.0,
+        )
+        self.assertIn('href="/my/internship/daily/new"', response.text)
+        self.assertIn(
+            ".o_internship_saas.o_internship_daily_list",
+            self._frontend_css(response),
+        )
+        debug_response = self.url_open(
+            "/my/internship/daily?debug=assets"
+        )
+        self.assertEqual(debug_response.status_code, 200)
+        self.assertIn(
+            ".o_internship_saas.o_internship_daily_list",
+            self._frontend_css(debug_response),
+        )
 
     def test_public_visitor_is_redirected_to_login(self):
         self.authenticate(None, None)
@@ -167,6 +207,30 @@ class TestPortalDailyEntries(HttpCase):
         )
         self.assertIn("Completed", response.text)
         self.assertIn("Draft", response.text)
+        self.assertIn("o_internship_entry_status_completed", response.text)
+        self.assertIn("o_internship_entry_status_draft", response.text)
+        self.assertIn("o_internship_daily_list_table_wrap", response.text)
+
+    def test_daily_list_pager_is_preserved(self):
+        user, student = self._create_portal_user("pager")
+        program = self._create_program(student, "pager")
+        for day in range(1, 32):
+            self._create_entry(
+                program,
+                f"Pager Entry {day:02d}",
+                f"2028-03-{day:02d}",
+            )
+        self._authenticate(user)
+
+        first_page = self.url_open("/my/internship/daily")
+        second_page = self.url_open("/my/internship/daily/page/2")
+
+        self.assertEqual(first_page.status_code, 200)
+        self.assertEqual(second_page.status_code, 200)
+        self.assertIn("Pager Entry 31", first_page.text)
+        self.assertNotIn("Pager Entry 01", first_page.text)
+        self.assertIn("Pager Entry 01", second_page.text)
+        self.assertIn("/my/internship/daily/page/2", first_page.text)
 
     def test_dashboard_contains_daily_entries_link(self):
         user, _student = self._create_portal_user("dashboard-link")
