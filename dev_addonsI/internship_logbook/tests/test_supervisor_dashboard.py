@@ -228,6 +228,44 @@ class TestInternshipSupervisorDashboard(TransactionCase):
             self.group_supervisor | self.group_manager,
         )
 
+        dashboard_arch = etree.fromstring(
+            self.env.ref(
+                "internship_logbook.view_internship_supervisor_dashboard"
+            ).arch_db.encode()
+        )
+        self.assertEqual(
+            dashboard_arch.xpath("//form/@create"),
+            ["0"],
+        )
+        self.assertEqual(
+            dashboard_arch.xpath("//form/@edit"),
+            ["0"],
+        )
+        self.assertEqual(
+            dashboard_arch.xpath("//form/@delete"),
+            ["0"],
+        )
+        self.assertTrue(
+            dashboard_arch.xpath(
+                "//sheet[contains(@class, "
+                "'o_internship_supervisor_dashboard')]"
+            )
+        )
+        expected_actions = {
+            "action_internship_pending_review",
+            "action_internship_revision_requested",
+            "action_internship_approved_entries",
+            "action_internship_completed_programs",
+            "action_internship_active_programs",
+            "action_internship_ending_soon",
+            "action_internship_students_missing_days",
+            "action_internship_assigned_students",
+        }
+        self.assertEqual(
+            set(dashboard_arch.xpath("//button/@name")),
+            expected_actions,
+        )
+
     def test_review_queue_and_dashboard_actions_preserve_ownership(self):
         queue_action = self.env.ref(
             "internship_logbook.action_internship_supervisor_review_queue"
@@ -367,6 +405,33 @@ class TestInternshipSupervisorDashboard(TransactionCase):
         self.assertEqual(
             review_view.xpath("//list/@default_order"),
             ["write_date desc, entry_date desc, id desc"],
+        )
+        self.assertFalse(review_view.xpath("//list/@decoration-warning"))
+        self.assertEqual(
+            review_view.xpath("//list/field/@name")[:5],
+            ["student_id", "entry_date", "title", "work_hours", "state"],
+        )
+        self.assertEqual(
+            review_view.xpath("//field[@name='state']/@widget"),
+            ["badge"],
+        )
+        self.assertEqual(
+            review_view.xpath("//field[@name='work_hours']/@sum"),
+            ["Total Hours"],
+        )
+
+        queue_action = self.env.ref(
+            "internship_logbook.action_internship_supervisor_review_queue"
+        )
+        self.assertEqual(queue_action.view_mode, "list,form,pivot,graph")
+        self.assertEqual(
+            safe_eval(queue_action.domain),
+            [("workflow_mode", "=", "supervised"),
+             ("state", "=", "submitted")],
+        )
+        self.assertIn(
+            "No daily entries are waiting for review.",
+            queue_action.help,
         )
 
         program = self.active_program.with_user(self.supervisor_one)
