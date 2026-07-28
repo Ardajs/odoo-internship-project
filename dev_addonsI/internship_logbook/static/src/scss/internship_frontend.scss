@@ -1786,6 +1786,186 @@ $internship-danger: #b91c1c;
     }
 }
 
+.o_internship_saas.o_internship_portal_dashboard {
+    color: var(--internship-text);
+    margin-inline: auto;
+    max-width: 82rem;
+    padding: 0 0 clamp(2.5rem, 6vw, 5rem);
+
+    .o_internship_dashboard_welcome {
+        align-items: center;
+        background:
+            radial-gradient(circle at 90% 0%, rgba(96, 165, 250, 0.22), transparent 42%),
+            linear-gradient(135deg, #eff6ff 0%, #fff 68%);
+        border: 1px solid #bfdbfe;
+        border-radius: var(--internship-radius-lg);
+        box-shadow: var(--internship-shadow-sm);
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: minmax(0, 1fr) auto;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        padding: clamp(1.5rem, 4vw, 3rem);
+    }
+
+    .o_internship_dashboard_welcome_copy {
+        min-width: 0;
+    }
+
+    .o_internship_dashboard_welcome .o_saas-heading {
+        font-size: clamp(1.75rem, 4vw, 2.75rem);
+        overflow-wrap: anywhere;
+    }
+
+    .o_internship_dashboard_intro {
+        color: var(--internship-muted);
+        font-size: clamp(1rem, 1.5vw, 1.125rem);
+        line-height: 1.7;
+        max-width: 48rem;
+    }
+
+    .o_internship_dashboard_header_actions {
+        align-items: stretch;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        min-width: 12rem;
+    }
+
+    .o_internship_dashboard_header_actions .btn,
+    .o_internship_dashboard_quick_actions .btn,
+    .o_internship_dashboard_empty .btn {
+        align-items: center;
+        display: inline-flex;
+        justify-content: center;
+        min-height: 2.75rem;
+    }
+
+    .card {
+        border: 1px solid var(--internship-border);
+        border-radius: var(--internship-radius-md);
+        box-shadow: var(--internship-shadow-sm);
+        overflow: hidden;
+    }
+
+    .card-body {
+        padding: clamp(1.25rem, 3vw, 2rem);
+    }
+
+    .o_internship_dashboard_notice {
+        border-radius: var(--internship-radius-sm);
+        overflow-wrap: anywhere;
+    }
+
+    .o_internship_dashboard_profile dl,
+    .o_internship_dashboard_overview dl {
+        row-gap: 0.6rem;
+    }
+
+    .o_internship_dashboard_profile dt,
+    .o_internship_dashboard_overview dt {
+        color: var(--internship-muted);
+        font-size: 0.875rem;
+        font-weight: 650;
+    }
+
+    .o_internship_dashboard_profile dd,
+    .o_internship_dashboard_overview dd {
+        color: var(--internship-heading);
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .o_internship_status_badge {
+        border-radius: 999px;
+        font-size: 0.8rem;
+        max-width: 100%;
+        padding: 0.45rem 0.75rem;
+        white-space: normal;
+    }
+
+    .o_internship_dashboard_progress .progress {
+        background: #e2e8f0;
+        border-radius: 999px;
+        height: 0.7rem;
+        overflow: hidden;
+    }
+
+    .o_internship_dashboard_progress .progress-bar {
+        background: linear-gradient(90deg, var(--internship-primary), #60a5fa);
+        border-radius: inherit;
+    }
+
+    .o_internship_dashboard_section > h2 {
+        color: var(--internship-heading);
+    }
+
+    .o_internship_dashboard_metric {
+        min-width: 9rem;
+        transition: border-color 160ms ease, transform 160ms ease;
+    }
+
+    .o_internship_dashboard_metric:hover {
+        border-color: #bfdbfe;
+        transform: translateY(-2px);
+    }
+
+    .o_internship_dashboard_metric .h4 {
+        color: var(--internship-heading);
+        font-size: clamp(1.35rem, 3vw, 1.75rem);
+        overflow-wrap: anywhere;
+    }
+
+    .o_internship_dashboard_recent .table-responsive {
+        border: 1px solid var(--internship-border);
+        border-radius: var(--internship-radius-sm);
+    }
+
+    .o_internship_dashboard_recent .table {
+        min-width: 36rem;
+    }
+
+    .o_internship_dashboard_recent thead th {
+        background: #f8fafc;
+        color: var(--internship-muted);
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        padding: 0.8rem 1rem;
+        text-transform: uppercase;
+    }
+
+    .o_internship_dashboard_recent tbody td {
+        color: var(--internship-text);
+        max-width: 22rem;
+        overflow-wrap: anywhere;
+        padding: 0.9rem 1rem;
+    }
+
+    .o_internship_dashboard_empty {
+        border-style: dashed;
+        text-align: center;
+    }
+
+    .o_internship_dashboard_quick_actions .card-body {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .o_internship_dashboard_quick_actions h2,
+    .o_internship_dashboard_quick_actions p {
+        flex-basis: 100%;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+        border-radius: 0.4rem;
+        outline: 3px solid rgba(37, 99, 235, 0.4);
+        outline-offset: 3px;
+    }
+}
+
 @media (max-width: 991.98px) {
     .o_internship_public_nav {
         .container {
@@ -1834,6 +2014,18 @@ $internship-danger: #b91c1c;
 
         .o_internship_auth_context {
             min-height: 0;
+        }
+    }
+
+    .o_internship_saas.o_internship_portal_dashboard {
+        .o_internship_dashboard_welcome {
+            align-items: stretch;
+            grid-template-columns: 1fr;
+        }
+
+        .o_internship_dashboard_header_actions {
+            flex-direction: row;
+            min-width: 0;
         }
     }
 }
@@ -1915,6 +2107,36 @@ $internship-danger: #b91c1c;
             flex-direction: column;
         }
     }
+
+    .o_internship_saas.o_internship_portal_dashboard {
+        .o_internship_dashboard_welcome {
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .o_internship_dashboard_header_actions,
+        .o_internship_dashboard_quick_actions .card-body {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .o_internship_dashboard_header_actions .btn,
+        .o_internship_dashboard_quick_actions .btn,
+        .o_internship_dashboard_empty .btn {
+            margin-left: 0 !important;
+            width: 100%;
+        }
+
+        .o_internship_dashboard_profile dt,
+        .o_internship_dashboard_overview dt {
+            margin-bottom: 0.15rem;
+        }
+
+        .o_internship_dashboard_profile dd,
+        .o_internship_dashboard_overview dd {
+            margin-bottom: 0.85rem;
+        }
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1925,7 +2147,9 @@ $internship-danger: #b91c1c;
     .o_internship_public_footer,
     .o_internship_public_footer *,
     .o_internship_auth,
-    .o_internship_auth * {
+    .o_internship_auth *,
+    .o_internship_portal_dashboard,
+    .o_internship_portal_dashboard * {
         animation-delay: 0.01ms !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;

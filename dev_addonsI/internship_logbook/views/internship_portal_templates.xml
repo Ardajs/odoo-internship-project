@@ -25,11 +25,40 @@
             <t t-call="portal.portal_searchbar">
                 <t t-set="title">My Internship</t>
             </t>
-            <div class="alert alert-success" role="status">
+            <main class="o_internship_saas o_internship_portal_dashboard"
+                  aria-labelledby="internship-dashboard-title">
+            <header class="o_internship_dashboard_welcome">
+                <div class="o_internship_dashboard_welcome_copy">
+                    <p class="o_saas-eyebrow mb-2">Internship Portal</p>
+                    <h1 id="internship-dashboard-title"
+                        class="o_saas-heading mb-3">
+                        Welcome back,
+                        <span t-out="student.name"/>
+                    </h1>
+                    <p class="o_internship_dashboard_intro mb-0">
+                        Track your internship progress, manage daily entries,
+                        and follow your program status.
+                    </p>
+                </div>
+                <div class="o_internship_dashboard_header_actions"
+                     aria-label="Dashboard actions">
+                    <a t-if="can_create_daily_entry"
+                       href="/my/internship/daily/new"
+                       class="btn btn-primary">
+                        Create Daily Entry
+                    </a>
+                    <a href="/my/internship/daily"
+                       class="btn btn-outline-primary">
+                        View Daily Entries
+                    </a>
+                </div>
+            </header>
+            <div class="alert alert-success o_internship_dashboard_notice"
+                 role="status">
                 <strong>Account verified.</strong>
                 Your student profile has been created.
             </div>
-            <div class="card mb-4">
+            <div class="card mb-4 o_internship_dashboard_profile">
                 <div class="card-body">
                     <h2 class="h4" t-out="student.name"/>
                     <dl class="row mb-0">
@@ -41,12 +70,13 @@
                 </div>
             </div>
             <div t-if="not education_complete"
-                 class="alert alert-info" role="status">
+                 class="alert alert-info o_internship_dashboard_notice"
+                 role="status">
                 Your education profile still needs university and department
                 information. Profile editing will be added during onboarding.
             </div>
             <div t-if="dashboard_program_status == 'none'"
-                 class="card border-dashed">
+                 class="card border-dashed o_internship_dashboard_empty">
                 <div class="card-body">
                     <h2 class="h4">Create Your First Internship</h2>
                     <p class="mb-2">
@@ -59,7 +89,7 @@
                 </div>
             </div>
             <div t-elif="dashboard_program_status == 'multiple_active'"
-                 class="alert alert-warning"
+                 class="alert alert-warning o_internship_dashboard_notice"
                  role="alert">
                 More than one active internship program was found. Progress
                 cannot be summarized until an administrator resolves the
@@ -68,18 +98,18 @@
             <div t-elif="dashboard_program">
                 <div t-if="dashboard_program_status == 'historical'
                            and dashboard_program.state == 'draft'"
-                     class="alert alert-info"
+                     class="alert alert-info o_internship_dashboard_notice"
                      role="status">
                     This internship is in Draft and is waiting to be
                     activated. It is shown below as a read-only summary.
                 </div>
                 <div t-elif="dashboard_program_status == 'historical'"
-                     class="alert alert-info"
+                     class="alert alert-info o_internship_dashboard_notice"
                      role="status">
                     No current active internship was found. The most recent
                     internship is shown below as a read-only summary.
                 </div>
-                <div class="card mb-4">
+                <div class="card mb-4 o_internship_dashboard_overview">
                     <div class="card-body">
                         <div class="d-flex flex-wrap align-items-start
                                     justify-content-between gap-2 mb-3">
@@ -95,7 +125,7 @@
                                 <p class="text-muted mb-0"
                                    t-out="dashboard_program.name"/>
                             </div>
-                            <span class="badge text-bg-secondary"
+                            <span class="badge text-bg-secondary o_internship_status_badge"
                                   t-out="program_state_labels.get(
                                       dashboard_program.state,
                                       dashboard_program.state or 'Unknown'
@@ -133,7 +163,7 @@
                     </div>
                 </div>
                 <div t-if="program_metrics.get('valid')"
-                     class="card mb-4">
+                     class="card mb-4 o_internship_dashboard_progress">
                     <div class="card-body">
                         <div class="d-flex justify-content-between gap-3">
                             <div>
@@ -182,15 +212,19 @@
                     </div>
                 </div>
                 <div t-else=""
-                     class="alert alert-warning"
+                     class="alert alert-warning o_internship_dashboard_notice"
                      role="alert">
                     Progress and calendar-day metrics are unavailable because
                     the program dates are incomplete or invalid.
                 </div>
 
-                <div class="row g-3 mb-4">
+                <section class="o_internship_dashboard_section"
+                         aria-labelledby="internship-dashboard-metrics-title">
+                    <h2 id="internship-dashboard-metrics-title"
+                        class="h4 mb-3">Progress Overview</h2>
+                <div class="row g-3 mb-4 o_internship_dashboard_metrics">
                     <div class="col-6 col-lg">
-                        <div class="card h-100">
+                        <div class="card h-100 o_internship_dashboard_metric">
                             <div class="card-body">
                                 <div class="small text-muted">Total Days</div>
                                 <div class="h4 mb-0"
@@ -210,7 +244,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-lg">
-                        <div class="card h-100">
+                        <div class="card h-100 o_internship_dashboard_metric">
                             <div class="card-body">
                                 <div class="small text-muted">Elapsed Days</div>
                                 <div class="h4 mb-0"
@@ -230,7 +264,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-lg">
-                        <div class="card h-100">
+                        <div class="card h-100 o_internship_dashboard_metric">
                             <div class="card-body">
                                 <div class="small text-muted">
                                     Remaining Days
@@ -252,7 +286,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-lg">
-                        <div class="card h-100">
+                        <div class="card h-100 o_internship_dashboard_metric">
                             <div class="card-body">
                                 <div class="small text-muted">
                                     Total Entries
@@ -273,7 +307,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-lg">
-                        <div class="card h-100">
+                        <div class="card h-100 o_internship_dashboard_metric">
                             <div class="card-body">
                                 <div class="small text-muted">Draft</div>
                                 <div class="h4 mb-0"
@@ -292,7 +326,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-lg">
-                        <div class="card h-100">
+                        <div class="card h-100 o_internship_dashboard_metric">
                             <div class="card-body">
                                 <div class="small text-muted">Completed</div>
                                 <div class="h4 mb-0"
@@ -312,7 +346,7 @@
                     </div>
                     <div t-if="program_metrics.get('other_entry_count')"
                          class="col-6 col-lg">
-                        <div class="card h-100">
+                        <div class="card h-100 o_internship_dashboard_metric">
                             <div class="card-body">
                                 <div class="small text-muted">
                                     Other States
@@ -333,7 +367,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-lg">
-                        <div class="card h-100">
+                        <div class="card h-100 o_internship_dashboard_metric">
                             <div class="card-body">
                                 <div class="small text-muted">
                                     Recorded Hours
@@ -354,8 +388,9 @@
                         </div>
                     </div>
                 </div>
+                </section>
 
-                <div class="card mb-4">
+                <div class="card mb-4 o_internship_dashboard_recent">
                     <div class="card-body">
                         <div class="d-flex justify-content-between
                                     align-items-center gap-3 mb-3">
@@ -399,7 +434,7 @@
                     </div>
                 </div>
 
-                <div class="card mb-4">
+                <div class="card mb-4 o_internship_dashboard_missing">
                     <div class="card-body">
                         <div class="d-flex flex-wrap justify-content-between
                                     align-items-start gap-3">
@@ -468,7 +503,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card mt-4">
+            <div class="card mt-4 o_internship_dashboard_quick_actions">
                 <div class="card-body">
                     <h2 class="h4">Daily Entries</h2>
                     <p class="mb-2">
@@ -490,6 +525,7 @@
                     </a>
                 </div>
             </div>
+            </main>
         </t>
     </template>
 
