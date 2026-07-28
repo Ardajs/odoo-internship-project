@@ -610,6 +610,285 @@ $internship-danger: #b91c1c;
         justify-content: center;
         width: 2.75rem;
     }
+
+    .o_landing-capability-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .o_landing-capability {
+        background: var(--internship-surface);
+        border: 1px solid var(--internship-border);
+        border-radius: var(--internship-radius);
+        box-shadow: var(--internship-shadow-sm);
+        min-width: 0;
+        padding: clamp(1.25rem, 3vw, 2rem);
+    }
+
+    .o_landing-capability > strong {
+        color: var(--internship-primary);
+        display: block;
+        font-size: clamp(1.65rem, 3vw, 2.35rem);
+        line-height: 1.1;
+        margin-bottom: 1rem;
+        overflow-wrap: anywhere;
+    }
+
+    .o_landing-capability p,
+    .o_landing-preview-panel p,
+    .o_landing-preview-panel li,
+    .o_landing-check-list li,
+    .o_landing-principle p {
+        font-size: 0.925rem;
+    }
+
+    .o_landing-workspace-preview {
+        background: #fff;
+        border: 1px solid var(--internship-border);
+        border-radius: var(--internship-radius-lg);
+        box-shadow: var(--internship-shadow-lg);
+        overflow: hidden;
+    }
+
+    .o_landing-workspace-header {
+        align-items: center;
+        background: $internship-slate-50;
+        border-bottom: 1px solid var(--internship-border);
+        color: var(--internship-muted);
+        display: flex;
+        font-size: 0.75rem;
+        gap: 0.65rem;
+        min-height: 3.25rem;
+        padding: 0.8rem 1rem;
+    }
+
+    .o_landing-workspace-mark {
+        background: var(--internship-primary);
+        border-radius: 0.45rem;
+        height: 1.5rem;
+        width: 1.5rem;
+    }
+
+    .o_landing-workspace-status {
+        background: $internship-blue-50;
+        border: 1px solid $internship-blue-200;
+        border-radius: 999px;
+        color: $internship-blue-700;
+        font-weight: 650;
+        margin-left: auto;
+        padding: 0.25rem 0.6rem;
+    }
+
+    .o_landing-workspace-body {
+        display: grid;
+        grid-template-columns: 8rem minmax(0, 1fr);
+        min-height: 27rem;
+    }
+
+    .o_landing-workspace-sidebar {
+        background: $internship-slate-900;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 2rem 1rem;
+    }
+
+    .o_landing-workspace-sidebar span {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 0.4rem;
+        height: 0.65rem;
+    }
+
+    .o_landing-workspace-sidebar .is-active {
+        background: $internship-blue-500;
+        height: 2.25rem;
+    }
+
+    .o_landing-workspace-content {
+        background: $internship-slate-50;
+        min-width: 0;
+        padding: clamp(1rem, 3vw, 2rem);
+    }
+
+    .o_landing-workspace-summary {
+        align-items: center;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+    }
+
+    .o_landing-workspace-summary small,
+    .o_landing-workspace-summary strong {
+        display: block;
+    }
+
+    .o_landing-workspace-summary small {
+        color: var(--internship-muted);
+        margin-bottom: 0.2rem;
+    }
+
+    .o_landing-workspace-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-block: 1.5rem;
+    }
+
+    .o_landing-workspace-grid > div {
+        background: #fff;
+        border: 1px solid var(--internship-border);
+        border-radius: 0.75rem;
+        padding: 1rem;
+    }
+
+    .o_landing-workspace-grid span,
+    .o_landing-workspace-grid strong {
+        display: block;
+    }
+
+    .o_landing-workspace-grid span {
+        color: var(--internship-muted);
+        font-size: 0.65rem;
+    }
+
+    .o_landing-workspace-grid strong {
+        color: var(--internship-heading);
+        font-size: 0.82rem;
+        overflow-wrap: anywhere;
+    }
+
+    .o_landing-workspace-lines {
+        background: #fff;
+        border: 1px solid var(--internship-border);
+        border-radius: 0.75rem;
+        display: grid;
+        gap: 1.2rem;
+        padding: 1.5rem;
+    }
+
+    .o_landing-workspace-lines span {
+        background: $internship-slate-200;
+        border-radius: 999px;
+        height: 0.65rem;
+    }
+
+    .o_landing-workspace-lines span:nth-child(2) {
+        width: 78%;
+    }
+
+    .o_landing-workspace-lines span:nth-child(3) {
+        width: 55%;
+    }
+
+    .o_landing-preview-panels {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .o_landing-preview-panel {
+        background: #fff;
+        border: 1px solid var(--internship-border);
+        border-radius: var(--internship-radius);
+        padding: 1.25rem;
+    }
+
+    .o_landing-preview-panel ul,
+    .o_landing-check-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .o_landing-preview-panel ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+
+    .o_landing-preview-panel li {
+        background: var(--internship-primary-soft);
+        border-radius: 999px;
+        color: $internship-blue-900;
+        padding: 0.25rem 0.6rem;
+    }
+
+    .o_landing-audience-card,
+    .o_landing-principle {
+        min-height: 100%;
+    }
+
+    .o_landing-check-list {
+        display: grid;
+        gap: 0.85rem;
+    }
+
+    .o_landing-check-list li {
+        align-items: flex-start;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .o_landing-check-list li::before {
+        background: $internship-blue-100;
+        border: 0.3rem solid $internship-blue-600;
+        border-radius: 50%;
+        content: "";
+        flex: 0 0 auto;
+        height: 0.8rem;
+        margin-top: 0.32rem;
+        width: 0.8rem;
+    }
+
+    .o_landing-faq-list {
+        max-width: 54rem;
+    }
+
+    .o_landing-faq-list .accordion-item {
+        border: 1px solid var(--internship-border);
+        border-radius: var(--internship-radius-sm);
+        box-shadow: var(--internship-shadow-sm);
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+    }
+
+    .o_landing-faq-list .accordion-button {
+        color: var(--internship-heading);
+        font-weight: 650;
+        overflow-wrap: anywhere;
+        padding: 1.15rem 1.25rem;
+    }
+
+    .o_landing-faq-list .accordion-button:not(.collapsed) {
+        background: var(--internship-primary-soft);
+        box-shadow: inset 0 -1px 0 var(--internship-primary-border);
+        color: $internship-blue-900;
+    }
+
+    .o_landing-faq-list .accordion-body {
+        color: var(--internship-body);
+        padding: 1.25rem;
+    }
+
+    .o_landing-final-cta {
+        padding-block: clamp(4rem, 8vw, 6rem);
+    }
+
+    .o_landing-final-cta-inner {
+        background: linear-gradient(145deg, #fff, $internship-blue-50);
+        border: 1px solid $internship-blue-200;
+        border-radius: var(--internship-radius-lg);
+        box-shadow: var(--internship-shadow);
+        max-width: 68rem;
+        padding: clamp(2rem, 6vw, 4.5rem);
+    }
+
+    .o_landing-final-cta-inner .o_saas-lead {
+        max-width: 44rem;
+    }
 }
 
 @keyframes o-internship-reveal {
@@ -711,6 +990,27 @@ $internship-danger: #b91c1c;
         .o_landing-workflow-step::after {
             display: none;
         }
+
+        .o_landing-capability-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .o_landing-workspace-body {
+            grid-template-columns: 3rem minmax(0, 1fr);
+            min-height: 23rem;
+        }
+
+        .o_landing-workspace-sidebar {
+            padding: 1.25rem 0.5rem;
+        }
+
+        .o_landing-workspace-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .o_landing-final-actions .btn {
+            width: 100%;
+        }
     }
 }
 
@@ -734,6 +1034,20 @@ $internship-danger: #b91c1c;
 
         .o_landing-highlights-list {
             grid-template-columns: 1fr;
+        }
+
+        .o_landing-workspace-header > span:nth-child(2),
+        .o_landing-workspace-sidebar {
+            display: none;
+        }
+
+        .o_landing-workspace-body {
+            display: block;
+        }
+
+        .o_landing-workspace-summary {
+            align-items: flex-start;
+            flex-direction: column;
         }
     }
 }
@@ -761,6 +1075,10 @@ $internship-danger: #b91c1c;
         .o_landing-workflow-step::after,
         .o_landing-workflow-step:nth-child(3)::after {
             display: none;
+        }
+
+        .o_landing-capability-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 }
