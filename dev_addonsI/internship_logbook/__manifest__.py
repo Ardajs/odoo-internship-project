@@ -51,6 +51,7 @@ This module allows companies to manage:
     "report/internship_report.xml",
 
     "views/internship_frontend_components.xml",
+    "views/internship_landing_templates.xml",
     "views/self_registration_templates.xml",
     "views/internship_portal_templates.xml",
 
