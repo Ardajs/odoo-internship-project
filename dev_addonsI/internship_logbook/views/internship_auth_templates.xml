@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="internship_public_login_experience"
+              name="Internship Public Login Experience"
+              inherit_id="web.login"
+              priority="50">
+        <xpath expr="//form[@role='form'][@data-captcha='login']"
+               position="before">
+            <div class="o_internship_saas o_internship_auth"
+                 aria-labelledby="internship-login-title">
+                <div class="o_internship_auth_shell">
+                    <section class="o_internship_auth_form_panel"
+                             aria-labelledby="internship-login-title">
+                        <header class="o_internship_auth_heading">
+                            <p class="o_saas-eyebrow mb-2">
+                                Internship Portal
+                            </p>
+                            <h1 id="internship-login-title"
+                                class="o_saas-heading mb-3">
+                                Welcome Back
+                            </h1>
+                            <p class="o_internship_auth_intro mb-4">
+                                Sign in to continue managing your internship
+                                progress and daily records.
+                            </p>
+                        </header>
+                        <xpath expr="//form[@role='form'][@data-captcha='login']"
+                               position="move"/>
+                    </section>
+
+                    <aside class="o_internship_auth_context"
+                           aria-labelledby="internship-login-context-title">
+                        <div class="o_internship_auth_context_content">
+                            <span class="o_internship_auth_context_icon"
+                                  aria-hidden="true">
+                                <t t-call="internship_logbook.internship_saas_icon">
+                                    <t t-set="icon" t-value="'dashboard'"/>
+                                    <t t-set="icon_size" t-value="25"/>
+                                    <t t-set="icon_class" t-value="''"/>
+                                    <t t-set="icon_label" t-value="False"/>
+                                </t>
+                            </span>
+                            <h2 id="internship-login-context-title"
+                                class="h3 mt-4 mb-3">
+                                Keep Every Internship Step Organized
+                            </h2>
+                            <p class="mb-4">
+                                Record daily work, follow review decisions,
+                                and track progress from one secure portal.
+                            </p>
+                            <ul class="o_internship_auth_benefits">
+                                <li>Structured daily entries</li>
+                                <li>Supervisor review workflow</li>
+                                <li>Clear progress visibility</li>
+                            </ul>
+                        </div>
+
+                        <div class="o_internship_auth_preview"
+                             aria-hidden="true">
+                            <div class="o_internship_auth_preview_header">
+                                <span/>
+                                <strong>Internship progress</strong>
+                                <small>Active</small>
+                            </div>
+                            <div class="o_internship_auth_preview_track">
+                                <span/>
+                            </div>
+                            <div class="o_internship_auth_preview_rows">
+                                <div><span/><span/><strong>Recorded</strong></div>
+                                <div><span/><span/><strong>Reviewed</strong></div>
+                                <div><span/><span/><strong>Visible</strong></div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="internship_public_login_registration_link"
+              name="Internship Public Login Registration Link"
+              inherit_id="auth_signup.login"
+              priority="60">
+        <xpath expr="//a[@t-if='signup_enabled']" position="replace">
+            <p t-if="signup_enabled"
+               class="o_internship_auth_registration mb-0 mt-3">
+                <span>Don’t have an account?</span>
+                <a href="/internship/register">Create an account</a>
+            </p>
+        </xpath>
+    </template>
+</odoo>
