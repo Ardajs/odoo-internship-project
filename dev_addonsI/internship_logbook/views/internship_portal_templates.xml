@@ -948,6 +948,196 @@
         </t>
     </template>
 
+    <template id="portal_daily_entry_detail"
+              name="Daily Internship Entry Detail">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Daily Entry</t>
+            </t>
+            <t t-set="status_class"
+               t-value="{
+                   'draft': 'draft',
+                   'submitted': 'submitted',
+                   'revision': 'revision',
+                   'approved': 'approved',
+                   'completed': 'completed',
+               }.get(entry.state, 'unknown')"/>
+            <main t-attf-class="o_internship_saas o_internship_daily_detail o_internship_daily_detail--#{status_class}"
+                  aria-labelledby="internship-daily-detail-title">
+                <article class="o_internship_daily_detail_article"
+                         aria-labelledby="internship-daily-detail-title">
+                    <header class="o_internship_daily_detail_header">
+                        <div class="o_internship_daily_detail_heading">
+                            <p class="o_saas-eyebrow mb-2">Daily Entry</p>
+                            <h1 id="internship-daily-detail-title"
+                                class="o_saas-heading mb-3"
+                                t-out="entry.title"/>
+                            <div class="o_internship_daily_detail_summary"
+                                 aria-label="Entry summary">
+                                <span>
+                                    <strong>Date:</strong>
+                                    <span t-field="entry.entry_date"/>
+                                </span>
+                                <span>
+                                    <strong>Work hours:</strong>
+                                    <span t-out="entry.work_hours"/>
+                                </span>
+                                <span t-attf-class="o_internship_entry_status o_internship_entry_status_#{status_class}">
+                                    <span class="visually-hidden">Status:</span>
+                                    <span t-out="state_label"/>
+                                </span>
+                            </div>
+                        </div>
+                        <nav class="o_internship_daily_detail_actions"
+                             aria-label="Daily entry actions">
+                            <a href="/my/internship/daily"
+                               class="btn btn-outline-primary">
+                                Back to Daily Entries
+                            </a>
+                            <a t-if="can_edit"
+                               t-att-href="'/my/internship/daily/%s/edit' % entry.id"
+                               class="btn btn-outline-primary">
+                                Edit Entry
+                            </a>
+                            <a t-if="can_submit"
+                               t-att-href="'/my/internship/daily/%s/submit-confirm' % entry.id"
+                               class="btn btn-primary">
+                                Submit Entry
+                            </a>
+                        </nav>
+                    </header>
+
+                    <section t-attf-class="o_internship_daily_detail_status o_internship_daily_detail_status--#{status_class}"
+                             aria-labelledby="internship-daily-detail-status-title">
+                        <div>
+                            <h2 id="internship-daily-detail-status-title"
+                                class="h5 mb-1">
+                                <span t-out="state_label"/>
+                            </h2>
+                            <p t-if="entry.state == 'draft'" class="mb-0">
+                                This entry has not been completed or submitted.
+                            </p>
+                            <p t-elif="entry.state == 'submitted'" class="mb-0">
+                                This entry is waiting for supervisor review.
+                            </p>
+                            <p t-elif="entry.state == 'revision'" class="mb-0">
+                                This entry requires changes before it can be submitted again.
+                            </p>
+                            <p t-elif="entry.state == 'approved'" class="mb-0">
+                                This entry has been approved.
+                            </p>
+                            <p t-elif="entry.state == 'completed'" class="mb-0">
+                                This independent entry is complete.
+                            </p>
+                            <p t-else="" class="mb-0">
+                                Review the current status of this entry.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section t-if="entry.state == 'revision' and entry.supervisor_comment"
+                             class="o_internship_daily_detail_feedback"
+                             aria-labelledby="internship-daily-detail-feedback-title">
+                        <h2 id="internship-daily-detail-feedback-title"
+                            class="h5 mb-2">Supervisor Feedback</h2>
+                        <p class="mb-0 o_internship_daily_detail_preformatted"
+                           t-out="entry.supervisor_comment"/>
+                    </section>
+
+                    <div class="o_internship_daily_detail_layout">
+                        <div class="o_internship_daily_detail_content">
+                            <section class="o_internship_daily_detail_card"
+                                     aria-labelledby="internship-daily-detail-work-title">
+                                <h2 id="internship-daily-detail-work-title"
+                                    class="h4 mb-3">Work Description</h2>
+                                <p class="o_internship_daily_detail_preformatted mb-0"
+                                   t-out="entry.work_description"/>
+                            </section>
+
+                            <section t-if="entry.technologies"
+                                     class="o_internship_daily_detail_card"
+                                     aria-labelledby="internship-daily-detail-technologies-title">
+                                <h2 id="internship-daily-detail-technologies-title"
+                                    class="h4 mb-3">Technologies Used</h2>
+                                <p class="o_internship_daily_detail_preformatted mb-0"
+                                   t-out="entry.technologies"/>
+                            </section>
+
+                            <section t-if="entry.learned_topics"
+                                     class="o_internship_daily_detail_card"
+                                     aria-labelledby="internship-daily-detail-learning-title">
+                                <h2 id="internship-daily-detail-learning-title"
+                                    class="h4 mb-3">What I Learned</h2>
+                                <p class="o_internship_daily_detail_preformatted mb-0"
+                                   t-out="entry.learned_topics"/>
+                            </section>
+
+                            <section t-if="entry.challenges"
+                                     class="o_internship_daily_detail_card"
+                                     aria-labelledby="internship-daily-detail-challenges-title">
+                                <h2 id="internship-daily-detail-challenges-title"
+                                    class="h4 mb-3">Problems and Solutions</h2>
+                                <p class="o_internship_daily_detail_preformatted mb-0"
+                                   t-out="entry.challenges"/>
+                            </section>
+                        </div>
+
+                        <aside class="o_internship_daily_detail_sidebar"
+                               aria-labelledby="internship-daily-detail-overview-title">
+                            <section class="o_internship_daily_detail_card">
+                                <h2 id="internship-daily-detail-overview-title"
+                                    class="h4 mb-3">Entry Overview</h2>
+                                <dl class="o_internship_daily_detail_meta mb-0">
+                                    <div>
+                                        <dt>Date</dt>
+                                        <dd><span t-field="entry.entry_date"/></dd>
+                                    </div>
+                                    <div>
+                                        <dt>Work Hours</dt>
+                                        <dd t-out="entry.work_hours"/>
+                                    </div>
+                                    <div>
+                                        <dt>Status</dt>
+                                        <dd t-out="state_label"/>
+                                    </div>
+                                    <div t-if="entry.program_id">
+                                        <dt>Program</dt>
+                                        <dd t-out="entry.program_id.display_name"/>
+                                    </div>
+                                    <div t-if="entry.company_name">
+                                        <dt>Company</dt>
+                                        <dd t-out="entry.company_name"/>
+                                    </div>
+                                    <div t-if="entry.program_department">
+                                        <dt>Department</dt>
+                                        <dd t-out="entry.program_department"/>
+                                    </div>
+                                </dl>
+                            </section>
+
+                            <section class="o_internship_daily_detail_card"
+                                     aria-labelledby="internship-daily-detail-history-title">
+                                <h2 id="internship-daily-detail-history-title"
+                                    class="h4 mb-3">Record History</h2>
+                                <dl class="o_internship_daily_detail_meta mb-0">
+                                    <div t-if="entry.create_date">
+                                        <dt>Created</dt>
+                                        <dd><span t-field="entry.create_date"/></dd>
+                                    </div>
+                                    <div t-if="entry.write_date">
+                                        <dt>Last Updated</dt>
+                                        <dd><span t-field="entry.write_date"/></dd>
+                                    </div>
+                                </dl>
+                            </section>
+                        </aside>
+                    </div>
+                </article>
+            </main>
+        </t>
+    </template>
+
     <template id="portal_create_daily_entry"
               name="Create Daily Entry">
         <t t-call="portal.portal_layout">

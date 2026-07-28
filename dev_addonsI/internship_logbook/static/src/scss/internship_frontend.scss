@@ -2326,6 +2326,171 @@ $internship-danger: #b91c1c;
     }
 }
 
+.o_internship_saas.o_internship_daily_detail {
+    color: var(--internship-text);
+    margin-inline: auto;
+    max-width: 82rem;
+    padding-bottom: clamp(2.5rem, 6vw, 5rem);
+
+    .o_internship_daily_detail_article {
+        min-width: 0;
+    }
+
+    .o_internship_daily_detail_header {
+        align-items: flex-start;
+        background:
+            radial-gradient(circle at 92% 0%, rgba(96, 165, 250, 0.2), transparent 42%),
+            linear-gradient(135deg, #eff6ff 0%, #fff 72%);
+        border: 1px solid #bfdbfe;
+        border-radius: var(--internship-radius-lg);
+        box-shadow: var(--internship-shadow-sm);
+        display: flex;
+        gap: 1.5rem;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        padding: clamp(1.5rem, 4vw, 3rem);
+    }
+
+    .o_internship_daily_detail_heading {
+        min-width: 0;
+    }
+
+    .o_internship_daily_detail_header .o_saas-heading {
+        font-size: clamp(1.75rem, 4vw, 2.75rem);
+        overflow-wrap: anywhere;
+    }
+
+    .o_internship_daily_detail_summary,
+    .o_internship_daily_detail_actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+    }
+
+    .o_internship_daily_detail_summary {
+        color: var(--internship-muted);
+    }
+
+    .o_internship_daily_detail_actions {
+        flex: 0 0 auto;
+        justify-content: flex-end;
+    }
+
+    .o_internship_daily_detail_actions .btn {
+        align-items: center;
+        display: inline-flex;
+        justify-content: center;
+        min-height: 2.75rem;
+    }
+
+    .o_internship_daily_detail_status,
+    .o_internship_daily_detail_feedback,
+    .o_internship_daily_detail_card {
+        border: 1px solid var(--internship-border);
+        border-radius: var(--internship-radius-md);
+        box-shadow: var(--internship-shadow-sm);
+    }
+
+    .o_internship_daily_detail_status {
+        background: #f8fafc;
+        border-left: 0.35rem solid #64748b;
+        margin-bottom: 1.25rem;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .o_internship_daily_detail_status--submitted {
+        background: #eff6ff;
+        border-left-color: #2563eb;
+    }
+
+    .o_internship_daily_detail_status--revision {
+        background: #fff7ed;
+        border-left-color: #ea580c;
+    }
+
+    .o_internship_daily_detail_status--approved,
+    .o_internship_daily_detail_status--completed {
+        background: #f0fdf4;
+        border-left-color: #16a34a;
+    }
+
+    .o_internship_daily_detail_feedback {
+        background: #fff7ed;
+        border-color: #fed7aa;
+        margin-bottom: 1.25rem;
+        padding: 1.5rem;
+    }
+
+    .o_internship_daily_detail_layout {
+        align-items: start;
+        display: grid;
+        gap: 1.25rem;
+        grid-template-columns: minmax(0, 2fr) minmax(17rem, 1fr);
+    }
+
+    .o_internship_daily_detail_content,
+    .o_internship_daily_detail_sidebar {
+        display: grid;
+        gap: 1.25rem;
+        min-width: 0;
+    }
+
+    .o_internship_daily_detail_card {
+        background: #fff;
+        padding: clamp(1.25rem, 3vw, 2rem);
+    }
+
+    .o_internship_daily_detail_preformatted {
+        line-height: 1.75;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .o_internship_daily_detail_meta {
+        display: grid;
+        gap: 0;
+    }
+
+    .o_internship_daily_detail_meta > div {
+        border-bottom: 1px solid var(--internship-border);
+        display: grid;
+        gap: 0.25rem;
+        padding-block: 0.85rem;
+    }
+
+    .o_internship_daily_detail_meta > div:first-child {
+        padding-top: 0;
+    }
+
+    .o_internship_daily_detail_meta > div:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .o_internship_daily_detail_meta dt {
+        color: var(--internship-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .o_internship_daily_detail_meta dd {
+        color: var(--internship-heading);
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+        border-radius: 0.4rem;
+        outline: 3px solid rgba(37, 99, 235, 0.4);
+        outline-offset: 3px;
+    }
+}
+
 @media (max-width: 991.98px) {
     .o_internship_public_nav {
         .container {
@@ -2408,6 +2573,20 @@ $internship-danger: #b91c1c;
 
         .o_internship_daily_form_header_context {
             justify-content: space-between;
+        }
+    }
+
+    .o_internship_saas.o_internship_daily_detail {
+        .o_internship_daily_detail_header {
+            flex-direction: column;
+        }
+
+        .o_internship_daily_detail_actions {
+            justify-content: flex-start;
+        }
+
+        .o_internship_daily_detail_layout {
+            grid-template-columns: minmax(0, 1fr);
         }
     }
 }
@@ -2647,6 +2826,26 @@ $internship-danger: #b91c1c;
             max-width: none;
         }
     }
+
+    .o_internship_saas.o_internship_daily_detail {
+        .o_internship_daily_detail_header,
+        .o_internship_daily_detail_status,
+        .o_internship_daily_detail_feedback,
+        .o_internship_daily_detail_card {
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+
+        .o_internship_daily_detail_actions {
+            align-items: stretch;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .o_internship_daily_detail_actions .btn {
+            width: 100%;
+        }
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2663,7 +2862,9 @@ $internship-danger: #b91c1c;
     .o_internship_daily_list,
     .o_internship_daily_list *,
     .o_internship_daily_form,
-    .o_internship_daily_form * {
+    .o_internship_daily_form *,
+    .o_internship_daily_detail,
+    .o_internship_daily_detail * {
         animation-delay: 0.01ms !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
