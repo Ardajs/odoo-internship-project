@@ -1203,6 +1203,57 @@ $internship-danger: #b91c1c;
         color: #166534;
     }
 
+    .o_internship_registration_form {
+        margin: 0;
+        width: 100%;
+    }
+
+    .o_internship_registration_form .mb-3 {
+        margin-bottom: 1.1rem !important;
+    }
+
+    .o_internship_registration_form .form-label {
+        color: var(--internship-heading);
+        font-size: 0.875rem;
+        font-weight: 650;
+    }
+
+    .o_internship_registration_form .form-control {
+        background-color: #fff;
+        border-color: var(--internship-border);
+        color: var(--internship-heading);
+        font-size: 1rem;
+        min-height: 3rem;
+        padding: 0.7rem 0.9rem;
+    }
+
+    .o_internship_registration_form .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.16);
+    }
+
+    .o_internship_registration_form .btn-primary {
+        min-height: 3rem;
+        width: 100%;
+    }
+
+    .o_internship_registration_form .btn-primary:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+    }
+
+    .o_internship_registration .alert {
+        border-radius: 0.75rem;
+        overflow-wrap: anywhere;
+        padding: 0.85rem 1rem;
+    }
+
+    .o_internship_registration .alert-danger {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+    }
+
     .oe_login_buttons > .btn-primary {
         min-height: 3rem;
         width: 100%;
@@ -1274,6 +1325,61 @@ $internship-danger: #b91c1c;
         flex: 0 0 auto;
         height: 0.8rem;
         width: 0.8rem;
+    }
+
+    .o_internship_registration_benefits li::before {
+        content: none;
+    }
+
+    .o_internship_registration_benefits .o_saas-icon {
+        flex: 0 0 auto;
+    }
+
+    .o_internship_registration_preview {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: grid;
+        gap: 0.7rem;
+        margin-top: 2.5rem;
+        padding: 1.25rem;
+    }
+
+    .o_internship_registration_preview_step {
+        align-items: center;
+        background: rgba(255, 255, 255, 0.09);
+        border-radius: 0.75rem;
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: auto minmax(0, 1fr);
+        padding: 0.75rem;
+    }
+
+    .o_internship_registration_preview_step > span {
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.36);
+        border-radius: 50%;
+        display: inline-flex;
+        font-size: 0.75rem;
+        font-weight: 700;
+        height: 2rem;
+        justify-content: center;
+        width: 2rem;
+    }
+
+    .o_internship_registration_preview_step.is-complete > span {
+        background: #dbeafe;
+        border-color: #dbeafe;
+        color: #1e3a8a;
+    }
+
+    .o_internship_registration_preview_step div {
+        display: grid;
+        gap: 0.1rem;
+    }
+
+    .o_internship_registration_preview_step small {
+        color: rgba(255, 255, 255, 0.65);
     }
 
     .o_internship_auth_preview {
@@ -1647,6 +1753,10 @@ $internship-danger: #b91c1c;
         }
 
         .o_internship_auth_preview {
+            display: none;
+        }
+
+        .o_internship_registration_preview {
             display: none;
         }
     }

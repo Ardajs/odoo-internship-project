@@ -334,7 +334,8 @@ class TestInternshipSelfRegistrationHttp(HttpCase):
         self.authenticate(None, None)
         response = self.url_open("/internship/register")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Create your Internship Logbook account", response.text)
+        self.assertIn("Create Your Internship Account", response.text)
+        self.assertIn("o_internship_registration", response.text)
         self.assertNotIn('name="password"', response.text)
         self.assertIn('name="csrf_token"', response.text)
 
