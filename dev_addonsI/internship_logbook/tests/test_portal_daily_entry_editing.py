@@ -1,5 +1,7 @@
 from urllib.parse import urlparse
 
+from lxml import html
+
 from odoo import Command, http
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
@@ -91,6 +93,9 @@ class TestPortalDailyEntryEditing(HttpCase):
     def _edit_url(self, entry):
         return f"/my/internship/daily/{entry.id}/edit"
 
+    def _document(self, response):
+        return html.fromstring(response.content)
+
     def test_owned_draft_form_prepopulates_only_safe_fields(self):
         user, student = self._create_portal_user("form")
         program = self._create_program(student, "form")
@@ -108,6 +113,37 @@ class TestPortalDailyEntryEditing(HttpCase):
         )
         self.assertIn('value="2028-06-10"', response.text)
         self.assertIn('value="7.5"', response.text)
+        self.assertIn("o_internship_daily_form--edit", response.text)
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn(
+            f'action="/my/internship/daily/{entry.id}/edit"',
+            response.text,
+        )
+        self.assertIn('method="post"', response.text)
+        self.assertIn("Draft", response.text)
+        document = self._document(response)
+        self.assertEqual(document.xpath("count(//main//h1)"), 1.0)
+        self.assertEqual(
+            document.xpath(
+                "count(//form[@aria-labelledby="
+                "'internship-daily-edit-title'])"
+            ),
+            1.0,
+        )
+        for field_id in (
+            "daily_entry_edit_date",
+            "daily_entry_edit_title",
+            "daily_entry_edit_description",
+            "daily_entry_edit_hours",
+        ):
+            self.assertEqual(
+                document.xpath(f"count(//label[@for='{field_id}'])"),
+                1.0,
+            )
+            self.assertEqual(
+                document.xpath(f"count(//*[@id='{field_id}'])"),
+                1.0,
+            )
         for forbidden_field in (
             "student_id",
             "program_id",
@@ -270,6 +306,8 @@ class TestPortalDailyEntryEditing(HttpCase):
 
                 self.assertEqual(response.status_code, 200)
                 self.assertIn(message, response.text)
+                self.assertIn('aria-invalid="true"', response.text)
+                self.assertIn("invalid-feedback", response.text)
                 entry.invalidate_recordset()
                 self.assertEqual(
                     (

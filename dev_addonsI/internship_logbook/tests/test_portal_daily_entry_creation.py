@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 
+from lxml import html
 from psycopg2 import IntegrityError
 
 from odoo import Command, http
@@ -78,6 +79,22 @@ class TestPortalDailyEntryCreation(HttpCase):
             ("program_id", "=", program.id),
         ])
 
+    def _document(self, response):
+        return html.fromstring(response.content)
+
+    def _frontend_css(self, response):
+        links = self._document(response).xpath(
+            "//link[contains(@href, '/web/assets/') "
+            "and contains(@href, '.css')]/@href"
+        )
+        self.assertTrue(links)
+        styles = []
+        for link in links:
+            asset = self.url_open(link)
+            self.assertEqual(asset.status_code, 200)
+            styles.append(asset.text)
+        return "\n".join(styles)
+
     def test_valid_portal_intern_can_open_form_with_safe_fields(self):
         user, student = self._create_portal_user("form")
         self._create_program(student, "form")
@@ -91,6 +108,45 @@ class TestPortalDailyEntryCreation(HttpCase):
         self.assertIn('name="title"', response.text)
         self.assertIn('name="work_description"', response.text)
         self.assertIn('name="work_hours"', response.text)
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn('action="/my/internship/daily/new"', response.text)
+        self.assertIn('method="post"', response.text)
+        self.assertIn("o_internship_daily_form--create", response.text)
+        document = self._document(response)
+        self.assertEqual(document.xpath("count(//main//h1)"), 1.0)
+        self.assertEqual(
+            document.xpath(
+                "count(//form[@action='/my/internship/daily/new']"
+                "[@aria-labelledby='internship-daily-create-title'])"
+            ),
+            1.0,
+        )
+        for field_id in (
+            "daily_entry_date",
+            "daily_entry_title",
+            "daily_entry_description",
+            "daily_entry_hours",
+        ):
+            self.assertEqual(
+                document.xpath(f"count(//label[@for='{field_id}'])"),
+                1.0,
+            )
+            self.assertEqual(
+                document.xpath(f"count(//*[@id='{field_id}'])"),
+                1.0,
+            )
+        self.assertIn(
+            ".o_internship_saas.o_internship_daily_form",
+            self._frontend_css(response),
+        )
+        debug_response = self.url_open(
+            "/my/internship/daily/new?debug=assets"
+        )
+        self.assertEqual(debug_response.status_code, 200)
+        self.assertIn(
+            ".o_internship_saas.o_internship_daily_form",
+            self._frontend_css(debug_response),
+        )
         for forbidden_field in (
             "student_id",
             "program_id",

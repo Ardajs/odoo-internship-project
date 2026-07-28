@@ -955,24 +955,48 @@
             <t t-call="portal.portal_searchbar">
                 <t t-set="title">Create Daily Entry</t>
             </t>
+            <main class="o_internship_saas o_internship_daily_form o_internship_daily_form--create"
+                  aria-labelledby="internship-daily-create-title">
             <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <h1 class="h3">Create Daily Entry</h1>
-                    <p class="text-muted">
-                        Save today's internship work as a draft entry.
-                    </p>
+                <div class="col-xl-9 col-lg-10">
+                    <header class="o_internship_daily_form_header">
+                        <div>
+                            <p class="o_saas-eyebrow mb-2">Daily Entry</p>
+                            <h1 id="internship-daily-create-title"
+                                class="o_saas-heading mb-3">
+                                Add Daily Entry
+                            </h1>
+                            <p class="o_internship_daily_form_intro mb-0">
+                                Document the work you completed during your
+                                internship day and save it as a draft.
+                            </p>
+                        </div>
+                        <a href="/my/internship/daily"
+                           class="btn btn-outline-primary">
+                            Back to Daily Entries
+                        </a>
+                    </header>
                     <div t-if="form_error"
-                         class="alert alert-danger"
+                         id="daily-entry-create-form-error"
+                         class="alert alert-danger o_internship_daily_form_error"
                          role="alert"
                          t-out="form_error"/>
                     <form action="/my/internship/daily/new"
                           method="post"
-                          class="card">
-                        <div class="card-body">
+                          class="card o_internship_daily_form_card"
+                          aria-labelledby="internship-daily-create-title">
+                        <div class="card-body o_internship_daily_form_grid">
                             <input type="hidden"
                                    name="csrf_token"
                                    t-att-value="request.csrf_token()"/>
-                            <div class="mb-3">
+                            <div class="o_internship_daily_form_group_heading">
+                                <h2 class="h5 mb-1">Entry Information</h2>
+                                <p class="small text-muted mb-0">
+                                    Choose the internship day and provide a
+                                    concise title for your work.
+                                </p>
+                            </div>
+                            <div class="o_internship_daily_form_field">
                                 <label for="daily_entry_date"
                                        class="form-label">Entry Date</label>
                                 <input id="daily_entry_date"
@@ -982,12 +1006,19 @@
                                        t-att-min="program.start_date"
                                        t-att-max="program.end_date"
                                        t-att-value="form_values.get('entry_date')"
+                                       t-att-aria-invalid="'true' if errors.get('entry_date') else 'false'"
+                                       t-att-aria-describedby="'daily-entry-date-error' if errors.get('entry_date') else 'daily-entry-date-help'"
                                        t-att-class="'form-control is-invalid' if errors.get('entry_date') else 'form-control'"/>
+                                <div id="daily-entry-date-help"
+                                     class="form-text">
+                                    Select a date within the internship period.
+                                </div>
                                 <div t-if="errors.get('entry_date')"
+                                     id="daily-entry-date-error"
                                      class="invalid-feedback"
                                      t-out="errors.get('entry_date')"/>
                             </div>
-                            <div class="mb-3">
+                            <div class="o_internship_daily_form_field">
                                 <label for="daily_entry_title"
                                        class="form-label">Work Title</label>
                                 <input id="daily_entry_title"
@@ -996,12 +1027,22 @@
                                        required="required"
                                        maxlength="200"
                                        t-att-value="form_values.get('title')"
+                                       t-att-aria-invalid="'true' if errors.get('title') else 'false'"
+                                       t-att-aria-describedby="'daily-entry-title-error' if errors.get('title') else False"
                                        t-att-class="'form-control is-invalid' if errors.get('title') else 'form-control'"/>
                                 <div t-if="errors.get('title')"
+                                     id="daily-entry-title-error"
                                      class="invalid-feedback"
                                      t-out="errors.get('title')"/>
                             </div>
-                            <div class="mb-3">
+                            <div class="o_internship_daily_form_group_heading">
+                                <h2 class="h5 mb-1">Work Details</h2>
+                                <p class="small text-muted mb-0">
+                                    Describe the work completed during this
+                                    internship day.
+                                </p>
+                            </div>
+                            <div class="o_internship_daily_form_field o_internship_daily_form_field--wide">
                                 <label for="daily_entry_description"
                                        class="form-label">
                                     Work Description
@@ -1011,13 +1052,22 @@
                                           required="required"
                                           maxlength="10000"
                                           rows="8"
+                                          t-att-aria-invalid="'true' if errors.get('work_description') else 'false'"
+                                          t-att-aria-describedby="'daily-entry-description-error' if errors.get('work_description') else False"
                                           t-att-class="'form-control is-invalid' if errors.get('work_description') else 'form-control'"
                                           t-out="form_values.get('work_description')"/>
                                 <div t-if="errors.get('work_description')"
+                                     id="daily-entry-description-error"
                                      class="invalid-feedback"
                                      t-out="errors.get('work_description')"/>
                             </div>
-                            <div class="mb-3">
+                            <div class="o_internship_daily_form_group_heading">
+                                <h2 class="h5 mb-1">Time Information</h2>
+                                <p class="small text-muted mb-0">
+                                    Record the hours worked for this entry.
+                                </p>
+                            </div>
+                            <div class="o_internship_daily_form_field o_internship_daily_form_field--hours">
                                 <label for="daily_entry_hours"
                                        class="form-label">Work Hours</label>
                                 <input id="daily_entry_hours"
@@ -1028,13 +1078,21 @@
                                        max="24"
                                        step="0.25"
                                        t-att-value="form_values.get('work_hours')"
+                                       t-att-aria-invalid="'true' if errors.get('work_hours') else 'false'"
+                                       t-att-aria-describedby="'daily-entry-hours-error' if errors.get('work_hours') else 'daily-entry-hours-help'"
                                        t-att-class="'form-control is-invalid' if errors.get('work_hours') else 'form-control'"/>
+                                <div id="daily-entry-hours-help"
+                                     class="form-text">
+                                    Enter a value greater than zero and no
+                                    more than 24 hours.
+                                </div>
                                 <div t-if="errors.get('work_hours')"
+                                     id="daily-entry-hours-error"
                                      class="invalid-feedback"
                                      t-out="errors.get('work_hours')"/>
                             </div>
                         </div>
-                        <div class="card-footer d-flex gap-2">
+                        <div class="card-footer o_internship_daily_form_actions">
                             <button type="submit" class="btn btn-primary">
                                 Save Draft
                             </button>
@@ -1046,6 +1104,7 @@
                     </form>
                 </div>
             </div>
+            </main>
         </t>
     </template>
 
@@ -1110,24 +1169,52 @@
             <t t-call="portal.portal_searchbar">
                 <t t-set="title">Edit Daily Entry</t>
             </t>
+            <main class="o_internship_saas o_internship_daily_form o_internship_daily_form--edit"
+                  aria-labelledby="internship-daily-edit-title">
             <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <h1 class="h3">Edit Daily Entry</h1>
-                    <p class="text-muted">
-                        Update this draft internship entry.
-                    </p>
+                <div class="col-xl-9 col-lg-10">
+                    <header class="o_internship_daily_form_header">
+                        <div>
+                            <p class="o_saas-eyebrow mb-2">Daily Entry</p>
+                            <h1 id="internship-daily-edit-title"
+                                class="o_saas-heading mb-3">
+                                Edit Daily Entry
+                            </h1>
+                            <p class="o_internship_daily_form_intro mb-0">
+                                Update this draft internship entry while the
+                                program remains active.
+                            </p>
+                        </div>
+                        <div class="o_internship_daily_form_header_context">
+                            <span class="badge o_internship_entry_status o_internship_entry_status_draft">
+                                Draft
+                            </span>
+                            <a href="/my/internship/daily"
+                               class="btn btn-outline-primary">
+                                Back to Daily Entries
+                            </a>
+                        </div>
+                    </header>
                     <div t-if="form_error"
-                         class="alert alert-danger"
+                         id="daily-entry-edit-form-error"
+                         class="alert alert-danger o_internship_daily_form_error"
                          role="alert"
                          t-out="form_error"/>
                     <form t-att-action="'/my/internship/daily/%s/edit' % entry.id"
                           method="post"
-                          class="card">
-                        <div class="card-body">
+                          class="card o_internship_daily_form_card"
+                          aria-labelledby="internship-daily-edit-title">
+                        <div class="card-body o_internship_daily_form_grid">
                             <input type="hidden"
                                    name="csrf_token"
                                    t-att-value="request.csrf_token()"/>
-                            <div class="mb-3">
+                            <div class="o_internship_daily_form_group_heading">
+                                <h2 class="h5 mb-1">Entry Information</h2>
+                                <p class="small text-muted mb-0">
+                                    Update the internship day or work title.
+                                </p>
+                            </div>
+                            <div class="o_internship_daily_form_field">
                                 <label for="daily_entry_edit_date"
                                        class="form-label">Entry Date</label>
                                 <input id="daily_entry_edit_date"
@@ -1137,12 +1224,19 @@
                                        t-att-min="program.start_date"
                                        t-att-max="program.end_date"
                                        t-att-value="form_values.get('entry_date')"
+                                       t-att-aria-invalid="'true' if errors.get('entry_date') else 'false'"
+                                       t-att-aria-describedby="'daily-entry-edit-date-error' if errors.get('entry_date') else 'daily-entry-edit-date-help'"
                                        t-att-class="'form-control is-invalid' if errors.get('entry_date') else 'form-control'"/>
+                                <div id="daily-entry-edit-date-help"
+                                     class="form-text">
+                                    Select a date within the internship period.
+                                </div>
                                 <div t-if="errors.get('entry_date')"
+                                     id="daily-entry-edit-date-error"
                                      class="invalid-feedback"
                                      t-out="errors.get('entry_date')"/>
                             </div>
-                            <div class="mb-3">
+                            <div class="o_internship_daily_form_field">
                                 <label for="daily_entry_edit_title"
                                        class="form-label">Work Title</label>
                                 <input id="daily_entry_edit_title"
@@ -1151,12 +1245,22 @@
                                        required="required"
                                        maxlength="200"
                                        t-att-value="form_values.get('title')"
+                                       t-att-aria-invalid="'true' if errors.get('title') else 'false'"
+                                       t-att-aria-describedby="'daily-entry-edit-title-error' if errors.get('title') else False"
                                        t-att-class="'form-control is-invalid' if errors.get('title') else 'form-control'"/>
                                 <div t-if="errors.get('title')"
+                                     id="daily-entry-edit-title-error"
                                      class="invalid-feedback"
                                      t-out="errors.get('title')"/>
                             </div>
-                            <div class="mb-3">
+                            <div class="o_internship_daily_form_group_heading">
+                                <h2 class="h5 mb-1">Work Details</h2>
+                                <p class="small text-muted mb-0">
+                                    Refine the description of the work you
+                                    completed.
+                                </p>
+                            </div>
+                            <div class="o_internship_daily_form_field o_internship_daily_form_field--wide">
                                 <label for="daily_entry_edit_description"
                                        class="form-label">
                                     Work Description
@@ -1166,13 +1270,22 @@
                                           required="required"
                                           maxlength="10000"
                                           rows="8"
+                                          t-att-aria-invalid="'true' if errors.get('work_description') else 'false'"
+                                          t-att-aria-describedby="'daily-entry-edit-description-error' if errors.get('work_description') else False"
                                           t-att-class="'form-control is-invalid' if errors.get('work_description') else 'form-control'"
                                           t-out="form_values.get('work_description')"/>
                                 <div t-if="errors.get('work_description')"
+                                     id="daily-entry-edit-description-error"
                                      class="invalid-feedback"
                                      t-out="errors.get('work_description')"/>
                             </div>
-                            <div class="mb-3">
+                            <div class="o_internship_daily_form_group_heading">
+                                <h2 class="h5 mb-1">Time Information</h2>
+                                <p class="small text-muted mb-0">
+                                    Update the hours recorded for this entry.
+                                </p>
+                            </div>
+                            <div class="o_internship_daily_form_field o_internship_daily_form_field--hours">
                                 <label for="daily_entry_edit_hours"
                                        class="form-label">Work Hours</label>
                                 <input id="daily_entry_edit_hours"
@@ -1183,13 +1296,21 @@
                                        max="24"
                                        step="0.25"
                                        t-att-value="form_values.get('work_hours')"
+                                       t-att-aria-invalid="'true' if errors.get('work_hours') else 'false'"
+                                       t-att-aria-describedby="'daily-entry-edit-hours-error' if errors.get('work_hours') else 'daily-entry-edit-hours-help'"
                                        t-att-class="'form-control is-invalid' if errors.get('work_hours') else 'form-control'"/>
+                                <div id="daily-entry-edit-hours-help"
+                                     class="form-text">
+                                    Enter a value greater than zero and no
+                                    more than 24 hours.
+                                </div>
                                 <div t-if="errors.get('work_hours')"
+                                     id="daily-entry-edit-hours-error"
                                      class="invalid-feedback"
                                      t-out="errors.get('work_hours')"/>
                             </div>
                         </div>
-                        <div class="card-footer d-flex gap-2">
+                        <div class="card-footer o_internship_daily_form_actions">
                             <button type="submit" class="btn btn-primary">
                                 Save Changes
                             </button>
@@ -1201,6 +1322,7 @@
                     </form>
                 </div>
             </div>
+            </main>
         </t>
     </template>
 
