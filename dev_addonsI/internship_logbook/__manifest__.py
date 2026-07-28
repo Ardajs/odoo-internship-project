@@ -50,12 +50,14 @@ This module allows companies to manage:
     "report/portal_internship_report_template.xml",
     "report/internship_report.xml",
 
+    "views/internship_frontend_components.xml",
     "views/self_registration_templates.xml",
     "views/internship_portal_templates.xml",
 
     ],
     "assets": {
         "web.assets_frontend": [
+            "internship_logbook/static/src/scss/internship_frontend.scss",
             "internship_logbook/static/src/js/verification_token.js",
         ],
     },
