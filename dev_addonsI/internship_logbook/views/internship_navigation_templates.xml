@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="internship_public_navigation"
+              name="Internship Public Navigation">
+        <nav class="navbar navbar-expand-lg sticky-top o_internship_public_nav"
+             aria-label="Primary navigation">
+            <div class="container">
+                <a href="/"
+                   class="navbar-brand o_internship_public_brand"
+                   t-att-aria-current="'page' if request.httprequest.path == '/' else None">
+                    <span class="o_internship_public_brand_icon"
+                          aria-hidden="true">
+                        <t t-call="internship_logbook.internship_saas_icon">
+                            <t t-set="icon" t-value="'book'"/>
+                            <t t-set="icon_size" t-value="22"/>
+                            <t t-set="icon_class" t-value="''"/>
+                            <t t-set="icon_label" t-value="False"/>
+                        </t>
+                    </span>
+                    <span>Internship Logbook</span>
+                </a>
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#internshipPublicNavigation"
+                        aria-controls="internshipPublicNavigation"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon" aria-hidden="true"/>
+                </button>
+                <div class="collapse navbar-collapse"
+                     id="internshipPublicNavigation">
+                    <ul class="navbar-nav mx-lg-auto mb-3 mb-lg-0"
+                        role="list">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/#features">Features</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/#workflow">Workflow</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/#faq">FAQ</a>
+                        </li>
+                    </ul>
+                    <div class="o_internship_public_actions d-flex flex-column flex-lg-row gap-2">
+                        <a href="/web/login"
+                           class="btn btn-outline-primary">
+                            Sign In
+                        </a>
+                        <a href="/internship/register"
+                           class="btn btn-primary">
+                            Get Started
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </template>
+
+    <template id="internship_public_navigation_layout"
+              name="Internship Public Navigation Layout"
+              inherit_id="website.template_header_default"
+              priority="60">
+        <xpath expr="//header" position="attributes">
+            <attribute name="t-attf-class"
+                       add="#{'o_internship_public_header' if request.env.user._is_public() else ''}"
+                       separator=" "/>
+        </xpath>
+        <xpath expr="//t[@t-call='website.navbar']" position="before">
+            <t t-if="request.env.user._is_public()"
+               t-call="internship_logbook.internship_public_navigation"/>
+        </xpath>
+        <xpath expr="//t[@t-call='website.navbar']" position="attributes">
+            <attribute name="t-if">not request.env.user._is_public()</attribute>
+        </xpath>
+        <xpath expr="//t[@t-call='website.template_header_mobile']"
+               position="attributes">
+            <attribute name="t-if">not request.env.user._is_public()</attribute>
+        </xpath>
+    </template>
+</odoo>

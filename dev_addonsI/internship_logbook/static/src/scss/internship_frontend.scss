@@ -891,6 +891,110 @@ $internship-danger: #b91c1c;
     }
 }
 
+.o_internship_public_header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+.o_internship_public_nav {
+    --internship-nav-blue: #2563eb;
+    --internship-nav-blue-dark: #1d4ed8;
+    --internship-nav-border: #e2e8f0;
+    --internship-nav-heading: #0f172a;
+    --internship-nav-muted: #475569;
+
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid var(--internship-nav-border);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    min-height: 4.75rem;
+    padding-block: 0.7rem;
+
+    .o_internship_public_brand {
+        align-items: center;
+        color: var(--internship-nav-heading);
+        display: inline-flex;
+        font-size: clamp(1rem, 2vw, 1.15rem);
+        font-weight: 750;
+        gap: 0.65rem;
+        letter-spacing: -0.025em;
+        margin-right: 1rem;
+        min-width: 0;
+        text-decoration: none;
+    }
+
+    .o_internship_public_brand_icon {
+        align-items: center;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 0.75rem;
+        color: var(--internship-nav-blue);
+        display: inline-flex;
+        flex: 0 0 auto;
+        height: 2.5rem;
+        justify-content: center;
+        width: 2.5rem;
+    }
+
+    .nav-link {
+        border-radius: 0.625rem;
+        color: var(--internship-nav-muted);
+        font-weight: 650;
+        padding: 0.6rem 0.85rem;
+        transition: background-color 180ms ease, color 180ms ease;
+    }
+
+    .nav-link:hover {
+        background: #eff6ff;
+        color: var(--internship-nav-blue-dark);
+    }
+
+    .btn {
+        align-items: center;
+        border-radius: 0.75rem;
+        display: inline-flex;
+        font-weight: 650;
+        justify-content: center;
+        min-height: 2.65rem;
+        padding: 0.55rem 1rem;
+    }
+
+    .btn-primary {
+        background: var(--internship-nav-blue);
+        border-color: var(--internship-nav-blue);
+        box-shadow: 0 7px 18px rgba(37, 99, 235, 0.16);
+    }
+
+    .btn-primary:hover {
+        background: var(--internship-nav-blue-dark);
+        border-color: var(--internship-nav-blue-dark);
+    }
+
+    .btn-outline-primary {
+        border-color: #bfdbfe;
+        color: var(--internship-nav-blue-dark);
+    }
+
+    .btn-outline-primary:hover {
+        background: #eff6ff;
+        border-color: #93c5fd;
+        color: var(--internship-nav-blue-dark);
+    }
+
+    .navbar-toggler {
+        border-color: #cbd5e1;
+        border-radius: 0.7rem;
+        padding: 0.45rem 0.6rem;
+    }
+
+    :where(a, button):focus-visible {
+        border-radius: 0.625rem;
+        outline: 3px solid rgba(37, 99, 235, 0.42);
+        outline-offset: 3px;
+    }
+}
+
 @keyframes o-internship-reveal {
     from {
         opacity: 0;
@@ -1083,9 +1187,63 @@ $internship-danger: #b91c1c;
     }
 }
 
+@media (max-width: 991.98px) {
+    .o_internship_public_nav {
+        .container {
+            flex-wrap: wrap;
+        }
+
+        .o_internship_public_brand {
+            max-width: calc(100% - 3.75rem);
+        }
+
+        .o_internship_public_brand > span:last-child {
+            overflow-wrap: anywhere;
+        }
+
+        .navbar-collapse {
+            border-top: 1px solid var(--internship-nav-border);
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            width: 100%;
+        }
+
+        .nav-link {
+            padding-inline: 0.75rem;
+        }
+
+        .o_internship_public_actions {
+            border-top: 1px solid var(--internship-nav-border);
+            padding-top: 0.75rem;
+        }
+
+        .o_internship_public_actions .btn {
+            width: 100%;
+        }
+    }
+}
+
+@media (max-width: 374.98px) {
+    .o_internship_public_nav {
+        min-height: 4.25rem;
+
+        .o_internship_public_brand {
+            font-size: 0.9rem;
+            gap: 0.45rem;
+        }
+
+        .o_internship_public_brand_icon {
+            height: 2.25rem;
+            width: 2.25rem;
+        }
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .o_internship_saas,
-    .o_internship_saas * {
+    .o_internship_saas *,
+    .o_internship_public_nav,
+    .o_internship_public_nav * {
         animation-delay: 0.01ms !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
