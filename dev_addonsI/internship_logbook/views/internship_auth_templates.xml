@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="internship_public_login_experience"
+              name="Internship Public Login Experience"
+              inherit_id="web.login"
+              priority="50">
+        <xpath expr="//form[@role='form'][@data-captcha='login']"
+               position="before">
+            <div class="o_internship_saas o_internship_auth"
+                 aria-labelledby="internship-login-title">
+                <div class="o_internship_auth_shell">
+                    <section class="o_internship_auth_form_panel"
+                             aria-labelledby="internship-login-title">
+                        <header class="o_internship_auth_heading">
+                            <p class="o_saas-eyebrow mb-2">
+                                Internship Portal
+                            </p>
+                            <h1 id="internship-login-title"
+                                class="o_saas-heading mb-3">
+                                Welcome Back
+                            </h1>
+                            <p class="o_internship_auth_intro mb-4">
+                                Sign in to continue managing your internship
+                                progress and daily records.
+                            </p>
+                        </header>
+                        <xpath expr="//form[@role='form'][@data-captcha='login']"
+                               position="move"/>
+                    </section>
+
+                    <aside class="o_internship_auth_context"
+                           aria-labelledby="internship-login-context-title">
+                        <div class="o_internship_auth_context_content">
+                            <span class="o_internship_auth_context_icon"
+                                  aria-hidden="true">
+                                <t t-call="internship_logbook.internship_saas_icon">
+                                    <t t-set="icon" t-value="'dashboard'"/>
+                                    <t t-set="icon_size" t-value="25"/>
+                                    <t t-set="icon_class" t-value="''"/>
+                                    <t t-set="icon_label" t-value="False"/>
+                                </t>
+                            </span>
+                            <h2 id="internship-login-context-title"
+                                class="h3 mt-4 mb-3">
+                                Keep Every Internship Step Organized
+                            </h2>
+                            <p class="mb-4">
+                                Record daily work, follow review decisions,
+                                and track progress from one secure portal.
+                            </p>
+                            <ul class="o_internship_auth_benefits">
+                                <li>Structured daily entries</li>
+                                <li>Supervisor review workflow</li>
+                                <li>Clear progress visibility</li>
+                            </ul>
+                        </div>
+
+                        <div class="o_internship_auth_preview"
+                             aria-hidden="true">
+                            <div class="o_internship_auth_preview_header">
+                                <span/>
+                                <strong>Internship progress</strong>
+                                <small>Active</small>
+                            </div>
+                            <div class="o_internship_auth_preview_track">
+                                <span/>
+                            </div>
+                            <div class="o_internship_auth_preview_rows">
+                                <div><span/><span/><strong>Recorded</strong></div>
+                                <div><span/><span/><strong>Reviewed</strong></div>
+                                <div><span/><span/><strong>Visible</strong></div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="internship_public_login_registration_link"
+              name="Internship Public Login Registration Link"
+              inherit_id="auth_signup.login"
+              priority="60">
+        <xpath expr="//a[@t-if='signup_enabled']" position="replace">
+            <p t-if="signup_enabled"
+               class="o_internship_auth_registration mb-0 mt-3">
+                <span>Don’t have an account?</span>
+                <a href="/internship/register">Create an account</a>
+            </p>
+        </xpath>
+    </template>
+
+    <template id="internship_public_registration_experience"
+              name="Internship Public Registration Experience"
+              inherit_id="internship_logbook.self_registration_form"
+              priority="50">
+        <xpath expr="//section[hasclass('container')]"
+               position="attributes">
+            <attribute name="class">
+                o_internship_saas o_internship_auth o_internship_registration
+            </attribute>
+            <attribute name="aria-labelledby">
+                internship-registration-title
+            </attribute>
+        </xpath>
+        <xpath expr="//form[@action='/internship/register']/ancestor::div[hasclass('row')][1]"
+               position="attributes">
+            <attribute name="class">o_internship_auth_shell</attribute>
+        </xpath>
+        <xpath expr="//form[@action='/internship/register']/ancestor::div[hasclass('col-lg-6')][1]"
+               position="attributes">
+            <attribute name="class">o_internship_auth_form_panel</attribute>
+        </xpath>
+        <xpath expr="//form[@action='/internship/register']"
+               position="attributes">
+            <attribute name="class"
+                       add="o_internship_registration_form"
+                       separator=" "/>
+            <attribute name="aria-labelledby">
+                internship-registration-title
+            </attribute>
+        </xpath>
+        <xpath expr="//form[@action='/internship/register']/preceding-sibling::h1[1]"
+               position="replace">
+            <header class="o_internship_auth_heading">
+                <p class="o_saas-eyebrow mb-2">Internship Portal</p>
+                <h1 id="internship-registration-title"
+                    class="o_saas-heading mb-3">
+                    Create Your Internship Account
+                </h1>
+                <p class="o_internship_auth_intro mb-4">
+                    Start recording your internship journey in just a few
+                    minutes.
+                </p>
+            </header>
+        </xpath>
+        <xpath expr="//form[@action='/internship/register']/preceding-sibling::p[1]"
+               position="replace"/>
+        <xpath expr="//form[@action='/internship/register']/parent::div"
+               position="after">
+            <aside class="o_internship_auth_context"
+                   aria-labelledby="internship-registration-context-title">
+                <div class="o_internship_auth_context_content">
+                    <span class="o_internship_auth_context_icon"
+                          aria-hidden="true">
+                        <t t-call="internship_logbook.internship_saas_icon">
+                            <t t-set="icon" t-value="'user'"/>
+                            <t t-set="icon_size" t-value="25"/>
+                            <t t-set="icon_class" t-value="''"/>
+                            <t t-set="icon_label" t-value="False"/>
+                        </t>
+                    </span>
+                    <h2 id="internship-registration-context-title"
+                        class="h3 mt-4 mb-3">Everything In One Place</h2>
+                    <p class="mb-4">
+                        Build a clear, secure record of your internship from
+                        the first day onward.
+                    </p>
+                    <ul class="o_internship_auth_benefits o_internship_registration_benefits">
+                        <li><t t-call="internship_logbook.internship_saas_icon"><t t-set="icon" t-value="'check'"/><t t-set="icon_size" t-value="20"/><t t-set="icon_class" t-value="''"/><t t-set="icon_label" t-value="False"/></t><span>Daily Entries</span></li>
+                        <li><t t-call="internship_logbook.internship_saas_icon"><t t-set="icon" t-value="'check'"/><t t-set="icon_size" t-value="20"/><t t-set="icon_class" t-value="''"/><t t-set="icon_label" t-value="False"/></t><span>Supervisor Feedback</span></li>
+                        <li><t t-call="internship_logbook.internship_saas_icon"><t t-set="icon" t-value="'check'"/><t t-set="icon_size" t-value="20"/><t t-set="icon_class" t-value="''"/><t t-set="icon_label" t-value="False"/></t><span>Progress Tracking</span></li>
+                        <li><t t-call="internship_logbook.internship_saas_icon"><t t-set="icon" t-value="'check'"/><t t-set="icon_size" t-value="20"/><t t-set="icon_class" t-value="''"/><t t-set="icon_label" t-value="False"/></t><span>Secure Portal</span></li>
+                    </ul>
+                </div>
+                <div class="o_internship_registration_preview"
+                     aria-hidden="true">
+                    <div class="o_internship_registration_preview_step is-complete"><span>1</span><div><strong>Create account</strong><small>Start securely</small></div></div>
+                    <div class="o_internship_registration_preview_step"><span>2</span><div><strong>Verify email</strong><small>Confirm ownership</small></div></div>
+                    <div class="o_internship_registration_preview_step"><span>3</span><div><strong>Open portal</strong><small>Track progress</small></div></div>
+                </div>
+            </aside>
+        </xpath>
+    </template>
+
+    <template id="internship_registration_sent_experience"
+              name="Internship Registration Sent Experience"
+              inherit_id="internship_logbook.self_registration_sent"
+              priority="50">
+        <xpath expr="//section[hasclass('container')]"
+               position="attributes">
+            <attribute name="class">
+                o_internship_saas o_internship_auth o_internship_auth_status
+                o_internship_auth_success
+            </attribute>
+            <attribute name="aria-labelledby">internship-email-sent-title</attribute>
+        </xpath>
+        <xpath expr="//section//h1" position="before">
+            <span class="o_internship_auth_status_icon"
+                  aria-hidden="true">
+                <t t-call="internship_logbook.internship_saas_icon">
+                    <t t-set="icon" t-value="'check'"/>
+                    <t t-set="icon_size" t-value="30"/>
+                    <t t-set="icon_class" t-value="''"/>
+                    <t t-set="icon_label" t-value="False"/>
+                </t>
+            </span>
+            <p class="o_saas-eyebrow mb-2">Email Verification</p>
+        </xpath>
+        <xpath expr="//section//h1" position="replace">
+            <h1 id="internship-email-sent-title"
+                class="o_saas-heading mb-3">Check Your Email</h1>
+        </xpath>
+        <xpath expr="//section//h1/following-sibling::p[1]"
+               position="replace">
+            <p class="o_internship_auth_status_intro">
+                We sent a verification link to the email address you
+                provided. Open the message to activate your account.
+            </p>
+        </xpath>
+        <xpath expr="//section//p[hasclass('text-muted')]"
+               position="replace">
+            <div class="o_internship_auth_note" role="note">
+                <strong>Before you continue</strong>
+                <ul>
+                    <li>Check your inbox for the verification message.</li>
+                    <li>Check your spam or junk folder if it is not visible.</li>
+                    <li>The secure link is available for a limited time.</li>
+                </ul>
+            </div>
+        </xpath>
+        <xpath expr="//section//a[@href='/web/login']"
+               position="attributes">
+            <attribute name="class">btn btn-primary</attribute>
+        </xpath>
+        <xpath expr="//section//a[@href='/web/login']" position="after">
+            <a href="/internship/register"
+               class="btn btn-outline-primary">Register Again</a>
+        </xpath>
+    </template>
+
+    <template id="internship_verification_experience"
+              name="Internship Verification Experience"
+              inherit_id="internship_logbook.self_registration_verify"
+              priority="50">
+        <xpath expr="//section[hasclass('container')]"
+               position="attributes">
+            <attribute name="t-attf-class">
+                o_internship_saas o_internship_auth
+                o_internship_auth_status o_internship_auth_verification
+                #{'o_internship_auth_error' if error else ''}
+            </attribute>
+            <attribute name="aria-labelledby">internship-verification-title</attribute>
+        </xpath>
+        <xpath expr="//section/div[hasclass('row')]"
+               position="attributes">
+            <attribute name="class">o_internship_auth_status_shell</attribute>
+        </xpath>
+        <xpath expr="//form[@action='/internship/verify']/parent::div"
+               position="attributes">
+            <attribute name="class">o_internship_auth_status_card</attribute>
+        </xpath>
+        <xpath expr="//form[@action='/internship/verify']"
+               position="attributes">
+            <attribute name="class"
+                       add="o_internship_auth_auxiliary_form"
+                       separator=" "/>
+            <attribute name="aria-labelledby">internship-verification-title</attribute>
+        </xpath>
+        <xpath expr="//form[@action='/internship/verify']/preceding-sibling::h1[1]"
+               position="before">
+            <span class="o_internship_auth_status_icon"
+                  aria-hidden="true">
+                <t t-call="internship_logbook.internship_saas_icon">
+                    <t t-set="icon" t-value="'shield'"/>
+                    <t t-set="icon_size" t-value="30"/>
+                    <t t-set="icon_class" t-value="''"/>
+                    <t t-set="icon_label" t-value="False"/>
+                </t>
+            </span>
+            <p class="o_saas-eyebrow mb-2">
+                <t t-if="error">Verification Issue</t>
+                <t t-else="">Secure Password Setup</t>
+            </p>
+        </xpath>
+        <xpath expr="//form[@action='/internship/verify']/preceding-sibling::h1[1]"
+               position="replace">
+            <h1 id="internship-verification-title"
+                class="o_saas-heading mb-3">
+                <t t-if="error">We Couldn't Verify This Link</t>
+                <t t-else="">Create Your Password</t>
+            </h1>
+        </xpath>
+        <xpath expr="//form[@action='/internship/verify']/preceding-sibling::p[1]"
+               position="replace">
+            <p class="o_internship_auth_status_intro">
+                <t t-if="error">
+                    Review the message below, then return to registration if
+                    you need a new verification link.
+                </t>
+                <t t-else="">
+                    Choose a secure password to finish creating your
+                    Internship Logbook account.
+                </t>
+            </p>
+        </xpath>
+        <xpath expr="//form[@action='/internship/verify']/button[@type='submit']"
+               position="after">
+            <div class="o_internship_auth_auxiliary_actions">
+                <a href="/web/login">Back to Sign In</a>
+                <a href="/internship/register">Create an Account</a>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="internship_password_reset_experience"
+              name="Internship Password Reset Experience"
+              inherit_id="auth_signup.reset_password"
+              priority="50">
+        <xpath expr="//form[hasclass('oe_reset_password_form')]"
+               position="attributes">
+            <attribute name="class"
+                       add="o_internship_saas o_internship_auth o_internship_auth_reset o_internship_auth_auxiliary_form"
+                       separator=" "/>
+            <attribute name="aria-labelledby">internship-reset-title</attribute>
+        </xpath>
+        <xpath expr="//form[hasclass('oe_reset_password_form')]/input[@name='csrf_token']"
+               position="before">
+            <header class="o_internship_auth_auxiliary_heading">
+                <span class="o_internship_auth_status_icon"
+                      aria-hidden="true">
+                    <t t-call="internship_logbook.internship_saas_icon">
+                        <t t-set="icon" t-value="'shield'"/>
+                        <t t-set="icon_size" t-value="28"/>
+                        <t t-set="icon_class" t-value="''"/>
+                        <t t-set="icon_label" t-value="False"/>
+                    </t>
+                </span>
+                <p class="o_saas-eyebrow mb-2">
+                    <t t-if="token">Secure Password Setup</t>
+                    <t t-else="">Account Recovery</t>
+                </p>
+                <h1 id="internship-reset-title"
+                    class="o_saas-heading mb-3">
+                    <t t-if="token">Create a New Password</t>
+                    <t t-else="">Reset Your Password</t>
+                </h1>
+                <p class="o_internship_auth_status_intro">
+                    <t t-if="token">
+                        Choose a secure password for your Internship Logbook
+                        account.
+                    </t>
+                    <t t-else="">
+                        Enter your account email address and we'll send you
+                        instructions to create a new password.
+                    </t>
+                </p>
+            </header>
+        </xpath>
+        <xpath expr="//div[@t-if='message'][hasclass('oe_login_form')]"
+               position="attributes">
+            <attribute name="class"
+                       add="o_internship_saas o_internship_auth o_internship_auth_status o_internship_auth_success"
+                       separator=" "/>
+            <attribute name="aria-labelledby">internship-reset-success-title</attribute>
+        </xpath>
+        <xpath expr="//div[@t-if='message'][hasclass('oe_login_form')]/p[@role='status']"
+               position="before">
+            <span class="o_internship_auth_status_icon"
+                  aria-hidden="true">
+                <t t-call="internship_logbook.internship_saas_icon">
+                    <t t-set="icon" t-value="'check'"/>
+                    <t t-set="icon_size" t-value="30"/>
+                    <t t-set="icon_class" t-value="''"/>
+                    <t t-set="icon_label" t-value="False"/>
+                </t>
+            </span>
+            <p class="o_saas-eyebrow mb-2">Account Recovery</p>
+            <h1 id="internship-reset-success-title"
+                class="o_saas-heading mb-3">Check Your Email</h1>
+        </xpath>
+    </template>
+</odoo>

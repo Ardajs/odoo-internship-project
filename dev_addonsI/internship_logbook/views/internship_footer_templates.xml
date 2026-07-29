@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="internship_public_footer"
+              name="Internship Public Footer">
+        <footer id="bottom"
+                class="o_footer o_internship_public_footer"
+                data-anchor="true"
+                aria-label="Website footer">
+            <div class="container">
+                <div class="o_internship_footer_grid">
+                    <section class="o_internship_footer_brand"
+                             aria-labelledby="internship-footer-brand-title">
+                        <div class="o_internship_footer_brand_heading">
+                            <span class="o_internship_footer_brand_icon"
+                                  aria-hidden="true">
+                                <t t-call="internship_logbook.internship_saas_icon">
+                                    <t t-set="icon" t-value="'book'"/>
+                                    <t t-set="icon_size" t-value="22"/>
+                                    <t t-set="icon_class" t-value="''"/>
+                                    <t t-set="icon_label" t-value="False"/>
+                                </t>
+                            </span>
+                            <h2 id="internship-footer-brand-title"
+                                class="h5 mb-0">
+                                Internship Logbook
+                            </h2>
+                        </div>
+                        <p class="mb-0">
+                            A secure internship management platform for
+                            students and supervisors.
+                        </p>
+                    </section>
+
+                    <nav aria-labelledby="internship-footer-product-title">
+                        <h2 id="internship-footer-product-title"
+                            class="h6">
+                            Product
+                        </h2>
+                        <ul>
+                            <li><a href="/#features">Features</a></li>
+                            <li><a href="/#workflow">Workflow</a></li>
+                            <li><a href="/#faq">FAQ</a></li>
+                        </ul>
+                    </nav>
+
+                    <nav aria-labelledby="internship-footer-access-title">
+                        <h2 id="internship-footer-access-title"
+                            class="h6">
+                            Access
+                        </h2>
+                        <ul>
+                            <li>
+                                <a href="/internship/register">
+                                    Create Account
+                                </a>
+                            </li>
+                            <li><a href="/web/login">Sign In</a></li>
+                        </ul>
+                    </nav>
+
+                    <section aria-labelledby="internship-footer-platform-title">
+                        <h2 id="internship-footer-platform-title"
+                            class="h6">
+                            Platform
+                        </h2>
+                        <ul class="o_internship_footer_information">
+                            <li>Responsive</li>
+                            <li>Secure Authentication</li>
+                            <li>Supervisor Workflow</li>
+                            <li>Daily Progress Tracking</li>
+                        </ul>
+                    </section>
+                </div>
+
+                <div class="o_internship_footer_bottom">
+                    <span>© Internship Logbook</span>
+                    <span>Built with Odoo 19</span>
+                </div>
+            </div>
+        </footer>
+    </template>
+
+    <template id="internship_public_footer_layout"
+              name="Internship Public Footer Layout"
+              inherit_id="website.layout"
+              priority="60">
+        <xpath expr="//footer[@id='bottom']" position="before">
+            <t t-if="not no_footer and request.env.user._is_public()"
+               t-call="internship_logbook.internship_public_footer"/>
+        </xpath>
+        <xpath expr="//footer[@id='bottom']" position="attributes">
+            <attribute name="t-if">
+                not no_footer and not request.env.user._is_public()
+            </attribute>
+        </xpath>
+    </template>
+</odoo>

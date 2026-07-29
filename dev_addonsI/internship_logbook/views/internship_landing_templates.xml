@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="internship_landing_feature_card"
+              name="Internship Landing Feature Card">
+        <article class="o_saas-card o_saas-card--interactive
+                        o_landing-feature">
+            <span class="o_saas-icon-wrap" aria-hidden="true">
+                <t t-call="internship_logbook.internship_saas_icon">
+                    <t t-set="icon" t-value="feature_icon"/>
+                    <t t-set="icon_size" t-value="24"/>
+                    <t t-set="icon_class" t-value="''"/>
+                    <t t-set="icon_label" t-value="False"/>
+                </t>
+            </span>
+            <h3 class="h5 mt-4 mb-2" t-out="feature_title"/>
+            <p class="text-muted mb-0" t-out="feature_description"/>
+        </article>
+    </template>
+
+    <template id="internship_landing_workflow_step"
+              name="Internship Landing Workflow Step">
+        <li class="o_landing-workflow-step">
+            <span class="o_landing-workflow-number"
+                  aria-hidden="true"
+                  t-out="step_number"/>
+            <div>
+                <h3 class="h5 mb-2" t-out="step_title"/>
+                <p class="text-muted mb-0" t-out="step_description"/>
+            </div>
+        </li>
+    </template>
+
+    <template id="internship_landing_capability"
+              name="Internship Landing Capability">
+        <li class="o_landing-capability">
+            <strong t-out="capability_value"/>
+            <h3 class="h5 mb-2" t-out="capability_title"/>
+            <p class="text-muted mb-0" t-out="capability_description"/>
+        </li>
+    </template>
+
+    <template id="internship_landing_principle"
+              name="Internship Landing Principle">
+        <article class="o_saas-card o_landing-principle">
+            <span class="o_saas-icon-wrap" aria-hidden="true">
+                <t t-call="internship_logbook.internship_saas_icon">
+                    <t t-set="icon" t-value="principle_icon"/>
+                    <t t-set="icon_size" t-value="24"/>
+                    <t t-set="icon_class" t-value="''"/>
+                    <t t-set="icon_label" t-value="False"/>
+                </t>
+            </span>
+            <h3 class="h5 mt-4 mb-2" t-out="principle_title"/>
+            <p class="text-muted mb-0" t-out="principle_description"/>
+        </article>
+    </template>
+
+    <template id="internship_saas_homepage"
+              name="Internship SaaS Homepage"
+              inherit_id="website.homepage"
+              priority="30">
+        <xpath expr="//div[@id='wrap']" position="replace">
+            <main id="wrap" class="oe_structure o_internship_saas">
+                <section class="o_landing-hero position-relative overflow-hidden"
+                         aria-labelledby="internship-hero-title">
+                    <div class="o_landing-hero-shape
+                                o_landing-hero-shape--one"
+                         aria-hidden="true"/>
+                    <div class="o_landing-hero-shape
+                                o_landing-hero-shape--two"
+                         aria-hidden="true"/>
+                    <div class="container position-relative">
+                        <div class="row align-items-center gy-5">
+                            <div class="col-lg-6">
+                                <div class="o_landing-hero-copy
+                                            o_saas-reveal">
+                                    <p class="o_saas-eyebrow mb-3">
+                                        Internship Management Platform
+                                    </p>
+                                    <h1 id="internship-hero-title"
+                                        class="o_saas-display mb-4">
+                                        Turn Every Internship Day Into
+                                        Measurable Progress
+                                    </h1>
+                                    <p class="o_saas-lead mb-4">
+                                        A secure portal for students and
+                                        supervisors to record daily work,
+                                        review progress, request revisions,
+                                        and complete internship documentation
+                                        in one place.
+                                    </p>
+                                    <div class="o_landing-hero-actions
+                                                d-flex flex-column
+                                                flex-sm-row gap-3">
+                                        <a href="/internship/register"
+                                           class="btn btn-primary btn-lg">
+                                            Get Started
+                                            <t t-call="internship_logbook.internship_saas_icon">
+                                                <t t-set="icon"
+                                                   t-value="'arrow'"/>
+                                                <t t-set="icon_size"
+                                                   t-value="18"/>
+                                                <t t-set="icon_class"
+                                                   t-value="'ms-2'"/>
+                                                <t t-set="icon_label"
+                                                   t-value="False"/>
+                                            </t>
+                                        </a>
+                                        <a href="/web/login"
+                                           class="btn btn-outline-primary
+                                                  btn-lg">
+                                            Sign In
+                                        </a>
+                                    </div>
+                                    <p class="o_landing-hero-note mt-3 mb-0">
+                                        Secure access for students and
+                                        supervisors. No installation needed.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="o_landing-product-visual
+                                            o_saas-reveal"
+                                     role="img"
+                                     aria-label="Illustration of the Internship Logbook dashboard">
+                                    <div class="o_landing-mockup"
+                                         aria-hidden="true">
+                                        <div class="o_landing-mockup-bar">
+                                            <span/>
+                                            <span/>
+                                            <span/>
+                                            <strong>Internship Logbook</strong>
+                                        </div>
+                                        <div class="o_landing-mockup-body">
+                                            <aside class="o_landing-mockup-nav">
+                                                <div class="o_landing-mockup-brand">
+                                                    <t t-call="internship_logbook.internship_saas_icon">
+                                                        <t t-set="icon"
+                                                           t-value="'book'"/>
+                                                        <t t-set="icon_size"
+                                                           t-value="19"/>
+                                                        <t t-set="icon_class"
+                                                           t-value="''"/>
+                                                        <t t-set="icon_label"
+                                                           t-value="False"/>
+                                                    </t>
+                                                </div>
+                                                <span class="is-active"/>
+                                                <span/>
+                                                <span/>
+                                                <span/>
+                                            </aside>
+                                            <div class="o_landing-mockup-content">
+                                                <div class="d-flex
+                                                            justify-content-between
+                                                            align-items-start
+                                                            gap-3 mb-3">
+                                                    <div>
+                                                        <span class="o_landing-mockup-kicker">
+                                                            Current Internship
+                                                        </span>
+                                                        <strong class="d-block">
+                                                            Internship Progress
+                                                        </strong>
+                                                    </div>
+                                                    <span class="o_landing-status">
+                                                        Active
+                                                    </span>
+                                                </div>
+                                                <div class="o_landing-progress-card">
+                                                    <div class="d-flex
+                                                                justify-content-between
+                                                                gap-2 mb-2">
+                                                        <span>Daily progress</span>
+                                                        <strong>In progress</strong>
+                                                    </div>
+                                                    <div class="o_landing-progress-track">
+                                                        <span/>
+                                                    </div>
+                                                </div>
+                                                <div class="o_landing-mockup-stats">
+                                                    <div>
+                                                        <span>Entries</span>
+                                                        <strong>Logged</strong>
+                                                    </div>
+                                                    <div>
+                                                        <span>Approved</span>
+                                                        <strong>Reviewed</strong>
+                                                    </div>
+                                                    <div>
+                                                        <span>Hours</span>
+                                                        <strong>Tracked</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="o_landing-activity-list">
+                                                    <div class="o_landing-activity-row">
+                                                        <span class="o_landing-activity-icon">
+                                                            <t t-call="internship_logbook.internship_saas_icon">
+                                                                <t t-set="icon"
+                                                                   t-value="'check'"/>
+                                                                <t t-set="icon_size"
+                                                                   t-value="16"/>
+                                                                <t t-set="icon_class"
+                                                                   t-value="''"/>
+                                                                <t t-set="icon_label"
+                                                                   t-value="False"/>
+                                                            </t>
+                                                        </span>
+                                                        <span>
+                                                            Daily entry reviewed
+                                                        </span>
+                                                        <strong>Approved</strong>
+                                                    </div>
+                                                    <div class="o_landing-activity-row">
+                                                        <span class="o_landing-activity-icon">
+                                                            <t t-call="internship_logbook.internship_saas_icon">
+                                                                <t t-set="icon"
+                                                                   t-value="'calendar'"/>
+                                                                <t t-set="icon_size"
+                                                                   t-value="16"/>
+                                                                <t t-set="icon_class"
+                                                                   t-value="''"/>
+                                                                <t t-set="icon_label"
+                                                                   t-value="False"/>
+                                                            </t>
+                                                        </span>
+                                                        <span>
+                                                            Daily log recorded
+                                                        </span>
+                                                        <strong>Draft</strong>
+                                                    </div>
+                                                    <div class="o_landing-activity-row">
+                                                        <span class="o_landing-activity-icon">
+                                                            <t t-call="internship_logbook.internship_saas_icon">
+                                                                <t t-set="icon"
+                                                                   t-value="'user'"/>
+                                                                <t t-set="icon_size"
+                                                                   t-value="16"/>
+                                                                <t t-set="icon_class"
+                                                                   t-value="''"/>
+                                                                <t t-set="icon_label"
+                                                                   t-value="False"/>
+                                                            </t>
+                                                        </span>
+                                                        <span>
+                                                            Supervisor review
+                                                        </span>
+                                                        <strong>Pending</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="o_landing-highlights"
+                         aria-label="Platform highlights">
+                    <div class="container">
+                        <ul class="o_landing-highlights-list">
+                            <li>
+                                <t t-call="internship_logbook.internship_saas_icon">
+                                    <t t-set="icon" t-value="'shield'"/>
+                                    <t t-set="icon_size" t-value="19"/>
+                                    <t t-set="icon_class" t-value="''"/>
+                                    <t t-set="icon_label" t-value="False"/>
+                                </t>
+                                Role-Based Access
+                            </li>
+                            <li>
+                                <t t-call="internship_logbook.internship_saas_icon">
+                                    <t t-set="icon" t-value="'check'"/>
+                                    <t t-set="icon_size" t-value="19"/>
+                                    <t t-set="icon_class" t-value="''"/>
+                                    <t t-set="icon_label" t-value="False"/>
+                                </t>
+                                Secure Authentication
+                            </li>
+                            <li>
+                                <t t-call="internship_logbook.internship_saas_icon">
+                                    <t t-set="icon" t-value="'user'"/>
+                                    <t t-set="icon_size" t-value="19"/>
+                                    <t t-set="icon_class" t-value="''"/>
+                                    <t t-set="icon_label" t-value="False"/>
+                                </t>
+                                Supervisor Workflow
+                            </li>
+                            <li>
+                                <t t-call="internship_logbook.internship_saas_icon">
+                                    <t t-set="icon" t-value="'device'"/>
+                                    <t t-set="icon_size" t-value="19"/>
+                                    <t t-set="icon_class" t-value="''"/>
+                                    <t t-set="icon_label" t-value="False"/>
+                                </t>
+                                Responsive Portal
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="features"
+                         class="o_saas-section o_landing-features"
+                         aria-labelledby="internship-features-title">
+                    <div class="container">
+                        <header class="o_landing-section-heading
+                                       text-center mx-auto mb-5">
+                            <p class="o_saas-eyebrow mb-3">
+                                Organized From Day One
+                            </p>
+                            <h2 id="internship-features-title"
+                                class="o_saas-heading mb-3">
+                                Everything Needed for a Clear Internship
+                                Process
+                            </h2>
+                            <p class="o_saas-lead mb-0">
+                                From the first daily entry to final approval,
+                                every stage stays organized and visible.
+                            </p>
+                        </header>
+                        <div class="row g-4">
+                            <div class="col-12 col-md-6 col-xl-4">
+                                <t t-call="internship_logbook.internship_landing_feature_card">
+                                    <t t-set="feature_icon"
+                                       t-value="'book'"/>
+                                    <t t-set="feature_title">
+                                        Daily Internship Logs
+                                    </t>
+                                    <t t-set="feature_description">
+                                        Students can document tasks, outcomes,
+                                        and learning progress in a structured
+                                        daily format.
+                                    </t>
+                                </t>
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-4">
+                                <t t-call="internship_logbook.internship_landing_feature_card">
+                                    <t t-set="feature_icon"
+                                       t-value="'check'"/>
+                                    <t t-set="feature_title">
+                                        Supervisor Approval
+                                    </t>
+                                    <t t-set="feature_description">
+                                        Supervisors can review submitted
+                                        entries, approve them, or request
+                                        clear revisions.
+                                    </t>
+                                </t>
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-4">
+                                <t t-call="internship_logbook.internship_landing_feature_card">
+                                    <t t-set="feature_icon"
+                                       t-value="'dashboard'"/>
+                                    <t t-set="feature_title">
+                                        Progress Tracking
+                                    </t>
+                                    <t t-set="feature_description">
+                                        Track completed days, pending work,
+                                        and internship progress from one
+                                        dashboard.
+                                    </t>
+                                </t>
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-4">
+                                <t t-call="internship_logbook.internship_landing_feature_card">
+                                    <t t-set="feature_icon"
+                                       t-value="'bell'"/>
+                                    <t t-set="feature_title">
+                                        Automatic Notifications
+                                    </t>
+                                    <t t-set="feature_description">
+                                        Keep students informed about
+                                        submissions, revision requests, and
+                                        approval updates.
+                                    </t>
+                                </t>
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-4">
+                                <t t-call="internship_logbook.internship_landing_feature_card">
+                                    <t t-set="feature_icon"
+                                       t-value="'shield'"/>
+                                    <t t-set="feature_title">
+                                        Secure Portal
+                                    </t>
+                                    <t t-set="feature_description">
+                                        Role-based access keeps internship
+                                        records available only to authorized
+                                        users.
+                                    </t>
+                                </t>
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-4">
+                                <t t-call="internship_logbook.internship_landing_feature_card">
+                                    <t t-set="feature_icon"
+                                       t-value="'device'"/>
+                                    <t t-set="feature_title">
+                                        Responsive Experience
+                                    </t>
+                                    <t t-set="feature_description">
+                                        Use the platform comfortably from
+                                        desktop, tablet, or mobile devices.
+                                    </t>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="o_landing-transition"
+                         aria-hidden="true">
+                    <div class="container">
+                        <div/>
+                    </div>
+                </section>
+
+                <section id="workflow"
+                         class="o_saas-section o_saas-section--subtle
+                                o_landing-workflow"
+                         aria-labelledby="internship-workflow-title">
+                    <div class="container">
+                        <header class="o_landing-section-heading
+                                       text-center mx-auto mb-5">
+                            <p class="o_saas-eyebrow mb-3">
+                                How It Works
+                            </p>
+                            <h2 id="internship-workflow-title"
+                                class="o_saas-heading mb-3">
+                                A Simple Workflow From First Entry to Final
+                                Approval
+                            </h2>
+                            <p class="o_saas-lead mb-0">
+                                Every action follows a clear process, so
+                                students and supervisors always know what
+                                comes next.
+                            </p>
+                        </header>
+                        <ol class="o_landing-workflow-list">
+                            <t t-call="internship_logbook.internship_landing_workflow_step">
+                                <t t-set="step_number" t-value="1"/>
+                                <t t-set="step_title">
+                                    Create Internship Program
+                                </t>
+                                <t t-set="step_description">
+                                    The internship period, company,
+                                    supervisor, and required dates are
+                                    prepared.
+                                </t>
+                            </t>
+                            <t t-call="internship_logbook.internship_landing_workflow_step">
+                                <t t-set="step_number" t-value="2"/>
+                                <t t-set="step_title">Write Daily Entry</t>
+                                <t t-set="step_description">
+                                    The student records completed work and
+                                    learning outcomes.
+                                </t>
+                            </t>
+                            <t t-call="internship_logbook.internship_landing_workflow_step">
+                                <t t-set="step_number" t-value="3"/>
+                                <t t-set="step_title">Submit for Review</t>
+                                <t t-set="step_description">
+                                    The entry is locked for review and sent to
+                                    the assigned supervisor.
+                                </t>
+                            </t>
+                            <t t-call="internship_logbook.internship_landing_workflow_step">
+                                <t t-set="step_number" t-value="4"/>
+                                <t t-set="step_title">Supervisor Review</t>
+                                <t t-set="step_description">
+                                    The supervisor checks the entry and
+                                    provides a decision.
+                                </t>
+                            </t>
+                            <t t-call="internship_logbook.internship_landing_workflow_step">
+                                <t t-set="step_number" t-value="5"/>
+                                <t t-set="step_title">Revise When Needed</t>
+                                <t t-set="step_description">
+                                    The student updates the entry when a
+                                    revision is requested.
+                                </t>
+                            </t>
+                            <t t-call="internship_logbook.internship_landing_workflow_step">
+                                <t t-set="step_number" t-value="6"/>
+                                <t t-set="step_title">
+                                    Approve and Complete
+                                </t>
+                                <t t-set="step_description">
+                                    Approved records contribute to the
+                                    completed internship logbook.
+                                </t>
+                            </t>
+                        </ol>
+                    </div>
+                </section>
+            </main>
+        </xpath>
+    </template>
+
+    <template id="internship_saas_homepage_completion"
+              name="Internship SaaS Homepage Completion"
+              inherit_id="internship_logbook.internship_saas_homepage"
+              priority="40">
+        <xpath expr="//section[hasclass('o_landing-workflow')]"
+               position="after">
+            <section id="capabilities"
+                     class="o_saas-section o_landing-capabilities"
+                     aria-labelledby="internship-capabilities-title">
+                <div class="container">
+                    <header class="o_landing-section-heading text-center mx-auto mb-5">
+                        <p class="o_saas-eyebrow mb-3">Platform Capabilities</p>
+                        <h2 id="internship-capabilities-title" class="o_saas-heading mb-3">
+                            Built for a Complete Internship Workflow
+                        </h2>
+                        <p class="o_saas-lead mb-0">
+                            The platform brings the essential internship operations together without relying on disconnected documents or manual follow-up.
+                        </p>
+                    </header>
+                    <ul class="o_landing-capability-grid">
+                        <t t-call="internship_logbook.internship_landing_capability"><t t-set="capability_value" t-value="'6'"/><t t-set="capability_title">Workflow Stages</t><t t-set="capability_description">From program setup to final approval.</t></t>
+                        <t t-call="internship_logbook.internship_landing_capability"><t t-set="capability_value" t-value="'2'"/><t t-set="capability_title">User Roles</t><t t-set="capability_description">Dedicated experiences for students and supervisors.</t></t>
+                        <t t-call="internship_logbook.internship_landing_capability"><t t-set="capability_value" t-value="'24/7'"/><t t-set="capability_title">Portal Access</t><t t-set="capability_description">Internship records remain available whenever users need them.</t></t>
+                        <t t-call="internship_logbook.internship_landing_capability"><t t-set="capability_value" t-value="'Responsive'"/><t t-set="capability_title">By Design</t><t t-set="capability_description">Optimized for desktop, tablet, and mobile use.</t></t>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="product-preview"
+                     class="o_saas-section o_saas-section--subtle o_landing-preview"
+                     aria-labelledby="internship-preview-title">
+                <div class="container">
+                    <header class="o_landing-section-heading text-center mx-auto mb-5">
+                        <p class="o_saas-eyebrow mb-3">Product Preview</p>
+                        <h2 id="internship-preview-title" class="o_saas-heading mb-3">One Workspace for Every Internship Step</h2>
+                        <p class="o_saas-lead mb-0">A focused interface helps students record their work while supervisors review progress without losing context.</p>
+                    </header>
+                    <div class="row align-items-center g-5">
+                        <div class="col-lg-7">
+                            <div class="o_landing-workspace-preview" role="img" aria-label="Conceptual preview of a shared internship workspace">
+                                <div class="o_landing-workspace-header" aria-hidden="true"><span class="o_landing-workspace-mark"/><span>Internship workspace preview</span><span class="o_landing-workspace-status">Active program</span></div>
+                                <div class="o_landing-workspace-body" aria-hidden="true">
+                                    <div class="o_landing-workspace-sidebar"><span class="is-active"/><span/><span/><span/></div>
+                                    <div class="o_landing-workspace-content">
+                                        <div class="o_landing-workspace-summary"><div><small>Program overview</small><strong>Progress stays visible</strong></div><span class="o_saas-badge">In progress</span></div>
+                                        <div class="o_landing-workspace-grid"><div><span>Daily entries</span><strong>Structured</strong></div><div><span>Review state</span><strong>Visible</strong></div><div><span>Timeline</span><strong>Consistent</strong></div></div>
+                                        <div class="o_landing-workspace-lines"><span/><span/><span/></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="o_landing-preview-panels">
+                                <article class="o_landing-preview-panel"><h3 class="h5">Student Workspace</h3><p>Record work and understand what needs attention next.</p><ul><li>Daily entries</li><li>Internship progress</li><li>Missing-day visibility</li><li>Submission actions</li></ul></article>
+                                <article class="o_landing-preview-panel"><h3 class="h5">Supervisor Review</h3><p>Review submitted work with its workflow context intact.</p><ul><li>Submitted entries</li><li>Approval state</li><li>Revision requests</li><li>Review history</li></ul></article>
+                                <article class="o_landing-preview-panel"><h3 class="h5">Shared Progress</h3><p>Keep program status understandable for both roles.</p><ul><li>Status visibility</li><li>Timeline consistency</li><li>Program overview</li><li>Completion tracking</li></ul></article>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="use-cases" class="o_saas-section o_landing-use-cases" aria-labelledby="internship-use-cases-title">
+                <div class="container">
+                    <header class="o_landing-section-heading text-center mx-auto mb-5"><p class="o_saas-eyebrow mb-3">Purposeful Experiences</p><h2 id="internship-use-cases-title" class="o_saas-heading mb-0">Designed for Both Sides of the Internship Process</h2></header>
+                    <div class="row g-4">
+                        <div class="col-12 col-lg-6"><article class="o_saas-card o_landing-audience-card"><span class="o_saas-icon-wrap" aria-hidden="true"><t t-call="internship_logbook.internship_saas_icon"><t t-set="icon" t-value="'book'"/><t t-set="icon_size" t-value="24"/><t t-set="icon_class" t-value="''"/><t t-set="icon_label" t-value="False"/></t></span><p class="o_saas-eyebrow mt-4 mb-2">Students</p><h3 class="h4 mb-4">Stay Organized Throughout the Internship</h3><ul class="o_landing-check-list"><li>Record daily work in a structured format</li><li>See missing or incomplete days</li><li>Submit entries for supervisor review</li><li>Respond clearly to revision requests</li><li>Follow overall internship progress</li></ul></article></div>
+                        <div class="col-12 col-lg-6"><article class="o_saas-card o_landing-audience-card"><span class="o_saas-icon-wrap" aria-hidden="true"><t t-call="internship_logbook.internship_saas_icon"><t t-set="icon" t-value="'building'"/><t t-set="icon_size" t-value="24"/><t t-set="icon_class" t-value="''"/><t t-set="icon_label" t-value="False"/></t></span><p class="o_saas-eyebrow mt-4 mb-2">Supervisors</p><h3 class="h4 mb-4">Review Progress With Clear Context</h3><ul class="o_landing-check-list"><li>Review assigned student entries</li><li>Approve or request revisions</li><li>Track submission history</li><li>Keep internship documentation consistent</li><li>Follow the full program status</li></ul></article></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="principles" class="o_saas-section o_saas-section--subtle o_landing-principles" aria-labelledby="internship-principles-title">
+                <div class="container">
+                    <header class="o_landing-section-heading text-center mx-auto mb-5"><p class="o_saas-eyebrow mb-3">Product Principles</p><h2 id="internship-principles-title" class="o_saas-heading mb-0">Built Around Clarity, Accountability, and Progress</h2></header>
+                    <div class="row g-4">
+                        <div class="col-12 col-md-4"><t t-call="internship_logbook.internship_landing_principle"><t t-set="principle_icon" t-value="'book'"/><t t-set="principle_title">Clear Records</t><t t-set="principle_description">Daily work, decisions, and revisions remain easy to understand throughout the internship.</t></t></div>
+                        <div class="col-12 col-md-4"><t t-call="internship_logbook.internship_landing_principle"><t t-set="principle_icon" t-value="'shield'"/><t t-set="principle_title">Visible Responsibility</t><t t-set="principle_description">Students and supervisors can clearly see which action is expected next.</t></t></div>
+                        <div class="col-12 col-md-4"><t t-call="internship_logbook.internship_landing_principle"><t t-set="principle_icon" t-value="'dashboard'"/><t t-set="principle_title">Consistent Progress</t><t t-set="principle_description">Structured workflows help prevent missing entries and incomplete documentation.</t></t></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="faq" class="o_saas-section o_landing-faq" aria-labelledby="internship-faq-title">
+                <div class="container">
+                    <header class="o_landing-section-heading text-center mx-auto mb-5"><p class="o_saas-eyebrow mb-3">Common Questions</p><h2 id="internship-faq-title" class="o_saas-heading mb-3">Frequently Asked Questions</h2><p class="o_saas-lead mb-0">Quick answers about how the internship portal works.</p></header>
+                    <div class="accordion o_landing-faq-list mx-auto" id="internshipLandingFaq">
+                        <div class="accordion-item"><h3 class="accordion-header" id="faq-heading-account"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-panel-account" aria-expanded="false" aria-controls="faq-panel-account">Who can create an internship account?</button></h3><div id="faq-panel-account" class="accordion-collapse collapse" aria-labelledby="faq-heading-account" data-bs-parent="#internshipLandingFaq"><div class="accordion-body">Students can use the registration flow when self-registration is available. Account and internship access remain subject to the platform’s configured verification and approval rules.</div></div></div>
+                        <div class="accordion-item"><h3 class="accordion-header" id="faq-heading-review"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-panel-review" aria-expanded="false" aria-controls="faq-panel-review">How are daily entries reviewed?</button></h3><div id="faq-panel-review" class="accordion-collapse collapse" aria-labelledby="faq-heading-review" data-bs-parent="#internshipLandingFaq"><div class="accordion-body">Students submit completed daily entries to their assigned supervisor. The supervisor can approve the entry or request a revision.</div></div></div>
+                        <div class="accordion-item"><h3 class="accordion-header" id="faq-heading-edit"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-panel-edit" aria-expanded="false" aria-controls="faq-panel-edit">Can a submitted entry be edited?</button></h3><div id="faq-panel-edit" class="accordion-collapse collapse" aria-labelledby="faq-heading-edit" data-bs-parent="#internshipLandingFaq"><div class="accordion-body">Editing depends on the current workflow state. Entries that require revision can be updated and submitted again according to the existing portal rules.</div></div></div>
+                        <div class="accordion-item"><h3 class="accordion-header" id="faq-heading-missing"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-panel-missing" aria-expanded="false" aria-controls="faq-panel-missing">Can students track missing internship days?</button></h3><div id="faq-panel-missing" class="accordion-collapse collapse" aria-labelledby="faq-heading-missing" data-bs-parent="#internshipLandingFaq"><div class="accordion-body">The internship dashboard can highlight missing or incomplete days based on the active internship program and its configured dates.</div></div></div>
+                        <div class="accordion-item"><h3 class="accordion-header" id="faq-heading-mobile"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-panel-mobile" aria-expanded="false" aria-controls="faq-panel-mobile">Does the portal work on mobile devices?</button></h3><div id="faq-panel-mobile" class="accordion-collapse collapse" aria-labelledby="faq-heading-mobile" data-bs-parent="#internshipLandingFaq"><div class="accordion-body">Yes. The public website and portal interface are designed to adapt to desktop, tablet, and mobile screen sizes.</div></div></div>
+                        <div class="accordion-item"><h3 class="accordion-header" id="faq-heading-privacy"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-panel-privacy" aria-expanded="false" aria-controls="faq-panel-privacy">Is internship data visible to everyone?</button></h3><div id="faq-panel-privacy" class="accordion-collapse collapse" aria-labelledby="faq-heading-privacy" data-bs-parent="#internshipLandingFaq"><div class="accordion-body">No. Portal access and record visibility follow the configured authentication, role, ownership, and access-control rules.</div></div></div>
+                        <div class="accordion-item"><h3 class="accordion-header" id="faq-heading-export"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-panel-export" aria-expanded="false" aria-controls="faq-panel-export">Can internship records be exported?</button></h3><div id="faq-panel-export" class="accordion-collapse collapse" aria-labelledby="faq-heading-export" data-bs-parent="#internshipLandingFaq"><div class="accordion-body">Export availability depends on the current internship state and the PDF functionality configured in the portal.</div></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="get-started" class="o_landing-final-cta" aria-labelledby="internship-final-cta-title">
+                <div class="container"><div class="o_landing-final-cta-inner text-center mx-auto"><p class="o_saas-eyebrow mb-3">Get Started</p><h2 id="internship-final-cta-title" class="o_saas-heading mb-3">Ready to Organize Your Internship Journey?</h2><p class="o_saas-lead mx-auto mb-4">Create your account to start recording internship progress, or sign in to continue your existing workflow.</p><div class="o_landing-final-actions d-flex flex-column flex-sm-row justify-content-center gap-3"><a href="/internship/register" class="btn btn-primary btn-lg">Create Account</a><a href="/web/login" class="btn btn-outline-primary btn-lg">Sign In</a></div></div></div>
+            </section>
+        </xpath>
+    </template>
+</odoo>

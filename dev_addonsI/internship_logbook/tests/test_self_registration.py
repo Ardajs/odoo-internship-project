@@ -334,7 +334,8 @@ class TestInternshipSelfRegistrationHttp(HttpCase):
         self.authenticate(None, None)
         response = self.url_open("/internship/register")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Create your Internship Logbook account", response.text)
+        self.assertIn("Create Your Internship Account", response.text)
+        self.assertIn("o_internship_registration", response.text)
         self.assertNotIn('name="password"', response.text)
         self.assertIn('name="csrf_token"', response.text)
 
@@ -384,6 +385,10 @@ class TestInternshipSelfRegistrationHttp(HttpCase):
         self.assertTrue(
             existing_response.url.endswith("/internship/register/sent")
         )
+        self.assertIn("o_internship_auth_status", new_response.text)
+        self.assertIn("Check Your Email", new_response.text)
+        self.assertIn('href="/web/login"', new_response.text)
+        self.assertIn('href="/internship/register"', new_response.text)
         pending = self.env["internship.self.registration"].sudo().search(
             [("email_normalized", "=", "new-http@example.test")]
         )
@@ -404,6 +409,14 @@ class TestInternshipSelfRegistrationHttp(HttpCase):
         })
         response = self.url_open(f"/internship/verify/{selector}")
         self.assertEqual(response.status_code, 200)
+        self.assertIn("o_internship_auth_verification", response.text)
+        self.assertIn("Create Your Password", response.text)
+        self.assertIn('action="/internship/verify"', response.text)
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn('name="selector"', response.text)
+        self.assertIn('name="secret"', response.text)
+        self.assertIn('name="password"', response.text)
+        self.assertIn('name="password_confirmation"', response.text)
         self.assertEqual(pending.token_digest, digest)
         self.assertFalse(pending.user_id)
         self.assertNotIn("#token=", response.url)
@@ -434,6 +447,9 @@ class TestInternshipSelfRegistrationHttp(HttpCase):
                 },
             )
             self.assertEqual(response.status_code, 200)
+            self.assertIn("o_internship_auth_error", response.text)
+            self.assertIn("We Couldn't Verify This Link", response.text)
+            self.assertNotIn("invalid-secret", response.text)
             pending.invalidate_recordset()
             self.assertEqual(pending.verification_attempt_count, attempt)
 

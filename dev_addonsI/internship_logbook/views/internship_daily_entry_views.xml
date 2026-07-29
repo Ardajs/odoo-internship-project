@@ -62,6 +62,7 @@
                         name="action_request_revision"
                         string="Request Revision"
                         type="object"
+                        class="btn-secondary"
                         groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
                         invisible="workflow_mode != 'supervised' or state != 'submitted'"/>
 
@@ -69,6 +70,7 @@
                         name="action_review_next"
                         string="Review Next"
                         type="object"
+                        class="btn-secondary"
                         groups="internship_logbook.group_internship_supervisor,internship_logbook.group_internship_manager"
                         invisible="workflow_mode != 'supervised' or state != 'submitted'"/>
 
@@ -107,7 +109,7 @@
 
                 </header>
 
-                <sheet>
+                <sheet class="o_internship_daily_entry_form">
 
                     <div class="oe_button_box" name="button_box">
                         <button name="action_open_student"
@@ -177,29 +179,35 @@
                         </group>
                     </group>
 
-                    <group string="Work Details">
+                    <separator string="Entry Content"/>
+
+                    <group string="Work Details" col="2">
 
                         <field
                             name="technologies"
+                            colspan="2"
                             placeholder="Python, Odoo, PostgreSQL, XML..."
                             readonly="state not in ('draft', 'revision')"/>
 
                         <field
                             name="work_description"
+                            colspan="2"
                             placeholder="Describe the work completed during the day..."
                             readonly="state not in ('draft', 'revision')"/>
 
                     </group>
 
-                    <group string="Learning and Problems">
+                    <group string="Learning and Problems" col="2">
 
                         <field
                             name="learned_topics"
+                            colspan="2"
                             placeholder="What did you learn today?"
                             readonly="state not in ('draft', 'revision')"/>
 
                         <field
                             name="challenges"
+                            colspan="2"
                             placeholder="Describe encountered problems and their solutions..."
                             readonly="state not in ('draft', 'revision')"/>
 
@@ -207,17 +215,24 @@
 
                     <group
                         string="Supervisor Evaluation"
+                        class="o_internship_supervisor_review"
+                        col="2"
                         invisible="workflow_mode == 'independent' or state == 'draft'">
 
                         <div class="alert alert-info" role="alert"
+                             colspan="2"
                              invisible="state != 'submitted'">
-                            Add a clear review comment before requesting a revision.
+                            Review the entry content before making a decision.
+                            Add a clear comment when requesting a revision;
+                            approval does not require a comment.
                         </div>
 
                         <field
                             name="supervisor_comment"
+                            string="Supervisor Feedback"
+                            colspan="2"
                             readonly="state != 'submitted'"
-                            placeholder="Supervisor evaluation or revision explanation..."/>
+                            placeholder="Explain clearly what the student should revise..."/>
 
                     </group>
 
@@ -412,19 +427,19 @@
         <field name="model">internship.daily.entry</field>
         <field name="arch" type="xml">
             <list string="Supervisor Review Queue"
-                  default_order="write_date desc, entry_date desc, id desc"
-                  decoration-warning="state == 'submitted'">
+                  default_order="write_date desc, entry_date desc, id desc">
+                <field name="student_id"/>
+                <field name="entry_date"/>
+                <field name="title" string="Work Title"/>
+                <field name="work_hours" sum="Total Hours"/>
+                <field name="state" widget="badge"/>
+                <field name="program_id" optional="hide"/>
+                <field name="company_name" optional="hide"/>
+                <field name="program_department" optional="hide"/>
+                <field name="student_university" optional="hide"/>
                 <field name="write_date"
                        string="Submitted / Updated"
-                       optional="show"/>
-                <field name="entry_date"/>
-                <field name="title"/>
-                <field name="student_id"/>
-                <field name="program_id"/>
-                <field name="company_name" optional="show"/>
-                <field name="student_university" optional="hide"/>
-                <field name="work_hours"/>
-                <field name="state" widget="badge"/>
+                       optional="hide"/>
             </list>
         </field>
     </record>

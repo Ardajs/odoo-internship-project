@@ -226,3 +226,40 @@ class TestSupervisorReviewWorkflow(TransactionCase):
             "state != 'submitted'",
             arch.xpath("//button[@name='action_approve']/@invisible")[0],
         )
+        for method in (
+            "action_approve",
+            "action_request_revision",
+            "action_review_next",
+        ):
+            button = arch.xpath(f"//button[@name='{method}']")[0]
+            self.assertEqual(button.get("type"), "object")
+            self.assertEqual(
+                button.get("groups"),
+                "internship_logbook.group_internship_supervisor,"
+                "internship_logbook.group_internship_manager",
+            )
+            self.assertIn("state != 'submitted'", button.get("invisible"))
+
+        self.assertEqual(
+            arch.xpath("//button[@name='action_approve']/@class"),
+            ["btn-primary"],
+        )
+        self.assertEqual(
+            arch.xpath("//button[@name='action_request_revision']/@class"),
+            ["btn-secondary"],
+        )
+        self.assertEqual(
+            arch.xpath("//button[@name='action_review_next']/@class"),
+            ["btn-secondary"],
+        )
+        comment = arch.xpath("//field[@name='supervisor_comment']")[0]
+        self.assertEqual(comment.get("readonly"), "state != 'submitted'")
+        self.assertEqual(comment.get("string"), "Supervisor Feedback")
+        self.assertTrue(
+            arch.xpath(
+                "//group[contains(@class, "
+                "'o_internship_supervisor_review')]"
+            )
+        )
+        statusbars = arch.xpath("//field[@name='state'][@widget='statusbar']")
+        self.assertEqual(len(statusbars), 2)

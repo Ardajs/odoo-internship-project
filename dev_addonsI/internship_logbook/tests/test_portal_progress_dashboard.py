@@ -109,6 +109,19 @@ class TestPortalProgressDashboard(HttpCase):
         self.assertEqual(len(values), 1)
         return values[0]
 
+    def _frontend_css(self, response):
+        links = self._document(response).xpath(
+            "//link[contains(@href, '/web/assets/') "
+            "and contains(@href, '.css')]/@href"
+        )
+        self.assertTrue(links)
+        styles = []
+        for link in links:
+            asset = self.url_open(link)
+            self.assertEqual(asset.status_code, 200)
+            styles.append(asset.text)
+        return "\n".join(styles)
+
     def test_access_no_program_and_dashboard_navigation(self):
         user, _student = self._create_portal_user("access")
         self._authenticate(user)
@@ -116,6 +129,26 @@ class TestPortalProgressDashboard(HttpCase):
         dashboard = self._dashboard()
 
         self.assertEqual(dashboard.status_code, 200)
+        document = self._document(dashboard)
+        self.assertEqual(
+            document.xpath(
+                "count(//*[contains(concat(' ', normalize-space(@class), "
+                " ' '), ' o_internship_portal_dashboard ')])"
+            ),
+            1.0,
+        )
+        self.assertEqual(document.xpath("count(//main//h1)"), 1.0)
+        self.assertIn("Welcome back,", dashboard.text)
+        self.assertIn(
+            ".o_internship_saas.o_internship_portal_dashboard",
+            self._frontend_css(dashboard),
+        )
+        debug_dashboard = self.url_open("/my/internship?debug=assets")
+        self.assertEqual(debug_dashboard.status_code, 200)
+        self.assertIn(
+            ".o_internship_saas.o_internship_portal_dashboard",
+            self._frontend_css(debug_dashboard),
+        )
         self.assertIn("Create Your First Internship", dashboard.text)
         self.assertIn('href="/my/internship/create"', dashboard.text)
         self.assertIn('href="/my/internship/daily"', dashboard.text)
@@ -148,6 +181,14 @@ class TestPortalProgressDashboard(HttpCase):
         self.assertIn("07/10/2026", response.text)
         self.assertIn('href="/my/internship/daily/new"', response.text)
         self.assertIn("View All Daily Entries", response.text)
+        self.assertIn("Progress Overview", response.text)
+        self.assertIn("o_internship_dashboard_overview", response.text)
+        self.assertEqual(
+            self._document(response).xpath(
+                "count(//main[@aria-labelledby='internship-dashboard-title'])"
+            ),
+            1.0,
+        )
 
     def test_date_metrics_before_during_and_after_program(self):
         user, student = self._create_portal_user("dates")

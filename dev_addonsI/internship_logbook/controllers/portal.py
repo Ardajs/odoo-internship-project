@@ -971,6 +971,40 @@ class InternshipPortal(CustomerPortal):
         )
 
     @http.route(
+        "/my/internship/daily/<int:entry_id>",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET"],
+        sitemap=False,
+    )
+    def portal_daily_entry_detail(self, entry_id, **_ignored):
+        if not self._is_portal_intern():
+            raise Forbidden()
+        student = self._resolve_portal_student()
+        if not student:
+            raise Forbidden()
+        entry = self._resolve_portal_daily_entry(student, entry_id)
+        if not entry:
+            raise request.not_found()
+
+        state_labels = self._daily_entry_state_labels()
+        values = self._prepare_portal_layout_values()
+        values.update({
+            "entry": entry,
+            "state_label": state_labels.get(
+                entry.state,
+                entry.state or _("Unknown"),
+            ),
+            "can_edit": self._is_portal_daily_entry_editable(entry),
+            "can_submit": self._is_portal_daily_entry_submittable(entry),
+        })
+        return request.render(
+            "internship_logbook.portal_daily_entry_detail",
+            values,
+        )
+
+    @http.route(
         "/my/internship/daily/new",
         type="http",
         auth="user",
